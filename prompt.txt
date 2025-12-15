@@ -1,0 +1,1495 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barber King | Premium Haircuts & Beard Trims in Sofia</title>
+    <meta name="description" content="Book your next haircut at Barber King – professional barbers, modern salon, easy online booking. Sofia's top-rated barber shop.">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .hero-gradient {
+            background: linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.5) 50%, rgba(0,0,0,0.8) 100%);
+        }
+        [v-cloak] { display: none; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-white text-gray-900">
+
+    <!-- Landing Page View -->
+    <div id="landingPage">
+    <!-- Header -->
+    <header class="sticky top-0 z-50 w-full border-b border-gray-200 bg-white/80 backdrop-blur-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex h-16 items-center justify-between">
+                <a href="#" class="text-xl font-bold tracking-tight text-gray-900">
+                    Barber King
+                </a>
+
+                <nav class="hidden md:flex items-center gap-8">
+                    <a href="#services" class="text-sm font-medium hover:text-gray-600 transition-colors">Services</a>
+                    <a href="#location" class="text-sm font-medium hover:text-gray-600 transition-colors">Location</a>
+                    <a href="#" class="inline-flex items-center justify-center rounded-md bg-black px-4 py-2 text-sm font-medium text-white shadow hover:bg-black/90 transition-colors">
+                        Schedule Now
+                    </a>
+                </nav>
+
+                <!-- Mobile CTA -->
+                <div class="md:hidden">
+                    <a href="#" class="inline-flex items-center justify-center rounded-md bg-black px-3 py-1.5 text-sm font-medium text-white shadow hover:bg-black/90 transition-colors">
+                        Schedule
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="relative min-h-[90vh] flex items-center justify-center bg-black overflow-hidden">
+        <!-- Background Image -->
+        <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('https://images.unsplash.com/photo-1585747860715-2ba37e788b70?q=80&w=2074&auto=format&fit=crop');"></div>
+        <!-- Dark overlay -->
+        <div class="absolute inset-0 hero-gradient"></div>
+
+        <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full text-center md:text-left">
+            <div class="max-w-3xl">
+                <h1 class="text-5xl md:text-7xl font-bold text-white tracking-tight">
+                    Barber King
+                </h1>
+                <p class="mt-4 text-xl md:text-2xl text-white/90">
+                    Premium cuts & classic style
+                </p>
+
+                <div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+                    <a href="#" class="inline-flex items-center justify-center rounded-md bg-white px-8 py-3 text-lg font-semibold text-black shadow-lg hover:bg-gray-100 transition-all">
+                        Schedule Now
+                    </a>
+                    <a href="#services" class="inline-flex items-center justify-center rounded-md bg-transparent border-2 border-white px-8 py-3 text-lg font-semibold text-white hover:bg-white/10 transition-all">
+                        View Services
+                    </a>
+                </div>
+
+                <div class="mt-6 flex items-center justify-center md:justify-start gap-2 text-white/80 text-sm md:text-base">
+                    <div class="flex text-yellow-500">
+                        <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+                        <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+                        <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+                        <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+                        <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+                    </div>
+                    <span>4.9 rating • 500+ happy clients</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Trust Section -->
+    <section class="py-20 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold tracking-tight">Why Choose Us</h2>
+                <div class="mt-2 w-20 h-1 bg-black mx-auto"></div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <!-- Feature 1 -->
+                <div class="bg-white p-8 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow text-center">
+                    <div class="w-12 h-12 mx-auto bg-black text-white flex items-center justify-center rounded-lg mb-6">
+                        <i data-lucide="scissors" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">Professional Barbers</h3>
+                    <p class="text-gray-500 leading-relaxed">Years of experience, attention to detail in every cut.</p>
+                </div>
+                <!-- Feature 2 -->
+                <div class="bg-white p-8 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow text-center">
+                    <div class="w-12 h-12 mx-auto bg-black text-white flex items-center justify-center rounded-lg mb-6">
+                        <i data-lucide="sparkles" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">Clean & Modern</h3>
+                    <p class="text-gray-500 leading-relaxed">Relaxing atmosphere with the highest hygiene standards.</p>
+                </div>
+                <!-- Feature 3 -->
+                <div class="bg-white p-8 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow text-center">
+                    <div class="w-12 h-12 mx-auto bg-black text-white flex items-center justify-center rounded-lg mb-6">
+                        <i data-lucide="calendar" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">Online Booking</h3>
+                    <p class="text-gray-500 leading-relaxed">Schedule in seconds from your phone, no waiting in line.</p>
+                </div>
+                <!-- Feature 4 -->
+                <div class="bg-white p-8 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow text-center">
+                    <div class="w-12 h-12 mx-auto bg-black text-white flex items-center justify-center rounded-lg mb-6">
+                        <i data-lucide="package" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">Premium Products</h3>
+                    <p class="text-gray-500 leading-relaxed">We use only the best products for your hair and beard.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Services Section -->
+    <section id="services" class="py-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold tracking-tight text-gray-900">Our Services</h2>
+                <div class="mt-2 w-20 h-1 bg-black mx-auto"></div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Service 1 -->
+                <div onclick="openBookingWithService('s1')" class="p-6 rounded-2xl border border-gray-200 hover:border-black transition-all cursor-pointer hover:shadow-lg group">
+                    <h3 class="text-xl font-bold mb-1">Haircut</h3>
+                    <p class="text-sm text-gray-500 mb-4">30 min • Professional cut & style</p>
+                    <div class="flex justify-between items-end">
+                        <p class="text-3xl font-bold">25 лв</p>
+                        <span class="text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">Book <i data-lucide="chevron-right" class="w-4 h-4"></i></span>
+                    </div>
+                </div>
+                <!-- Service 2 -->
+                <div onclick="openBookingWithService('s2')" class="p-6 rounded-2xl border border-gray-200 hover:border-black transition-all cursor-pointer hover:shadow-lg group">
+                    <h3 class="text-xl font-bold mb-1">Beard Trim</h3>
+                    <p class="text-sm text-gray-500 mb-4">20 min • Shape & line up</p>
+                    <div class="flex justify-between items-end">
+                        <p class="text-3xl font-bold">15 лв</p>
+                        <span class="text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">Book <i data-lucide="chevron-right" class="w-4 h-4"></i></span>
+                    </div>
+                </div>
+                <!-- Service 3 -->
+                <div onclick="openBookingWithService('s3')" class="p-6 rounded-2xl border border-black bg-black text-white cursor-pointer hover:scale-[1.02] transition-all">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="text-xl font-bold mb-1">Hair + Beard</h3>
+                            <p class="text-sm text-gray-400 mb-4">50 min • The works</p>
+                        </div>
+                        <span class="bg-white text-black text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">Best Value</span>
+                    </div>
+                    <div class="flex justify-between items-end">
+                        <p class="text-3xl font-bold">35 лв</p>
+                        <span class="text-sm font-bold flex items-center gap-1">Book Now <i data-lucide="chevron-right" class="w-4 h-4"></i></span>
+                    </div>
+                </div>
+                <!-- Service 4 -->
+                <div onclick="openBookingWithService('s4')" class="p-6 rounded-2xl border border-gray-200 hover:border-black transition-all cursor-pointer hover:shadow-lg group">
+                    <h3 class="text-xl font-bold mb-1">Kids Cut</h3>
+                    <p class="text-sm text-gray-500 mb-4">25 min • Up to 12 years</p>
+                    <div class="flex justify-between items-end">
+                        <p class="text-3xl font-bold">20 лв</p>
+                        <span class="text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">Book <i data-lucide="chevron-right" class="w-4 h-4"></i></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-16 text-center">
+                <a href="#" class="inline-flex items-center justify-center rounded-md bg-black px-10 py-4 text-lg font-bold text-white shadow hover:bg-black/90 transition-all">
+                    Book Your Appointment
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Location Section -->
+    <section id="location" class="py-20 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold tracking-tight text-gray-900">Find Us</h2>
+                <div class="mt-2 w-20 h-1 bg-black mx-auto"></div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-12 items-center">
+                <!-- Map -->
+                <div class="order-2 md:order-1 overflow-hidden rounded-2xl shadow-lg h-[450px]">
+                    <iframe 
+                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2932.453392477!2d23.31976!3d42.697708!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x40aa856e7e13d961%3A0x67396657962130e5!2sSofia%20Center%2C%20Sofia!5e0!3m2!1sen!2sbg!4v1700000000000" 
+                        width="100%" 
+                        height="100%" 
+                        style="border:0;" 
+                        allowfullscreen="" 
+                        loading="lazy" 
+                        referrerpolicy="no-referrer-when-downgrade">
+                    </iframe>
+                </div>
+
+                <!-- Info -->
+                <div class="flex flex-col space-y-8 order-1 md:order-2">
+                    <div>
+                        <h3 class="text-2xl font-bold mb-3 flex items-center gap-2">
+                            <i data-lucide="map-pin" class="w-6 h-6"></i> Visit Us
+                        </h3>
+                        <p class="text-xl text-gray-600">Sofia, ul. Example 12, 1000 Center</p>
+                    </div>
+
+                    <div>
+                        <h3 class="text-2xl font-bold mb-3 flex items-center gap-2">
+                            <i data-lucide="clock" class="w-6 h-6"></i> Working Hours
+                        </h3>
+                        <p class="text-xl text-gray-600">Mon–Sat: 09:00 – 19:00</p>
+                        <p class="text-lg text-gray-400">Sunday: Closed</p>
+                    </div>
+
+                    <div>
+                        <h3 class="text-2xl font-bold mb-3 flex items-center gap-2">
+                            <i data-lucide="phone" class="w-6 h-6"></i> Contact
+                        </h3>
+                        <a href="tel:+359888123456" class="text-xl text-gray-600 hover:text-black transition-colors font-medium">
+                            +359 888 123 456
+                        </a>
+                    </div>
+
+                    <div class="pt-4">
+                        <a href="https://maps.google.com" target="_blank" class="inline-flex items-center justify-center rounded-md bg-white border border-gray-200 px-8 py-3 text-lg font-semibold text-black shadow-sm hover:bg-gray-50 transition-all gap-2">
+                            <i data-lucide="navigation" class="w-5 h-5"></i>
+                            Open in Google Maps
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-black text-white py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
+                <div>
+                    <h3 class="text-3xl font-bold mb-4">Barber King</h3>
+                    <p class="text-gray-400 max-w-xs">Premium cuts and classic style for the modern man. Experience the difference of a professional barber shop.</p>
+                </div>
+
+                <div>
+                    <h4 class="text-lg font-semibold mb-6 uppercase tracking-wider text-gray-400">Quick Links</h4>
+                    <ul class="space-y-4">
+                        <li><a href="#" class="hover:text-gray-300 transition-colors">Home</a></li>
+                        <li><a href="#services" class="hover:text-gray-300 transition-colors">Services</a></li>
+                        <li><a href="#location" class="hover:text-gray-300 transition-colors">Location</a></li>
+                        <li><a href="#" class="hover:text-gray-300 transition-colors">Privacy Policy</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-lg font-semibold mb-6 uppercase tracking-wider text-gray-400">Follow Us</h4>
+                    <div class="flex items-center gap-6">
+                        <a href="https://instagram.com" target="_blank" class="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center hover:bg-white hover:text-black transition-all">
+                            <i data-lucide="instagram" class="w-5 h-5"></i>
+                        </a>
+                        <a href="https://facebook.com" target="_blank" class="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center hover:bg-white hover:text-black transition-all">
+                            <i data-lucide="facebook" class="w-5 h-5"></i>
+                        </a>
+                        <a href="https://twitter.com" target="_blank" class="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center hover:bg-white hover:text-black transition-all">
+                            <i data-lucide="twitter" class="w-5 h-5"></i>
+                        </a>
+                    </div>
+                    <div class="mt-8">
+                        <p class="text-sm text-gray-500">Subscribe to our newsletter for style tips and exclusive offers.</p>
+                        <form class="mt-4 flex gap-2">
+                            <input type="email" placeholder="Email address" class="bg-white/10 border border-white/20 rounded px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-white w-full">
+                            <button class="bg-white text-black px-4 py-2 rounded text-sm font-bold hover:bg-gray-200 transition-colors">Join</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-16 pt-8 border-t border-white/10 text-center text-sm text-gray-500 flex flex-col md:flex-row items-center justify-between gap-4">
+                <p>&copy; <span id="year"></span> Barber King. All rights reserved.</p>
+                <div class="flex gap-4">
+                    <button onclick="showView('dashboard')" class="text-gray-400 hover:text-white transition-colors flex items-center gap-1">
+                        <i data-lucide="scissors" class="w-4 h-4"></i> Barber View
+                    </button>
+                    <button onclick="showView('owner')" class="text-gray-400 hover:text-white transition-colors flex items-center gap-1">
+                        <i data-lucide="shield-check" class="w-4 h-4"></i> Owner Dashboard
+                    </button>
+                    <button onclick="showView('admin')" class="text-gray-400 hover:text-white transition-colors flex items-center gap-1">
+                        <i data-lucide="crown" class="w-4 h-4"></i> Super Admin
+                    </button>
+                </div>
+            </div>
+        </div>
+    </footer>
+    </div> <!-- End Landing Page -->
+
+    <!-- Owner Dashboard View -->
+    <div id="ownerDashboard" class="hidden min-h-screen bg-gray-50">
+        <!-- Dashboard Header -->
+        <header class="sticky top-0 z-40 w-full border-b border-gray-200 bg-white shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex h-16 items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <button onclick="showView('landing')" class="p-2 hover:bg-gray-100 rounded-full">
+                            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                        </button>
+                        <h1 class="text-xl font-bold tracking-tight">Owner Dashboard</h1>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="hidden sm:block text-right">
+                            <p class="text-sm font-bold">Admin King</p>
+                            <p class="text-xs text-gray-500">Shop Owner</p>
+                        </div>
+                        <div class="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center font-bold">
+                            AK
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Dashboard Navigation Tabs -->
+            <div class="flex border-b border-gray-200 mb-8 overflow-x-auto scrollbar-hide">
+                <button onclick="switchOwnerTab('overview')" id="tab-overview" class="px-6 py-3 text-sm font-medium border-b-2 border-black transition-colors whitespace-nowrap">Overview</button>
+                <button onclick="switchOwnerTab('appointments-owner')" id="tab-appointments-owner" class="px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-black transition-colors whitespace-nowrap">Appointments</button>
+                <button onclick="switchOwnerTab('schedules-owner')" id="tab-schedules-owner" class="px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-black transition-colors whitespace-nowrap">Schedules</button>
+                <button onclick="switchOwnerTab('barbers')" id="tab-barbers" class="px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-black transition-colors whitespace-nowrap">Barbers</button>
+                <button onclick="switchOwnerTab('services-owner')" id="tab-services-owner" class="px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-black transition-colors whitespace-nowrap">Services</button>
+                <button onclick="switchOwnerTab('settings')" id="tab-settings" class="px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-black transition-colors whitespace-nowrap">Settings</button>
+            </div>
+
+            <!-- Overview Tab -->
+            <div id="panel-overview" class="space-y-8">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                        <p class="text-sm text-gray-500 font-bold uppercase tracking-wider mb-1">Today's Bookings</p>
+                        <h3 class="text-3xl font-bold">12</h3>
+                        <p class="text-xs text-green-600 font-bold mt-2 flex items-center gap-1"><i data-lucide="trending-up" class="w-3 h-3"></i> +15% from yesterday</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                        <p class="text-sm text-gray-500 font-bold uppercase tracking-wider mb-1">Weekly Total</p>
+                        <h3 class="text-3xl font-bold">84</h3>
+                        <p class="text-xs text-gray-400 font-bold mt-2">Past 7 days</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                        <p class="text-sm text-gray-500 font-bold uppercase tracking-wider mb-1">Cancellations</p>
+                        <h3 class="text-3xl font-bold">3</h3>
+                        <p class="text-xs text-red-600 font-bold mt-2">Last 7 days</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                        <p class="text-sm text-gray-500 font-bold uppercase tracking-wider mb-1">Top Barber</p>
+                        <h3 class="text-3xl font-bold text-black">Alex</h3>
+                        <p class="text-xs text-gray-400 font-bold mt-2">By booking count</p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                    <h3 class="text-lg font-bold mb-4">Weekly Performance</h3>
+                    <div class="h-48 w-full bg-gray-50 rounded flex items-end justify-between p-4 gap-2">
+                        <div class="w-full bg-black h-[40%] rounded-t"></div>
+                        <div class="w-full bg-black h-[60%] rounded-t"></div>
+                        <div class="w-full bg-black h-[55%] rounded-t"></div>
+                        <div class="w-full bg-black h-[80%] rounded-t"></div>
+                        <div class="w-full bg-black h-[70%] rounded-t"></div>
+                        <div class="w-full bg-black h-[90%] rounded-t"></div>
+                        <div class="w-full bg-gray-200 h-[10%] rounded-t"></div>
+                    </div>
+                    <div class="flex justify-between mt-2 text-[10px] font-bold text-gray-400 uppercase">
+                        <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Shop-wide Appointments Tab -->
+            <div id="panel-appointments-owner" class="hidden space-y-6">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-2xl font-bold">All Appointments</h2>
+                    <div class="flex gap-2">
+                        <select class="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none">
+                            <option>All Barbers</option>
+                            <option>Alex</option>
+                            <option>Martin</option>
+                            <option>George</option>
+                        </select>
+                        <input type="date" class="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none">
+                    </div>
+                </div>
+                <div id="ownerAppointmentsList" class="grid gap-4">
+                    <!-- Injected via JS -->
+                </div>
+            </div>
+
+            <!-- Schedules Tab -->
+            <div id="panel-schedules-owner" class="hidden space-y-6">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-2xl font-bold">Team Schedules</h2>
+                        <p class="text-gray-500">Edit any barber's availability.</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                    <div class="lg:col-span-1 space-y-2">
+                        <button class="w-full p-4 rounded-xl border border-black bg-black text-white text-left font-bold">Alex (Master)</button>
+                        <button class="w-full p-4 rounded-xl border border-gray-200 bg-white text-left hover:border-black transition-all">Martin (Senior)</button>
+                        <button class="w-full p-4 rounded-xl border border-gray-200 bg-white text-left hover:border-black transition-all">George (Stylist)</button>
+                    </div>
+                    <div class="lg:col-span-3">
+                        <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                            <div class="p-4 border-b border-gray-100 flex items-center justify-between">
+                                <div class="flex items-center gap-4">
+                                    <button class="p-1 hover:bg-gray-200 rounded"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
+                                    <span class="font-bold">May 24, 2024</span>
+                                    <button class="p-1 hover:bg-gray-200 rounded"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
+                                </div>
+                                <button class="text-sm font-bold flex items-center gap-1 text-black"><i data-lucide="plus" class="w-4 h-4"></i> Add Slot</button>
+                            </div>
+                            <div class="divide-y divide-gray-100">
+                                <div class="p-4 flex items-center justify-between">
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-10 h-10 rounded-lg bg-green-50 text-green-600 flex items-center justify-center"><i data-lucide="check-circle" class="w-6 h-6"></i></div>
+                                        <div><p class="font-bold">09:00 - 13:00</p><p class="text-xs font-bold text-gray-400 uppercase">Available</p></div>
+                                    </div>
+                                    <button class="p-2 text-gray-400 hover:text-red-600"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+                                </div>
+                                <div class="p-4 flex items-center justify-between">
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-10 h-10 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center"><i data-lucide="coffee" class="w-6 h-6"></i></div>
+                                        <div><p class="font-bold">13:00 - 14:00</p><p class="text-xs font-bold text-gray-400 uppercase">Break</p></div>
+                                    </div>
+                                    <button class="p-2 text-gray-400 hover:text-red-600"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Barbers Tab -->
+            <div id="panel-barbers" class="hidden space-y-6">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-2xl font-bold">Manage Barbers</h2>
+                    <button class="bg-black text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2">
+                        <i data-lucide="user-plus" class="w-4 h-4"></i> Add Barber
+                    </button>
+                </div>
+                <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                    <table class="w-full text-left">
+                        <thead class="bg-gray-50 border-b border-gray-200">
+                            <tr>
+                                <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Name</th>
+                                <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Role</th>
+                                <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Status</th>
+                                <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100" id="barbersListTable">
+                            <!-- Injected via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Services Tab -->
+            <div id="panel-services-owner" class="hidden space-y-6">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-2xl font-bold">Services Menu</h2>
+                    <button class="bg-black text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2">
+                        <i data-lucide="plus" class="w-4 h-4"></i> Add Service
+                    </button>
+                </div>
+                <div class="grid gap-4" id="ownerServicesList">
+                    <!-- Injected via JS -->
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div id="panel-settings" class="hidden space-y-6">
+                <h2 class="text-2xl font-bold">Shop Settings</h2>
+                <div class="bg-white p-8 rounded-xl border border-gray-200 shadow-sm max-w-2xl">
+                    <div class="space-y-6">
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">Shop Name</label>
+                            <input type="text" value="Barber King Sofia" class="w-full p-3 border border-gray-200 rounded-lg focus:ring-1 focus:ring-black outline-none">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-1">City</label>
+                                <input type="text" value="Sofia" class="w-full p-3 border border-gray-200 rounded-lg focus:ring-1 focus:ring-black outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-1">Address</label>
+                                <input type="text" value="ul. Example 12" class="w-full p-3 border border-gray-200 rounded-lg focus:ring-1 focus:ring-black outline-none">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">Phone</label>
+                            <input type="tel" value="+359 888 123 456" class="w-full p-3 border border-gray-200 rounded-lg focus:ring-1 focus:ring-black outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">Instagram URL</label>
+                            <input type="url" value="https://instagram.com/barberking" class="w-full p-3 border border-gray-200 rounded-lg focus:ring-1 focus:ring-black outline-none">
+                        </div>
+                        <div class="pt-4">
+                            <button class="bg-black text-white px-8 py-3 rounded-lg font-bold hover:bg-black/90 transition-all">Save Changes</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Barber Dashboard View -->
+    <div id="barberDashboard" class="hidden min-h-screen bg-gray-50">
+        <!-- Dashboard Header -->
+        <header class="sticky top-0 z-40 w-full border-b border-gray-200 bg-white shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex h-16 items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <button onclick="showView('landing')" class="p-2 hover:bg-gray-100 rounded-full">
+                            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                        </button>
+                        <h1 class="text-xl font-bold tracking-tight">Barber Dashboard</h1>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="hidden sm:block text-right">
+                            <p class="text-sm font-bold">Alex Master</p>
+                            <p class="text-xs text-gray-500">Barber King Sofia</p>
+                        </div>
+                        <div class="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center font-bold">
+                            AM
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Dashboard Navigation Tabs -->
+            <div class="flex border-b border-gray-200 mb-8 overflow-x-auto scrollbar-hide">
+                <button onclick="switchTab('today')" id="tab-today" class="px-6 py-3 text-sm font-medium border-b-2 border-black transition-colors whitespace-nowrap">Today's Schedule</button>
+                <button onclick="switchTab('my-slots')" id="tab-my-slots" class="px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-black transition-colors whitespace-nowrap">Manage My Availability</button>
+                <button onclick="switchTab('team')" id="tab-team" class="px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-black transition-colors whitespace-nowrap">Team View</button>
+            </div>
+
+            <!-- Today's Appointments Tab -->
+            <div id="panel-today" class="space-y-6">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-2xl font-bold">Today's Appointments</h2>
+                    <div class="flex items-center gap-2 text-sm text-gray-500">
+                        <i data-lucide="calendar" class="w-4 h-4"></i>
+                        <span id="currentDateDisplay">Today, 24 May</span>
+                    </div>
+                </div>
+
+                <div class="grid gap-4" id="appointmentsList">
+                    <!-- Appointments injected via JS -->
+                </div>
+            </div>
+
+            <!-- Manage Availability Tab -->
+            <div id="panel-my-slots" class="hidden space-y-6">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-2xl font-bold">Manage Availability</h2>
+                        <p class="text-gray-500">Set your working hours and breaks.</p>
+                    </div>
+                    <button onclick="openAddSlotModal()" class="bg-black text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-black/90 transition-all">
+                        <i data-lucide="plus" class="w-4 h-4"></i> Add Slot
+                    </button>
+                </div>
+
+                <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                    <div class="p-4 border-b border-gray-100 flex items-center gap-4 bg-gray-50/50">
+                        <button class="p-1 hover:bg-gray-200 rounded"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
+                        <span class="font-bold">May 24, 2024</span>
+                        <button class="p-1 hover:bg-gray-200 rounded"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
+                    </div>
+                    <div class="divide-y divide-gray-100" id="slotsList">
+                        <!-- Slots injected via JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Team View Tab -->
+            <div id="panel-team" class="hidden space-y-6">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-2xl font-bold">Team Schedule</h2>
+                    <select class="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-black outline-none">
+                        <option>Martin (Senior)</option>
+                        <option>George (Stylist)</option>
+                    </select>
+                </div>
+
+                <div class="bg-white p-12 rounded-xl border border-dashed border-gray-300 flex flex-col items-center justify-center text-center">
+                    <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                        <i data-lucide="users" class="w-8 h-8 text-gray-400"></i>
+                    </div>
+                    <h3 class="font-bold text-lg">Team Schedule View</h3>
+                    <p class="text-gray-500 max-w-sm mt-2">You can view your colleagues' schedules here to coordinate breaks and coverage.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Super Admin Dashboard View -->
+    <div id="superAdminDashboard" class="hidden min-h-screen bg-gray-50">
+        <!-- Dashboard Header -->
+        <header class="sticky top-0 z-40 w-full border-b border-gray-200 bg-white shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex h-16 items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <button onclick="showView('landing')" class="p-2 hover:bg-gray-100 rounded-full">
+                            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                        </button>
+                        <h1 class="text-xl font-bold tracking-tight">Super Admin Panel</h1>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="hidden sm:block text-right">
+                            <p class="text-sm font-bold">Global Admin</p>
+                            <p class="text-xs text-gray-500">System Root</p>
+                        </div>
+                        <div class="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center font-bold">
+                            SA
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Dashboard Navigation Tabs -->
+            <div class="flex border-b border-gray-200 mb-8 overflow-x-auto scrollbar-hide">
+                <button onclick="switchAdminTab('shops')" id="admin-tab-shops" class="px-6 py-3 text-sm font-medium border-b-2 border-black transition-colors whitespace-nowrap">Shops</button>
+                <button onclick="switchAdminTab('users')" id="admin-tab-users" class="px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-black transition-colors whitespace-nowrap">Users & Roles</button>
+                <button onclick="switchAdminTab('assignments')" id="admin-tab-assignments" class="px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-black transition-colors whitespace-nowrap">Assignments</button>
+                <button onclick="switchAdminTab('global-barbers')" id="admin-tab-global-barbers" class="px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-black transition-colors whitespace-nowrap">Global Barbers</button>
+                <button onclick="switchAdminTab('global-appointments')" id="admin-tab-global-appointments" class="px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-black transition-colors whitespace-nowrap">Global Appointments</button>
+                <button onclick="switchAdminTab('audit')" id="admin-tab-audit" class="px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-black transition-colors whitespace-nowrap">Audit Logs</button>
+            </div>
+
+            <!-- Shops Management Tab -->
+            <div id="admin-panel-shops" class="space-y-6">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-2xl font-bold">Manage Shops</h2>
+                    <button class="bg-black text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2">
+                        <i data-lucide="plus" class="w-4 h-4"></i> Add Shop
+                    </button>
+                </div>
+                <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden overflow-x-auto">
+                    <table class="w-full text-left min-w-[600px]">
+                        <thead class="bg-gray-50 border-b border-gray-200">
+                            <tr>
+                                <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Shop Name</th>
+                                <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase">City</th>
+                                <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Owner</th>
+                                <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100" id="adminShopsTable">
+                            <!-- Injected via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Users & Roles Tab -->
+            <div id="admin-panel-users" class="hidden space-y-6">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-2xl font-bold">User Management</h2>
+                    <div class="relative">
+                        <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
+                        <input type="text" placeholder="Search users..." class="pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-1 focus:ring-black outline-none">
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden overflow-x-auto">
+                    <table class="w-full text-left min-w-[600px]">
+                        <thead class="bg-gray-50 border-b border-gray-200">
+                            <tr>
+                                <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase">User Name</th>
+                                <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Email</th>
+                                <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Role</th>
+                                <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100" id="adminUsersTable">
+                            <!-- Injected via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Assignments Tab -->
+            <div id="admin-panel-assignments" class="hidden grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="space-y-6">
+                    <h3 class="text-xl font-bold">Assign Shop Owner</h3>
+                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-4">
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">Select Shop</label>
+                            <select id="assign-shop-id" class="w-full p-3 border border-gray-200 rounded-lg focus:ring-1 focus:ring-black outline-none">
+                                <option>Select a shop...</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">Select User (BARBER_OWNER)</label>
+                            <select id="assign-owner-id" class="w-full p-3 border border-gray-200 rounded-lg focus:ring-1 focus:ring-black outline-none">
+                                <option>Select a user...</option>
+                            </select>
+                        </div>
+                        <button onclick="simulateAssignment('owner')" class="w-full bg-black text-white py-3 rounded-lg font-bold hover:bg-black/90 transition-all">Assign Owner</button>
+                    </div>
+                </div>
+                <div class="space-y-6">
+                    <h3 class="text-xl font-bold">Assign Barber to Shop</h3>
+                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-4">
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">Select Shop</label>
+                            <select id="assign-worker-shop-id" class="w-full p-3 border border-gray-200 rounded-lg focus:ring-1 focus:ring-black outline-none">
+                                <option>Select a shop...</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">Select User (BARBER_WORKER)</label>
+                            <select id="assign-worker-id" class="w-full p-3 border border-gray-200 rounded-lg focus:ring-1 focus:ring-black outline-none">
+                                <option>Select a user...</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">Display Name</label>
+                            <input type="text" placeholder="e.g. Master Alex" class="w-full p-3 border border-gray-200 rounded-lg focus:ring-1 focus:ring-black outline-none">
+                        </div>
+                        <button onclick="simulateAssignment('worker')" class="w-full bg-black text-white py-3 rounded-lg font-bold hover:bg-black/90 transition-all">Assign Worker</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Global Barbers Tab -->
+            <div id="admin-panel-global-barbers" class="hidden space-y-6">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-2xl font-bold">Global Barbers List</h2>
+                    <select class="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none">
+                        <option>All Shops</option>
+                        <option>Barber King Sofia</option>
+                        <option>Barber King Plovdiv</option>
+                    </select>
+                </div>
+                <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden overflow-x-auto">
+                    <table class="w-full text-left min-w-[600px]">
+                        <thead class="bg-gray-50 border-b border-gray-200">
+                            <tr>
+                                <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Barber</th>
+                                <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Shop</th>
+                                <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Status</th>
+                                <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100" id="adminGlobalBarbersTable">
+                            <!-- Injected via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Global Appointments Tab -->
+            <div id="admin-panel-global-appointments" class="hidden space-y-6">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-2xl font-bold">Global Appointments</h2>
+                    <div class="flex gap-2">
+                        <input type="date" class="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none">
+                        <select class="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none">
+                            <option>All Statuses</option>
+                            <option>Confirmed</option>
+                            <option>Cancelled</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="adminGlobalAppointmentsList" class="grid gap-4">
+                    <!-- Injected via JS -->
+                </div>
+            </div>
+
+            <!-- Audit Logs Tab -->
+            <div id="admin-panel-audit" class="hidden space-y-6">
+                <h2 class="text-2xl font-bold">Audit Logs</h2>
+                <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden overflow-x-auto">
+                    <table class="w-full text-left min-w-[800px]">
+                        <thead class="bg-gray-50 border-b border-gray-200">
+                            <tr>
+                                <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Timestamp</th>
+                                <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Actor</th>
+                                <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Action</th>
+                                <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Target</th>
+                                <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase text-right">Details</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100" id="adminAuditTable">
+                            <!-- Injected via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Cancellation Modal -->
+    <div id="cancelModal" class="fixed inset-0 z-[110] hidden">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeCancelModal()"></div>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white rounded-2xl shadow-2xl p-6">
+            <h3 class="text-xl font-bold mb-4">Cancel Appointment</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Reason for cancellation</label>
+                    <textarea id="cancelReason" rows="3" class="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none" placeholder="e.g. Barber is unwell, Shop emergency..."></textarea>
+                    <p class="text-xs text-gray-400 mt-1">Minimum 5 characters required.</p>
+                </div>
+                <div class="flex gap-3 mt-6">
+                    <button onclick="closeCancelModal()" class="flex-1 py-2 text-sm font-bold border border-gray-200 rounded-lg hover:bg-gray-50">Keep Appointment</button>
+                    <button onclick="submitCancellation()" class="flex-1 py-2 text-sm font-bold bg-red-600 text-white rounded-lg hover:bg-red-700">Cancel Booking</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Booking Modal -->
+    <div id="bookingModal" class="fixed inset-0 z-[100] hidden">
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeBooking()"></div>
+        
+        <!-- Modal Content -->
+        <div class="absolute inset-0 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 w-full md:max-w-2xl bg-white md:rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-300">
+            <!-- Header -->
+            <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white sticky top-0 z-10">
+                <div>
+                    <h2 class="text-xl font-bold">Book an Appointment</h2>
+                    <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold" id="stepIndicator">Step 1 of 4</p>
+                </div>
+                <button onclick="closeBooking()" class="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+
+            <!-- Stepper Progress Bar -->
+            <div class="h-1.5 w-full bg-gray-100">
+                <div id="progressBar" class="h-full bg-black transition-all duration-500" style="width: 25%"></div>
+            </div>
+
+            <!-- Wizard Steps Container -->
+            <div id="wizardContent" class="flex-1 overflow-y-auto p-6 scrollbar-hide">
+                <!-- Content injected via JS -->
+            </div>
+
+            <!-- Footer Navigation -->
+            <div class="px-6 py-4 border-t border-gray-100 flex justify-between items-center bg-gray-50">
+                <button id="prevBtn" onclick="prevStep()" class="text-sm font-semibold text-gray-600 hover:text-black flex items-center gap-1 invisible">
+                    <i data-lucide="chevron-left" class="w-4 h-4"></i> Back
+                </button>
+                <div id="footerAction">
+                    <!-- Confirm button injected here if needed -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // --- App State ---
+        let currentView = 'landing';
+        let currentTab = 'today';
+        let currentOwnerTab = 'overview';
+        let currentAdminTab = 'shops';
+        let cancellingId = null;
+
+        // Mock Data for Dashboard
+        let mockAppointments = [
+            { id: 1, time: '09:00 - 09:30', service: 'Haircut', customer: 'Ivan Ivanov', phone: '+359 888 111 222', status: 'CONFIRMED', barber: 'Alex', shop: 'Sofia Center' },
+            { id: 2, time: '10:00 - 10:50', service: 'Hair + Beard', customer: 'Stefan Draganov', phone: '+359 888 333 444', status: 'PENDING', barber: 'Martin', shop: 'Sofia Center' },
+            { id: 3, time: '11:00 - 11:30', service: 'Kids Cut', customer: 'Leo (Child)', phone: '+359 888 555 666', status: 'CONFIRMED', barber: 'George', shop: 'Plovdiv Old Town' },
+            { id: 4, time: '13:30 - 14:00', service: 'Beard Trim', customer: 'Dimitar Bonev', phone: '+359 888 777 888', status: 'CONFIRMED', barber: 'Alex', shop: 'Sofia Center' },
+            { id: 5, time: '14:30 - 15:00', service: 'Haircut', customer: 'Yavor Kolev', phone: '+359 888 999 000', status: 'CANCELLED', barber: 'Martin', shop: 'Sofia Center', cancelReason: 'Customer sick' },
+        ];
+
+        let mockSlots = [
+            { id: 101, time: '09:00 - 12:00', type: 'AVAILABLE' },
+            { id: 102, time: '12:00 - 13:00', type: 'BREAK' },
+            { id: 103, time: '13:00 - 18:00', type: 'AVAILABLE' },
+        ];
+
+        let mockBarbers = [
+            { id: 'b1', name: 'Alex', role: 'Master Barber', status: 'Active', email: 'alex@barberking.com', shop: 'Sofia Center' },
+            { id: 'b2', name: 'Martin', role: 'Senior Barber', status: 'Active', email: 'martin@barberking.com', shop: 'Sofia Center' },
+            { id: 'b3', name: 'George', role: 'Stylist', status: 'Inactive', email: 'george@barberking.com', shop: 'Plovdiv Old Town' },
+        ];
+
+        let mockShops = [
+            { id: 's1', name: 'Sofia Center', city: 'Sofia', owner: 'Admin King', status: 'Active' },
+            { id: 's2', name: 'Plovdiv Old Town', city: 'Plovdiv', owner: 'Marta P.', status: 'Active' },
+            { id: 's3', name: 'Varna Beach', city: 'Varna', owner: 'None', status: 'Inactive' },
+        ];
+
+        let mockProfiles = [
+            { id: 'u1', name: 'Admin King', email: 'admin@barberking.com', role: 'BARBER_OWNER' },
+            { id: 'u2', name: 'Alex Master', email: 'alex@barberking.com', role: 'BARBER_WORKER' },
+            { id: 'u3', name: 'Marta P.', email: 'marta@example.com', role: 'BARBER_OWNER' },
+            { id: 'u4', name: 'Stefan D.', email: 'stefan@example.com', role: 'USER' },
+            { id: 'u5', name: 'Global Root', email: 'root@barberking.com', role: 'SUPER_ADMIN' },
+        ];
+
+        let mockAuditLogs = [
+            { id: 501, time: '2024-05-24 10:15', actor: 'Global Root', action: 'ROLE_UPDATE', target: 'Stefan D.', details: 'USER -> BARBER_WORKER' },
+            { id: 502, time: '2024-05-24 09:45', actor: 'Global Root', action: 'SHOP_CREATE', target: 'Varna Beach', details: 'New shop initialized' },
+            { id: 503, time: '2024-05-23 18:20', actor: 'Admin King', action: 'APPOINTMENT_CANCEL', target: 'Ivan Ivanov', details: 'Barber emergency' },
+        ];
+
+        // --- Navigation Logic ---
+        function showView(view) {
+            currentView = view;
+            const landing = document.getElementById('landingPage');
+            const dashboard = document.getElementById('barberDashboard');
+            const owner = document.getElementById('ownerDashboard');
+            const admin = document.getElementById('superAdminDashboard');
+            
+            landing.classList.add('hidden');
+            dashboard.classList.add('hidden');
+            owner.classList.add('hidden');
+            admin.classList.add('hidden');
+
+            if (view === 'dashboard') {
+                dashboard.classList.remove('hidden');
+                renderDashboard();
+            } else if (view === 'owner') {
+                owner.classList.remove('hidden');
+                renderOwnerDashboard();
+            } else if (view === 'admin') {
+                admin.classList.remove('hidden');
+                renderSuperAdminDashboard();
+            } else {
+                landing.classList.remove('hidden');
+            }
+            window.scrollTo(0, 0);
+            lucide.createIcons();
+        }
+
+        function switchAdminTab(tab) {
+            currentAdminTab = tab;
+            ['shops', 'users', 'assignments', 'global-barbers', 'global-appointments', 'audit'].forEach(t => {
+                const btn = document.getElementById(`admin-tab-${t}`);
+                const panel = document.getElementById(`admin-panel-${t}`);
+                if (t === tab) {
+                    btn.classList.add('border-black', 'text-black');
+                    btn.classList.remove('border-transparent', 'text-gray-500');
+                    panel.classList.remove('hidden');
+                } else {
+                    btn.classList.remove('border-black', 'text-black');
+                    btn.classList.add('border-transparent', 'text-gray-500');
+                    panel.classList.add('hidden');
+                }
+            });
+            renderSuperAdminDashboard();
+            lucide.createIcons();
+        }
+
+        function renderSuperAdminDashboard() {
+            if (currentAdminTab === 'shops') renderAdminShops();
+            if (currentAdminTab === 'users') renderAdminUsers();
+            if (currentAdminTab === 'global-barbers') renderAdminGlobalBarbers();
+            if (currentAdminTab === 'global-appointments') renderAdminGlobalAppointments();
+            if (currentAdminTab === 'audit') renderAdminAuditLogs();
+            if (currentAdminTab === 'assignments') populateAssignmentSelectors();
+        }
+
+        function renderAdminShops() {
+            const list = document.getElementById('adminShopsTable');
+            list.innerHTML = mockShops.map(s => `
+                <tr>
+                    <td class="px-6 py-4 font-bold">${s.name}</td>
+                    <td class="px-6 py-4 text-sm">${s.city}</td>
+                    <td class="px-6 py-4 text-sm">${s.owner}</td>
+                    <td class="px-6 py-4 text-right">
+                        <button class="text-xs font-bold hover:underline mr-3">Edit</button>
+                        <button class="text-xs font-bold text-red-600 hover:underline">Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderAdminUsers() {
+            const list = document.getElementById('adminUsersTable');
+            list.innerHTML = mockProfiles.map(u => `
+                <tr>
+                    <td class="px-6 py-4 font-bold">${u.name}</td>
+                    <td class="px-6 py-4 text-sm text-gray-500">${u.email}</td>
+                    <td class="px-6 py-4">
+                        <select onchange="updateUserRole('${u.id}', this.value)" class="text-xs font-bold border border-gray-200 rounded px-2 py-1 outline-none">
+                            <option value="USER" ${u.role === 'USER' ? 'selected' : ''}>USER</option>
+                            <option value="BARBER_WORKER" ${u.role === 'BARBER_WORKER' ? 'selected' : ''}>WORKER</option>
+                            <option value="BARBER_OWNER" ${u.role === 'BARBER_OWNER' ? 'selected' : ''}>OWNER</option>
+                            <option value="SUPER_ADMIN" ${u.role === 'SUPER_ADMIN' ? 'selected' : ''}>ADMIN</option>
+                        </select>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <button class="text-xs font-bold text-red-600 hover:underline">Revoke</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function updateUserRole(id, role) {
+            const u = mockProfiles.find(u => u.id === id);
+            if (u) {
+                const oldRole = u.role;
+                u.role = role;
+                mockAuditLogs.unshift({
+                    id: Date.now(),
+                    time: new Date().toISOString().replace('T', ' ').slice(0, 16),
+                    actor: 'Global Root',
+                    action: 'ROLE_UPDATE',
+                    target: u.name,
+                    details: `${oldRole} -> ${role}`
+                });
+                renderSuperAdminDashboard();
+            }
+        }
+
+        function renderAdminGlobalBarbers() {
+            const list = document.getElementById('adminGlobalBarbersTable');
+            list.innerHTML = mockBarbers.map(b => `
+                <tr>
+                    <td class="px-6 py-4 font-bold">${b.name}</td>
+                    <td class="px-6 py-4 text-sm">${b.shop}</td>
+                    <td class="px-6 py-4">
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${b.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}">${b.status}</span>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <button class="text-xs font-bold hover:underline">Manage</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderAdminGlobalAppointments() {
+            const list = document.getElementById('adminGlobalAppointmentsList');
+            list.innerHTML = mockAppointments.map(app => `
+                <div class="bg-white p-4 rounded-xl border border-gray-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div class="flex items-center gap-4">
+                        <div class="text-center min-w-[80px]">
+                            <p class="text-xs font-bold text-gray-400 uppercase">Shop</p>
+                            <p class="text-sm font-bold">${app.shop}</p>
+                        </div>
+                        <div class="h-10 w-[1px] bg-gray-100 hidden md:block"></div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <p class="font-bold">${app.customer}</p>
+                                ${getStatusBadge(app.status)}
+                            </div>
+                            <p class="text-xs text-gray-500">${app.time} • ${app.barber} • ${app.service}</p>
+                        </div>
+                    </div>
+                    <button class="text-xs font-bold border border-gray-200 px-3 py-1.5 rounded hover:bg-gray-50 transition-colors">Details</button>
+                </div>
+            `).join('');
+        }
+
+        function renderAdminAuditLogs() {
+            const list = document.getElementById('adminAuditTable');
+            list.innerHTML = mockAuditLogs.map(log => `
+                <tr>
+                    <td class="px-6 py-4 text-xs text-gray-500">${log.time}</td>
+                    <td class="px-6 py-4 text-xs font-bold">${log.actor}</td>
+                    <td class="px-6 py-4 text-xs"><span class="bg-gray-100 px-1.5 py-0.5 rounded font-bold">${log.action}</span></td>
+                    <td class="px-6 py-4 text-xs font-bold">${log.target}</td>
+                    <td class="px-6 py-4 text-right text-[10px] text-gray-400 font-mono">${log.details}</td>
+                </tr>
+            `).join('');
+        }
+
+        function populateAssignmentSelectors() {
+            const shopSelects = ['assign-shop-id', 'assign-worker-shop-id'];
+            const ownerSelect = document.getElementById('assign-owner-id');
+            const workerSelect = document.getElementById('assign-worker-id');
+
+            shopSelects.forEach(id => {
+                const el = document.getElementById(id);
+                el.innerHTML = '<option>Select a shop...</option>' + mockShops.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+            });
+
+            ownerSelect.innerHTML = '<option>Select a user...</option>' + mockProfiles.filter(p => p.role === 'BARBER_OWNER').map(p => `<option value="${p.id}">${p.name} (${p.email})</option>`).join('');
+            workerSelect.innerHTML = '<option>Select a user...</option>' + mockProfiles.filter(p => p.role === 'BARBER_WORKER').map(p => `<option value="${p.id}">${p.name} (${p.email})</option>`).join('');
+        }
+
+        function simulateAssignment(type) {
+            alert(`${type.toUpperCase()} Assigned successfully. Audit log created.`);
+            mockAuditLogs.unshift({
+                id: Date.now(),
+                time: new Date().toISOString().replace('T', ' ').slice(0, 16),
+                actor: 'Global Root',
+                action: type === 'owner' ? 'OWNER_ASSIGN' : 'WORKER_ASSIGN',
+                target: 'System Update',
+                details: 'Database record updated'
+            });
+            renderSuperAdminDashboard();
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            ['today', 'my-slots', 'team'].forEach(t => {
+                const btn = document.getElementById(`tab-${t}`);
+                const panel = document.getElementById(`panel-${t}`);
+                if (t === tab) {
+                    btn.classList.add('border-black', 'text-black');
+                    btn.classList.remove('border-transparent', 'text-gray-500');
+                    panel.classList.remove('hidden');
+                } else {
+                    btn.classList.remove('border-black', 'text-black');
+                    btn.classList.add('border-transparent', 'text-gray-500');
+                    panel.classList.add('hidden');
+                }
+            });
+            renderDashboard();
+            lucide.createIcons();
+        }
+
+        function switchOwnerTab(tab) {
+            currentOwnerTab = tab;
+            ['overview', 'appointments-owner', 'schedules-owner', 'barbers', 'services-owner', 'settings'].forEach(t => {
+                const btn = document.getElementById(`tab-${t}`);
+                const panel = document.getElementById(`panel-${t}`);
+                if (t === tab) {
+                    btn.classList.add('border-black', 'text-black');
+                    btn.classList.remove('border-transparent', 'text-gray-500');
+                    panel.classList.remove('hidden');
+                } else {
+                    btn.classList.remove('border-black', 'text-black');
+                    btn.classList.add('border-transparent', 'text-gray-500');
+                    panel.classList.add('hidden');
+                }
+            });
+            renderOwnerDashboard();
+            lucide.createIcons();
+        }
+
+        // --- Dashboard Rendering ---
+        function renderDashboard() {
+            if (currentTab === 'today') renderAppointments();
+            if (currentTab === 'my-slots') renderSlots();
+            
+            document.getElementById('currentDateDisplay').textContent = `Today, ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`;
+        }
+
+        function renderOwnerDashboard() {
+            if (currentOwnerTab === 'appointments-owner') renderOwnerAppointments();
+            if (currentOwnerTab === 'barbers') renderBarbersList();
+            if (currentOwnerTab === 'services-owner') renderOwnerServices();
+        }
+
+        function renderOwnerAppointments() {
+            const list = document.getElementById('ownerAppointmentsList');
+            list.innerHTML = mockAppointments.map(app => `
+                <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div class="flex items-start gap-4">
+                        <div class="bg-gray-100 p-3 rounded-lg text-center min-w-[100px]">
+                            <p class="text-xs font-bold text-gray-500 uppercase">Time</p>
+                            <p class="font-bold">${app.time.split(' - ')[0]}</p>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <h3 class="font-bold text-lg">${app.customer}</h3>
+                                ${getStatusBadge(app.status)}
+                            </div>
+                            <p class="text-sm text-gray-600">Barber: <strong>${app.barber}</strong> • ${app.service}</p>
+                            <p class="text-sm text-gray-400">${app.phone}</p>
+                            ${app.cancelReason ? `<p class="text-xs text-red-500 mt-1">Reason: ${app.cancelReason}</p>` : ''}
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        ${app.status === 'PENDING' ? `<button class="px-3 py-1 bg-green-600 text-white rounded text-xs font-bold">Confirm</button>` : ''}
+                        ${app.status !== 'DONE' && app.status !== 'CANCELLED' ? `<button onclick="openCancelModal(${app.id})" class="px-3 py-1 border border-gray-200 rounded text-xs font-bold hover:bg-gray-50">Cancel</button>` : ''}
+                        <button class="px-3 py-1 border border-gray-200 rounded text-xs font-bold hover:bg-gray-50">Reschedule</button>
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function renderBarbersList() {
+            const tbody = document.getElementById('barbersListTable');
+            tbody.innerHTML = mockBarbers.map(b => `
+                <tr>
+                    <td class="px-6 py-4">
+                        <p class="font-bold">${b.name}</p>
+                        <p class="text-xs text-gray-500">${b.email}</p>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-600">${b.role}</td>
+                    <td class="px-6 py-4">
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${b.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}">${b.status}</span>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <button class="text-sm font-bold text-black hover:underline mr-3">Edit</button>
+                        <button class="text-sm font-bold ${b.status === 'Active' ? 'text-red-600' : 'text-green-600'} hover:underline">${b.status === 'Active' ? 'Deactivate' : 'Activate'}</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderOwnerServices() {
+            const list = document.getElementById('ownerServicesList');
+            list.innerHTML = services.map(s => `
+                <div class="bg-white p-4 rounded-xl border border-gray-200 flex justify-between items-center">
+                    <div>
+                        <h4 class="font-bold">${s.name}</h4>
+                        <p class="text-sm text-gray-500">${s.duration} • ${s.price}</p>
+                    </div>
+                    <div class="flex gap-3">
+                        <button class="text-sm font-bold hover:underline">Edit</button>
+                        <button class="text-sm font-bold text-red-600 hover:underline">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderAppointments() {
+            const list = document.getElementById('appointmentsList');
+            if (mockAppointments.length === 0) {
+                list.innerHTML = '<p class="text-center py-12 text-gray-400">No appointments for today.</p>';
+                return;
+            }
+
+            list.innerHTML = mockAppointments.map(app => `
+                <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div class="flex items-start gap-4">
+                        <div class="bg-gray-100 p-3 rounded-lg text-center min-w-[100px]">
+                            <p class="text-xs font-bold text-gray-500 uppercase">Time</p>
+                            <p class="font-bold">${app.time.split(' - ')[0]}</p>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <h3 class="font-bold text-lg">${app.customer}</h3>
+                                ${getStatusBadge(app.status)}
+                            </div>
+                            <p class="text-sm text-gray-600 flex items-center gap-1"><i data-lucide="scissors" class="w-3 h-3"></i> ${app.service}</p>
+                            <p class="text-sm text-gray-400 flex items-center gap-1"><i data-lucide="phone" class="w-3 h-3"></i> ${app.phone}</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        ${app.status === 'CONFIRMED' || app.status === 'PENDING' ? `
+                            <button onclick="markDone(${app.id})" class="flex-1 md:flex-none px-4 py-2 bg-black text-white text-sm font-bold rounded-lg hover:bg-black/90 transition-all">Mark Done</button>
+                            <button onclick="openCancelModal(${app.id})" class="flex-1 md:flex-none px-4 py-2 border border-gray-200 text-sm font-bold rounded-lg hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all">Cancel</button>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function getStatusBadge(status) {
+            const styles = {
+                'CONFIRMED': 'bg-green-100 text-green-700',
+                'PENDING': 'bg-yellow-100 text-yellow-700',
+                'DONE': 'bg-gray-100 text-gray-700',
+                'CANCELLED': 'bg-red-100 text-red-700'
+            };
+            return `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${styles[status] || 'bg-gray-100'}">${status}</span>`;
+        }
+
+        function renderSlots() {
+            const list = document.getElementById('slotsList');
+            list.innerHTML = mockSlots.map(slot => `
+                <div class="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-lg flex items-center justify-center ${slot.type === 'AVAILABLE' ? 'bg-green-50 text-green-600' : 'bg-orange-50 text-orange-600'}">
+                            <i data-lucide="${slot.type === 'AVAILABLE' ? 'check-circle' : 'coffee'}" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <p class="font-bold">${slot.time}</p>
+                            <p class="text-xs text-gray-500 uppercase font-bold tracking-wider">${slot.type}</p>
+                        </div>
+                    </div>
+                    <button onclick="deleteSlot(${slot.id})" class="p-2 text-gray-400 hover:text-red-600 transition-colors">
+                        <i data-lucide="trash-2" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        // --- Dashboard Actions ---
+        function markDone(id) {
+            const app = mockAppointments.find(a => a.id === id);
+            if (app) {
+                app.status = 'DONE';
+                renderDashboard();
+            }
+        }
+
+        function openCancelModal(id) {
+            cancellingId = id;
+            document.getElementById('cancelModal').classList.remove('hidden');
+            document.getElementById('cancelReason').value = '';
+        }
+
+        function closeCancelModal() {
+            document.getElementById('cancelModal').classList.add('hidden');
+            cancellingId = null;
+        }
+
+        function submitCancellation() {
+            const reason = document.getElementById('cancelReason').value;
+            if (reason.length < 5) {
+                alert('Please provide a valid reason (min 5 characters).');
+                return;
+            }
+            const app = mockAppointments.find(a => a.id === cancellingId);
+            if (app) {
+                app.status = 'CANCELLED';
+                app.cancelReason = reason;
+                closeCancelModal();
+                renderDashboard();
+            }
+        }
+
+        function openAddSlotModal() {
+            const time = prompt("Enter slot time range (e.g. 18:00 - 19:00):", "18:00 - 19:00");
+            const type = confirm("Is this AVAILABLE? (Cancel for BREAK)") ? "AVAILABLE" : "BREAK";
+            if (time) {
+                mockSlots.push({ id: Date.now(), time, type });
+                renderDashboard();
+            }
+        }
+
+        function deleteSlot(id) {
+            mockSlots = mockSlots.filter(s => s.id !== id);
+            renderDashboard();
+        }
+
+        // --- Booking Wizard Logic (Kept and Integrated) ---
+        const services = [
+            { id: 's1', name: 'Haircut', duration: '30 min', price: '25 лв' },
+            { id: 's2', name: 'Beard Trim', duration: '20 min', price: '15 лв' },
+            { id: 's3', name: 'Hair + Beard', duration: '50 min', price: '35 лв', best: true },
+            { id: 's4', name: 'Kids Cut', duration: '25 min', price: '20 лв' }
+        ];
+
+        const barbers = [
+            { id: 'b1', name: 'Alex', role: 'Master Barber' },
+            { id: 'b2', name: 'Martin', role: 'Senior Barber' },
+            { id: 'b3', name: 'George', role: 'Stylist' },
+            { id: 'any', name: 'Any Barber', role: 'Fastest available' }
+        ];
+
+        let bookingState = {
+            step: 1,
+            service: null,
+            barber: null,
+            date: null,
+            time: null,
+            details: { name: '', phone: '', email: '' }
+        };
+
+        function openBooking() {
+            document.getElementById('bookingModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            bookingState.step = 1;
+            bookingState.service = null;
+            renderStep();
+        }
+
+        function openBookingWithService(id) {
+            document.getElementById('bookingModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            bookingState.service = services.find(s => s.id === id);
+            bookingState.step = 2;
+            renderStep();
+        }
+
+        function closeBooking() {
+            document.getElementById('bookingModal').classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        function setService(id) {
+            bookingState.service = services.find(s => s.id === id);
+            nextStep();
+        }
+
+        function setBarber(id) {
+            bookingState.barber = barbers.find(b => b.id === id);
+            nextStep();
+        }
+
+        function setDateTime(time) {
+            bookingState.time = time;
+            bookingState.date = new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+            nextStep();
+        }
+
+        function nextStep() {
+            if (bookingState.step < 4) {
+                bookingState.step++;
+                renderStep();
+            }
+        }
+
+        function prevStep() {
+            if (bookingState.step > 1) {
+                bookingState.step--;
+                renderStep();
+            }
+        }
+
+        function renderStep() {
+            const content = document.getElementById('wizardContent');
+            const indicator = document.getElementById('stepIndicator');
+            const progress = document.getElementById('progressBar');
+            const prevBtn = document.getElementById('prevBtn');
+            const footerAction = document.getElementById('footerAction');
+
+            indicator.textContent = `Step ${bookingState.step} of 4`;
+            progress.style.width = `${(bookingState.step / 4) * 100}%`;
+            prevBtn.classList.toggle('invisible', bookingState.step === 1);
+            footerAction.innerHTML = '';
+
+            let html = '';
+
+            if (bookingState.step === 1) {
+                html = `<h3 class="text-xl font-bold mb-6">Choose a Service</h3><div class="space-y-3">${services.map(s => `<button onclick="setService('${s.id}')" class="w-full p-4 border rounded-xl text-left flex justify-between items-center transition-all hover:border-black group ${bookingState.service?.id === s.id ? 'border-black bg-black text-white' : 'border-gray-200'}"><div><p class="font-bold">${s.name}</p><p class="text-sm ${bookingState.service?.id === s.id ? 'text-gray-400' : 'text-gray-500'}">${s.duration}</p></div><div class="text-right"><p class="font-bold">${s.price}</p>${s.best ? `<span class="text-[10px] bg-white text-black px-1.5 py-0.5 rounded font-bold uppercase">Best Value</span>` : ''}</div></button>`).join('')}</div>`;
+            } else if (bookingState.step === 2) {
+                html = `<h3 class="text-xl font-bold mb-6">Select a Barber</h3><div class="grid grid-cols-1 sm:grid-cols-2 gap-4">${barbers.map(b => `<button onclick="setBarber('${b.id}')" class="p-4 border rounded-xl text-center transition-all hover:border-black ${bookingState.barber?.id === b.id ? 'border-black bg-black text-white' : 'border-gray-200'}"><div class="w-12 h-12 bg-gray-100 rounded-full mx-auto mb-3 flex items-center justify-center text-black"><i data-lucide="user" class="w-6 h-6"></i></div><p class="font-bold">${b.name}</p><p class="text-xs ${bookingState.barber?.id === b.id ? 'text-gray-400' : 'text-gray-500'}">${b.role}</p></button>`).join('')}</div>`;
+            } else if (bookingState.step === 3) {
+                html = `<h3 class="text-xl font-bold mb-2">Pick a Time</h3><p class="text-sm text-gray-500 mb-6">Availability for Today</p><div class="grid grid-cols-3 gap-3">${['09:00', '09:30', '10:00', '11:00', '13:30', '14:00', '15:30', '16:00', '17:30'].map(t => `<button onclick="setDateTime('${t}')" class="py-3 border border-gray-200 rounded-lg text-center font-medium hover:border-black hover:bg-black hover:text-white transition-all">${t}</button>`).join('')}</div>`;
+            } else if (bookingState.step === 4) {
+                html = `<h3 class="text-xl font-bold mb-6">Your Details</h3><div class="space-y-4"><div><label class="block text-sm font-medium text-gray-700 mb-1">Full Name</label><input type="text" id="custName" class="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none" placeholder="John Doe"></div><div><label class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label><input type="tel" id="custPhone" class="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none" placeholder="+359 ..."></div><div class="bg-gray-50 p-4 rounded-xl border border-gray-100 mt-6"><p class="text-xs font-bold text-gray-400 uppercase mb-2">Summary</p><div class="flex justify-between items-center mb-1"><span class="text-sm font-medium">${bookingState.service?.name}</span><span class="text-sm font-bold">${bookingState.service?.price}</span></div><div class="text-xs text-gray-500">${bookingState.barber?.name} • ${bookingState.date} at ${bookingState.time}</div></div></div>`;
+                footerAction.innerHTML = `<button onclick="confirmBooking()" class="bg-black text-white px-8 py-2 rounded-lg font-bold hover:bg-black/90 transition-colors">Confirm Appointment</button>`;
+            }
+
+            content.innerHTML = html;
+            lucide.createIcons();
+        }
+
+        function confirmBooking() {
+            const name = document.getElementById('custName').value;
+            const phone = document.getElementById('custPhone').value;
+            if (!name || !phone) { alert('Please fill in your details.'); return; }
+            const content = document.getElementById('wizardContent');
+            const footer = document.querySelector('#bookingModal .border-t');
+            const stepper = document.querySelector('#bookingModal .h-1\\.5');
+            const indicator = document.getElementById('stepIndicator');
+            stepper.classList.add('hidden');
+            footer.classList.add('hidden');
+            indicator.textContent = 'Success!';
+            content.innerHTML = `<div class="text-center py-12 animate-in slide-in-from-bottom-4 duration-500"><div class="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6"><i data-lucide="check" class="w-10 h-10"></i></div><h3 class="text-3xl font-bold mb-2">Confirmed!</h3><p class="text-gray-500 mb-8 px-8">Your appointment is booked. We've sent the details to your phone.</p><button onclick="closeBooking()" class="w-full py-4 bg-black text-white rounded-xl font-bold hover:bg-black/90 transition-all">Got it</button></div>`;
+            lucide.createIcons();
+        }
+
+        // --- Year Helper ---
+        document.getElementById('year').textContent = new Date().getFullYear();
+
+        // Attach event listeners to all "Schedule" buttons
+        document.querySelectorAll('a[href="#"]').forEach(btn => {
+            if (btn.textContent.trim().toLowerCase().includes('schedule') || 
+                btn.textContent.trim().toLowerCase().includes('book') || 
+                btn.textContent.trim().toLowerCase().includes('now')) {
+                btn.onclick = (e) => {
+                    e.preventDefault();
+                    if(currentView === 'landing') openBooking();
+                };
+            }
+        });
+    </script>
+</body>
+</html>
