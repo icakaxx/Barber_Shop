@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Calendar, Scissors, Phone, Edit2, Check, X } from 'lucide-react';
 import { getStatusBadge } from '@/lib/utils';
+import type { AppointmentStatus } from '@/lib/types';
 import EditAppointmentModal from './EditAppointmentModal';
 
 interface Appointment {
@@ -347,7 +348,7 @@ export default function TodayAppointments({ barberId }: TodayAppointmentsProps) 
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <h3 className="font-bold text-lg">{app.customerName}</h3>
-                    {getStatusBadge(app.status)}
+                     {getStatusBadge(app.status as AppointmentStatus)}
                   </div>
                   <div className="text-sm text-gray-600 flex items-start gap-1 mb-1">
                     <Scissors className="w-3 h-3 mt-0.5 flex-shrink-0" />

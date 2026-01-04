@@ -2,7 +2,15 @@
 
 import { useState } from 'react';
 import { X, Plus, Edit, Trash2, Clock, CheckCircle, Coffee } from 'lucide-react';
-import type { Barber, BarberSchedule, ScheduleSlot } from '@/lib/types';
+import type { Barber, BarberSchedule, TimeSlot } from '@/lib/types';
+
+type ScheduleSlot = {
+  id: string;
+  startTime: string;
+  endTime: string;
+  type: 'AVAILABLE' | 'BREAK' | 'APPOINTMENT';
+  notes?: string;
+};
 
 interface BarberScheduleModalProps {
   barber: Barber;
@@ -11,7 +19,15 @@ interface BarberScheduleModalProps {
 }
 
 export default function BarberScheduleModal({ barber, schedule, onClose }: BarberScheduleModalProps) {
-  const [slots, setSlots] = useState<ScheduleSlot[]>(schedule?.slots || []);
+  const [slots, setSlots] = useState<ScheduleSlot[]>(
+    schedule?.slots?.map((s) => ({
+      id: s.id,
+      startTime: s.startTime,
+      endTime: s.endTime,
+      type: s.type,
+      notes: undefined
+    })) || []
+  );
   const [showAddSlot, setShowAddSlot] = useState(false);
   const [editingSlot, setEditingSlot] = useState<ScheduleSlot | null>(null);
   const [newSlot, setNewSlot] = useState({
@@ -98,7 +114,7 @@ export default function BarberScheduleModal({ barber, schedule, onClose }: Barbe
       <div className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-bold">Schedule: {barber.displayName || barber.name}</h2>
+            <h2 className="text-xl font-bold">Schedule: {barber.displayName}</h2>
             <p className="text-sm text-gray-500">Today - {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })}</p>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full">
@@ -111,11 +127,11 @@ export default function BarberScheduleModal({ barber, schedule, onClose }: Barbe
           <div className="bg-gray-50 p-4 rounded-xl mb-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-black text-white rounded-full flex items-center justify-center font-bold text-lg">
-                {(barber.displayName || barber.name).charAt(0)}
+                {barber.displayName.charAt(0)}
               </div>
               <div>
-                <p className="font-bold">{barber.displayName || barber.name}</p>
-                <p className="text-sm text-gray-600">{barber.role} • {barber.status}</p>
+                <p className="font-bold">{barber.displayName}</p>
+                <p className="text-sm text-gray-600">{barber.profile?.role || 'BARBER_WORKER'} • {barber.isActive ? 'Active' : 'Inactive'}</p>
               </div>
             </div>
           </div>

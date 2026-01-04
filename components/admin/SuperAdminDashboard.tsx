@@ -24,7 +24,7 @@ export default function SuperAdminDashboard() {
         const response = await fetch('/api/shops');
         if (response.ok) {
           const data = await response.json();
-          setShops(data.filter((s: Shop) => s.isActive !== false));
+          setShops(data.filter((s: any) => !s.status || s.status !== 'Inactive'));
           if (data.length > 0 && !selectedShopId) {
             setSelectedShopId(data[0].id);
           }

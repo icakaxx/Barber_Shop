@@ -14,13 +14,17 @@ interface Appointment {
   endTime: string;
   status: string;
   notes?: string;
+  barberId?: string;
+  barberName?: string;
+  shopId?: string;
+  shopName?: string;
 }
 
 interface EditAppointmentModalProps {
   appointment: Appointment | null;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (appointment: Appointment) => void;
+  onSave: ((appointment: Appointment) => void) | ((appointment: Appointment) => Promise<void>);
   services?: Array<{ id: string; name: string }>;
 }
 

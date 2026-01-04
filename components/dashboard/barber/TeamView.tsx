@@ -5,7 +5,7 @@ import { Users, Calendar, Scissors, Phone, Edit2, Plus } from 'lucide-react';
 import { getStatusBadge } from '@/lib/utils';
 import EditAppointmentModal from './EditAppointmentModal';
 import CreateAppointmentModal from './CreateAppointmentModal';
-import type { Barber } from '@/lib/types';
+import type { Barber, AppointmentStatus } from '@/lib/types';
 
 interface Appointment {
   id: string;
@@ -125,7 +125,7 @@ export default function TeamView({ shopId, currentBarberId }: TeamViewProps) {
     setIsEditModalOpen(true);
   };
 
-  const handleSave = async (updatedAppointment: Appointment) => {
+  const handleSave = async (updatedAppointment: any) => {
     try {
       const response = await fetch(`/api/appointments/${updatedAppointment.id}`, {
         method: 'PUT',
@@ -265,7 +265,7 @@ export default function TeamView({ shopId, currentBarberId }: TeamViewProps) {
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <h3 className="font-bold text-lg">{app.customerName}</h3>
-                    {getStatusBadge(app.status)}
+                    {getStatusBadge(app.status as AppointmentStatus)}
                     {app.barberId !== currentBarberId && (
                       <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold">
                         {app.barberName}

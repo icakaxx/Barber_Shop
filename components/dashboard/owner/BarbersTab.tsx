@@ -3,12 +3,13 @@
 import { useState } from 'react';
 import { Users, Calendar, Scissors, Phone, Edit2, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
 import { getStatusBadge } from '@/lib/utils';
+import type { AppointmentStatus } from '@/lib/types';
 import type { Barber } from '@/lib/types';
 
 interface Appointment {
   id: string;
-  barberId: string;
-  barberName: string;
+  barberId?: string;
+  barberName?: string;
   serviceName: string;
   customerName: string;
   customerPhone: string;
@@ -17,7 +18,8 @@ interface Appointment {
   endTime: string;
   status: string;
   notes?: string;
-  shopName: string;
+  shopId?: string;
+  shopName?: string;
 }
 
 interface BarbersTabProps {
@@ -101,7 +103,7 @@ export default function BarbersTab({
     if (sortBy === newSortBy) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
     } else {
-      setSortBy(newSortBy);
+      onSortChange(newSortBy);
       setSortOrder('asc');
     }
   };
@@ -271,7 +273,7 @@ export default function BarbersTab({
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1 flex-wrap">
                             <h3 className="font-bold text-lg">{app.customerName}</h3>
-                            {getStatusBadge(app.status)}
+                             {getStatusBadge(app.status as AppointmentStatus)}
                           </div>
                           <div className="text-sm text-gray-600 flex items-start gap-1 mb-1">
                             <Scissors className="w-3 h-3 mt-0.5 flex-shrink-0" />

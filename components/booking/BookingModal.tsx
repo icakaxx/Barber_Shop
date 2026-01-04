@@ -705,7 +705,7 @@ export default function BookingModal() {
                       <span className="text-lg font-bold">{calculateTotal().totalPrice}</span>
                     </div>
                     <div className="text-xs text-gray-500 mt-2">
-                      {bookingState.barber?.name} • {bookingState.date} at {bookingState.time} • {calculateTotal().totalDuration}
+                      {(bookingState.barber as any)?.name || bookingState.barber?.id || ''} • {bookingState.date} at {bookingState.time} • {calculateTotal().totalDuration}
                     </div>
                   </div>
                 </div>

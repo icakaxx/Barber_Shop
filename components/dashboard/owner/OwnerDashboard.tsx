@@ -7,7 +7,7 @@ import EditAppointmentModal from '@/components/dashboard/barber/EditAppointmentM
 import CreateAppointmentModal from '@/components/dashboard/barber/CreateAppointmentModal';
 import ServicesManagementTab from './ServicesManagementTab';
 import BarbersTab from './BarbersTab';
-import type { Barber } from '@/lib/types';
+import type { Barber, AppointmentStatus } from '@/lib/types';
 
 interface Shop {
   id: string;
@@ -18,8 +18,8 @@ interface Shop {
 
 interface Appointment {
   id: string;
-  barberId: string;
-  barberName: string;
+  barberId?: string;
+  barberName?: string;
   serviceName: string;
   customerName: string;
   customerPhone: string;
@@ -28,8 +28,8 @@ interface Appointment {
   endTime: string;
   status: string;
   notes?: string;
-  shopId: string;
-  shopName: string;
+  shopId?: string;
+  shopName?: string;
 }
 
 export default function OwnerDashboard() {
@@ -567,7 +567,7 @@ export default function OwnerDashboard() {
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
                           <h3 className="font-bold text-lg">{app.customerName}</h3>
-                          {getStatusBadge(app.status)}
+                           {getStatusBadge(app.status as AppointmentStatus)}
                           <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold">
                             {app.barberName}
                           </span>
@@ -632,6 +632,10 @@ export default function OwnerDashboard() {
             onEditAppointment={handleEdit}
             onDeleteAppointment={handleDelete}
             deletingId={deletingId}
+            onReloadAppointments={() => {
+              // Trigger reload by updating selectedDate
+              setSelectedDate(new Date().toISOString().split('T')[0]);
+            }}
           />
         )}
 

@@ -2,7 +2,7 @@ export type Role = 'USER' | 'BARBER_WORKER' | 'BARBER_OWNER' | 'SUPER_ADMIN';
 
 export type AppointmentStatus = 'CONFIRMED' | 'PENDING' | 'DONE' | 'CANCELLED';
 
-export type SlotType = 'AVAILABLE' | 'BREAK';
+export type SlotType = 'AVAILABLE' | 'BREAK' | 'APPOINTMENT';
 
 export interface Service {
   id: string;

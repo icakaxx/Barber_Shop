@@ -1,4 +1,13 @@
-import type { Appointment, Slot, Barber, Shop, Profile, AuditLog, Service, BarberSchedule, BarberShopAssignment } from './types';
+import type { Appointment, Slot, Barber, Shop, Profile, AuditLog, Service, BarberSchedule } from './types';
+
+interface BarberShopAssignment {
+  id: string;
+  barberId: string;
+  shopId: string;
+  isPrimary: boolean;
+  assignedAt: string;
+  assignedBy: string;
+}
 
 export const mockServices: Service[] = [
   { id: 's1', name: 'Haircut', duration: '30 min', price: '25 лв' },
@@ -11,104 +20,89 @@ export const mockServices: Service[] = [
 export const mockBarbers: Barber[] = [
   {
     id: 'b1',
-    name: 'Alexander Petrov',
+    profileId: 'p1',
+    shopId: 's1',
     displayName: 'Alex Master',
-    role: 'Master Barber',
-    status: 'Active',
-    email: 'alex@barberking.com',
-    phone: '+359 888 123 456',
-    dateOfBirth: '1990-05-15',
-    hireDate: '2018-03-01',
-    experience: 6,
-    specializations: ['haircuts', 'beard', 'styling', 'coloring'],
-    certifications: ['Master Barber License', 'Color Specialist'],
-    emergencyContact: {
-      name: 'Maria Petrov',
-      phone: '+359 888 654 321',
-      relationship: 'Wife'
+    bio: 'Specializes in modern cuts and beard designs',
+    photoUrl: '',
+    isActive: true,
+    createdAt: '2018-03-01T00:00:00Z',
+    updatedAt: new Date().toISOString(),
+    profile: {
+      fullName: 'Alexander Petrov',
+      role: 'BARBER_WORKER'
     },
-    notes: 'Specializes in modern cuts and beard designs',
-    rating: 4.9,
-    totalAppointments: 1250
+    shop: {
+      name: 'Sofia Center',
+      city: 'Sofia'
+    }
   },
   {
     id: 'b2',
-    name: 'Martin Dimitrov',
+    profileId: 'p2',
+    shopId: 's1',
     displayName: 'Martin Senior',
-    role: 'Senior Barber',
-    status: 'Active',
-    email: 'martin@barberking.com',
-    phone: '+359 888 234 567',
-    dateOfBirth: '1992-08-22',
-    hireDate: '2020-01-15',
-    experience: 4,
-    specializations: ['haircuts', 'beard', 'shaves'],
-    certifications: ['Professional Barber License'],
-    emergencyContact: {
-      name: 'Ivan Dimitrov',
-      phone: '+359 888 765 432',
-      relationship: 'Brother'
+    bio: 'Excellent with traditional cuts',
+    photoUrl: '',
+    isActive: true,
+    createdAt: '2020-01-15T00:00:00Z',
+    updatedAt: new Date().toISOString(),
+    profile: {
+      fullName: 'Martin Dimitrov',
+      role: 'BARBER_WORKER'
     },
-    notes: 'Excellent with traditional cuts',
-    rating: 4.7,
-    totalAppointments: 890
+    shop: {
+      name: 'Sofia Center',
+      city: 'Sofia'
+    }
   },
   {
     id: 'b3',
-    name: 'Georgi Kostov',
+    profileId: 'p3',
+    shopId: 's2',
     displayName: 'George Style',
-    role: 'Stylist',
-    status: 'On Leave',
-    email: 'george@barberking.com',
-    phone: '+359 888 345 678',
-    dateOfBirth: '1995-12-03',
-    hireDate: '2021-06-01',
-    experience: 3,
-    specializations: ['haircuts', 'styling', 'coloring'],
-    certifications: ['Hair Stylist License', 'Color Technician'],
-    emergencyContact: {
-      name: 'Elena Kostova',
-      phone: '+359 888 876 543',
-      relationship: 'Mother'
+    bio: 'Specializes in creative styling and coloring',
+    photoUrl: '',
+    isActive: false,
+    createdAt: '2021-06-01T00:00:00Z',
+    updatedAt: new Date().toISOString(),
+    profile: {
+      fullName: 'Georgi Kostov',
+      role: 'BARBER_WORKER'
     },
-    notes: 'Specializes in creative styling and coloring',
-    rating: 4.8,
-    totalAppointments: 650
+    shop: {
+      name: 'Plovdiv Old Town',
+      city: 'Plovdiv'
+    }
   }
 ];
 
 export const mockBarberSchedules: BarberSchedule[] = [
   {
-    id: 'sch1',
     barberId: 'b1',
-    shopId: 's1',
     date: '2024-12-15',
     slots: [
-      { id: 'slot1', startTime: '09:00', endTime: '12:00', type: 'AVAILABLE' },
-      { id: 'slot2', startTime: '12:00', endTime: '13:00', type: 'BREAK' },
-      { id: 'slot3', startTime: '13:00', endTime: '18:00', type: 'AVAILABLE' }
+      { id: 'slot1', barberId: 'b1', startTime: '2024-12-15T09:00:00Z', endTime: '2024-12-15T12:00:00Z', type: 'AVAILABLE', isAvailable: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+      { id: 'slot2', barberId: 'b1', startTime: '2024-12-15T12:00:00Z', endTime: '2024-12-15T13:00:00Z', type: 'BREAK', isAvailable: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+      { id: 'slot3', barberId: 'b1', startTime: '2024-12-15T13:00:00Z', endTime: '2024-12-15T18:00:00Z', type: 'AVAILABLE', isAvailable: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
     ]
   },
   {
-    id: 'sch2',
     barberId: 'b2',
-    shopId: 's1',
     date: '2024-12-15',
     slots: [
-      { id: 'slot4', startTime: '10:00', endTime: '14:00', type: 'AVAILABLE' },
-      { id: 'slot5', startTime: '14:00', endTime: '15:00', type: 'BREAK' },
-      { id: 'slot6', startTime: '15:00', endTime: '19:00', type: 'AVAILABLE' }
+      { id: 'slot4', barberId: 'b2', startTime: '2024-12-15T10:00:00Z', endTime: '2024-12-15T14:00:00Z', type: 'AVAILABLE', isAvailable: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+      { id: 'slot5', barberId: 'b2', startTime: '2024-12-15T14:00:00Z', endTime: '2024-12-15T15:00:00Z', type: 'BREAK', isAvailable: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+      { id: 'slot6', barberId: 'b2', startTime: '2024-12-15T15:00:00Z', endTime: '2024-12-15T19:00:00Z', type: 'AVAILABLE', isAvailable: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
     ]
   },
   {
-    id: 'sch3',
     barberId: 'b3',
-    shopId: 's2',
     date: '2024-12-15',
     slots: [
-      { id: 'slot7', startTime: '09:00', endTime: '13:00', type: 'AVAILABLE' },
-      { id: 'slot8', startTime: '13:00', endTime: '14:00', type: 'BREAK' },
-      { id: 'slot9', startTime: '14:00', endTime: '18:00', type: 'AVAILABLE' }
+      { id: 'slot7', barberId: 'b3', startTime: '2024-12-15T09:00:00Z', endTime: '2024-12-15T13:00:00Z', type: 'AVAILABLE', isAvailable: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+      { id: 'slot8', barberId: 'b3', startTime: '2024-12-15T13:00:00Z', endTime: '2024-12-15T14:00:00Z', type: 'BREAK', isAvailable: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+      { id: 'slot9', barberId: 'b3', startTime: '2024-12-15T14:00:00Z', endTime: '2024-12-15T18:00:00Z', type: 'AVAILABLE', isAvailable: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
     ]
   }
 ];

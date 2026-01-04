@@ -42,8 +42,8 @@ export default function BarberFormModal({ barber, onSave, onClose }: BarberFormM
   useEffect(() => {
     if (barber) {
       setFormData({
-        profileId: barber.profileId,
-        shopId: barber.shopId,
+        profileId: barber.profileId || '',
+        shopId: barber.shopId || '',
         displayName: barber.displayName,
         bio: barber.bio || '',
         photoUrl: barber.photoUrl || '',
@@ -75,246 +75,90 @@ export default function BarberFormModal({ barber, onSave, onClose }: BarberFormM
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 overflow-y-auto max-h-[calc(90vh-120px)] space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Basic Information */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-bold text-gray-900">Basic Information</h3>
-
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Full Name *</label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => handleChange('name', e.target.value)}
-                  className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Display Name</label>
-                <input
-                  type="text"
-                  value={formData.displayName}
-                  onChange={(e) => handleChange('displayName', e.target.value)}
-                  className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
-                  placeholder="How they appear to customers"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Email *</label>
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => handleChange('email', e.target.value)}
-                  className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Phone</label>
-                <input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => handleChange('phone', e.target.value)}
-                  className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">Role</label>
-                  <select
-                    value={formData.role}
-                    onChange={(e) => handleChange('role', e.target.value)}
-                    className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
-                  >
-                    <option value="Apprentice">Apprentice</option>
-                    <option value="Stylist">Stylist</option>
-                    <option value="Senior Barber">Senior Barber</option>
-                    <option value="Master Barber">Master Barber</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">Status</label>
-                  <select
-                    value={formData.status}
-                    onChange={(e) => handleChange('status', e.target.value)}
-                    className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
-                  >
-                    <option value="Active">Active</option>
-                    <option value="On Leave">On Leave</option>
-                    <option value="Inactive">Inactive</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* Professional Information */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-bold text-gray-900">Professional Information</h3>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">Date of Birth</label>
-                  <input
-                    type="date"
-                    value={formData.dateOfBirth}
-                    onChange={(e) => handleChange('dateOfBirth', e.target.value)}
-                    className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">Hire Date</label>
-                  <input
-                    type="date"
-                    value={formData.hireDate}
-                    onChange={(e) => handleChange('hireDate', e.target.value)}
-                    className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Years of Experience</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={formData.experience}
-                  onChange={(e) => handleChange('experience', parseInt(e.target.value) || 0)}
-                  className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
-                />
-              </div>
-
-              {/* Specializations */}
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Specializations</label>
-                <div className="flex gap-2 mb-2">
-                  <input
-                    type="text"
-                    value={newSpecialization}
-                    onChange={(e) => setNewSpecialization(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addSpecialization())}
-                    className="flex-1 p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none text-sm"
-                    placeholder="e.g. haircuts, beard, coloring"
-                  />
-                  <button
-                    type="button"
-                    onClick={addSpecialization}
-                    className="p-2 bg-black text-white rounded-lg hover:bg-black/90"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </button>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {formData.specializations?.map((spec) => (
-                    <span
-                      key={spec}
-                      className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full"
-                    >
-                      {spec}
-                      <button
-                        type="button"
-                        onClick={() => removeSpecialization(spec)}
-                        className="hover:text-red-600"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Certifications */}
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Certifications</label>
-                <div className="flex gap-2 mb-2">
-                  <input
-                    type="text"
-                    value={newCertification}
-                    onChange={(e) => setNewCertification(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addCertification())}
-                    className="flex-1 p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none text-sm"
-                    placeholder="e.g. Master Barber License"
-                  />
-                  <button
-                    type="button"
-                    onClick={addCertification}
-                    className="p-2 bg-black text-white rounded-lg hover:bg-black/90"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </button>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {formData.certifications?.map((cert) => (
-                    <span
-                      key={cert}
-                      className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full"
-                    >
-                      {cert}
-                      <button
-                        type="button"
-                        onClick={() => removeCertification(cert)}
-                        className="hover:text-red-600"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
+          {/* Profile Selection */}
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-1">Profile *</label>
+            <select
+              value={formData.profileId}
+              onChange={(e) => handleChange('profileId', e.target.value)}
+              className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
+              required
+            >
+              <option value="">Select a profile</option>
+              {mockProfiles.map((profile) => (
+                <option key={profile.id} value={profile.id}>
+                  {profile.fullName} ({profile.role})
+                </option>
+              ))}
+            </select>
           </div>
 
-          {/* Emergency Contact */}
-          <div className="mt-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Emergency Contact</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Contact Name</label>
-                <input
-                  type="text"
-                  value={formData.emergencyContact?.name}
-                  onChange={(e) => handleEmergencyContactChange('name', e.target.value)}
-                  className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Contact Phone</label>
-                <input
-                  type="tel"
-                  value={formData.emergencyContact?.phone}
-                  onChange={(e) => handleEmergencyContactChange('phone', e.target.value)}
-                  className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Relationship</label>
-                <input
-                  type="text"
-                  value={formData.emergencyContact?.relationship}
-                  onChange={(e) => handleEmergencyContactChange('relationship', e.target.value)}
-                  className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
-                  placeholder="e.g. Wife, Brother"
-                />
-              </div>
-            </div>
+          {/* Shop Selection */}
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-1">Shop *</label>
+            <select
+              value={formData.shopId}
+              onChange={(e) => handleChange('shopId', e.target.value)}
+              className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
+              required
+            >
+              <option value="">Select a shop</option>
+              {mockShops.map((shop) => (
+                <option key={shop.id} value={shop.id}>
+                  {shop.name}
+                </option>
+              ))}
+            </select>
           </div>
 
-          {/* Notes */}
-          <div className="mt-6">
-            <label className="block text-sm font-bold text-gray-700 mb-1">Notes</label>
+          {/* Display Name */}
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-1">Display Name *</label>
+            <input
+              type="text"
+              value={formData.displayName}
+              onChange={(e) => handleChange('displayName', e.target.value)}
+              className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
+              placeholder="How the barber is displayed to customers"
+              required
+            />
+          </div>
+
+          {/* Bio */}
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-1">Bio</label>
             <textarea
-              value={formData.notes}
-              onChange={(e) => handleChange('notes', e.target.value)}
+              value={formData.bio}
+              onChange={(e) => handleChange('bio', e.target.value)}
               rows={3}
               className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
-              placeholder="Additional notes about the barber..."
+              placeholder="Short description about the barber..."
             />
+          </div>
+
+          {/* Photo URL */}
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-1">Photo URL</label>
+            <input
+              type="url"
+              value={formData.photoUrl}
+              onChange={(e) => handleChange('photoUrl', e.target.value)}
+              className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
+              placeholder="https://example.com/photo.jpg"
+            />
+          </div>
+
+          {/* Active Status */}
+          <div>
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={formData.isActive}
+                onChange={(e) => handleChange('isActive', e.target.checked)}
+                className="w-4 h-4 text-black bg-gray-100 border-gray-300 rounded focus:ring-black"
+              />
+              <span className="text-sm font-bold text-gray-700">Active (visible to customers)</span>
+            </label>
           </div>
 
           {/* Form Actions */}
