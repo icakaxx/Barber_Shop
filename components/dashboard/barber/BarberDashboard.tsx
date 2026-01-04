@@ -6,6 +6,7 @@ import { ArrowLeft, Calendar, User } from 'lucide-react';
 import TodayAppointments from './TodayAppointments';
 import ManageAvailability from './ManageAvailability';
 import TeamView from './TeamView';
+import ScheduleCalendar from './ScheduleCalendar';
 import type { Barber } from '@/lib/types';
 
 interface BarberDashboardProps {
@@ -14,7 +15,7 @@ interface BarberDashboardProps {
 }
 
 export default function BarberDashboard({ barberId, barberName }: BarberDashboardProps) {
-  const [currentTab, setCurrentTab] = useState<'today' | 'my-slots' | 'team'>('today');
+  const [currentTab, setCurrentTab] = useState<'today' | 'calendar' | 'my-slots' | 'team'>('today');
   const [barber, setBarber] = useState<Barber | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -115,6 +116,14 @@ export default function BarberDashboard({ barberId, barberName }: BarberDashboar
             Today&apos;s Schedule
           </button>
           <button
+            onClick={() => setCurrentTab('calendar')}
+            className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+              currentTab === 'calendar' ? 'border-black text-black' : 'border-transparent text-gray-500 hover:text-black'
+            }`}
+          >
+            Calendar View
+          </button>
+          <button
             onClick={() => setCurrentTab('my-slots')}
             className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
               currentTab === 'my-slots' ? 'border-black text-black' : 'border-transparent text-gray-500 hover:text-black'
@@ -133,6 +142,7 @@ export default function BarberDashboard({ barberId, barberName }: BarberDashboar
         </div>
 
         {currentTab === 'today' && <TodayAppointments barberId={barber?.id} />}
+        {currentTab === 'calendar' && <ScheduleCalendar barberId={barber?.id} />}
         {currentTab === 'my-slots' && <ManageAvailability barberId={barber?.id} />}
         {currentTab === 'team' && <TeamView shopId={barber?.shopId} currentBarberId={barber?.id} />}
       </main>

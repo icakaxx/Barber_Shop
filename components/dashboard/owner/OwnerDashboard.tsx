@@ -6,6 +6,7 @@ import { getStatusBadge } from '@/lib/utils';
 import EditAppointmentModal from '@/components/dashboard/barber/EditAppointmentModal';
 import CreateAppointmentModal from '@/components/dashboard/barber/CreateAppointmentModal';
 import ServicesManagementTab from './ServicesManagementTab';
+import BarbersTab from './BarbersTab';
 import type { Barber } from '@/lib/types';
 
 interface Shop {
@@ -42,7 +43,11 @@ export default function OwnerDashboard() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [currentTab, setCurrentTab] = useState<'appointments' | 'services'>('appointments');
+  const [currentTab, setCurrentTab] = useState<'appointments' | 'services' | 'barbers'>('appointments');
+  const [selectedBarberId, setSelectedBarberId] = useState<string | null>(null);
+  const [barberAppointments, setBarberAppointments] = useState<Appointment[]>([]);
+  const [sortBy, setSortBy] = useState<'name' | 'appointments'>('name');
+  const [barberViewDate, setBarberViewDate] = useState(new Date().toISOString().split('T')[0]);
 
   useEffect(() => {
     const loadShops = async () => {
@@ -154,9 +159,62 @@ export default function OwnerDashboard() {
     loadAppointments();
   }, [selectedShopId, selectedDate, shops]);
 
+  // Load appointments for barber view when barber is selected
+  useEffect(() => {
+    const loadBarberAppointments = async () => {
+      if (!selectedBarberId || currentTab !== 'barbers') {
+        setBarberAppointments([]);
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/barbers/${selectedBarberId}/appointments?date=${barberViewDate}`);
+        if (response.ok) {
+          const data = await response.json();
+          // Map the response to match Appointment interface
+          const mappedAppointments: Appointment[] = data.map((apt: any) => ({
+            id: apt.id,
+            barberId: apt.barberId,
+            barberName: barbers.find(b => b.id === apt.barberId)?.displayName || 'Unknown',
+            serviceName: apt.serviceName,
+            customerName: apt.customerName,
+            customerPhone: apt.customerPhone,
+            customerEmail: apt.customerEmail,
+            startTime: apt.startTime,
+            endTime: apt.endTime,
+            status: apt.status,
+            notes: apt.notes,
+            shopId: apt.shopId,
+            shopName: apt.shopName
+          }));
+          setBarberAppointments(mappedAppointments);
+        }
+      } catch (error) {
+        console.error('Error loading barber appointments:', error);
+      }
+    };
+
+    loadBarberAppointments();
+  }, [selectedBarberId, barberViewDate, currentTab, barbers]);
+
   const formatTime = (timeString: string) => {
     const date = new Date(timeString);
     return date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const parseServicesFromNotes = (notes: string | undefined): string[] => {
+    if (!notes) return [];
+    const match = notes.match(/Additional services:\s*(.+?)(?:\n|$)/i);
+    if (match && match[1]) {
+      return match[1].split(',').map(s => s.trim()).filter(s => s.length > 0);
+    }
+    return [];
+  };
+
+  const getAllServices = (app: Appointment): string[] => {
+    const services = [app.serviceName];
+    const additionalServices = parseServicesFromNotes(app.notes);
+    return [...services, ...additionalServices];
   };
 
   const handleEdit = (appointment: Appointment) => {
@@ -287,6 +345,31 @@ export default function OwnerDashboard() {
             setAppointments(data);
           }
         }
+        
+        // Reload barber appointments if viewing barber tab
+        if (selectedBarberId && currentTab === 'barbers') {
+          const barberResponse = await fetch(`/api/barbers/${selectedBarberId}/appointments?date=${barberViewDate}`);
+          if (barberResponse.ok) {
+            const barberData = await barberResponse.json();
+            const barber = barbers.find(b => b.id === selectedBarberId);
+            const mappedAppointments: Appointment[] = barberData.map((apt: any) => ({
+              id: apt.id,
+              barberId: apt.barberId,
+              barberName: barber?.displayName || 'Unknown',
+              serviceName: apt.serviceName,
+              customerName: apt.customerName,
+              customerPhone: apt.customerPhone,
+              customerEmail: apt.customerEmail,
+              startTime: apt.startTime,
+              endTime: apt.endTime,
+              status: apt.status,
+              notes: apt.notes,
+              shopId: apt.shopId,
+              shopName: apt.shopName
+            }));
+            setBarberAppointments(mappedAppointments);
+          }
+        }
       } else {
         const error = await response.json();
         alert(`Failed to delete appointment: ${error.error}`);
@@ -412,6 +495,20 @@ export default function OwnerDashboard() {
               Appointments
             </button>
             <button
+              onClick={() => {
+                setCurrentTab('barbers');
+                setSelectedBarberId(null);
+              }}
+              className={`px-4 py-2 font-bold text-sm border-b-2 transition-colors flex items-center gap-2 ${
+                currentTab === 'barbers'
+                  ? 'border-black text-black'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <Users className="w-4 h-4" />
+              Barbers
+            </button>
+            <button
               onClick={() => setCurrentTab('services')}
               className={`px-4 py-2 font-bold text-sm border-b-2 transition-colors flex items-center gap-2 ${
                 currentTab === 'services'
@@ -480,9 +577,19 @@ export default function OwnerDashboard() {
                             </span>
                           )}
                         </div>
-                        <p className="text-sm text-gray-600 mb-1">{app.serviceName}</p>
+                        <div className="text-sm text-gray-600 flex items-start gap-1 mb-1">
+                          <Scissors className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                          <div>
+                            {getAllServices(app).map((service, index) => (
+                              <span key={index}>
+                                {service}
+                                {index < getAllServices(app).length - 1 && ', '}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
                         <p className="text-sm text-gray-400">{app.customerPhone}</p>
-                        {app.notes && (
+                        {app.notes && !app.notes.match(/Additional services:/i) && (
                           <p className="text-sm text-gray-500 mt-2 italic">Note: {app.notes}</p>
                         )}
                       </div>
@@ -509,6 +616,23 @@ export default function OwnerDashboard() {
           </div>
         </div>
           </>
+        )}
+
+        {currentTab === 'barbers' && (
+          <BarbersTab
+            barbers={activeBarbers}
+            appointments={appointments}
+            barberAppointments={barberAppointments}
+            selectedBarberId={selectedBarberId}
+            onBarberSelect={setSelectedBarberId}
+            barberViewDate={barberViewDate}
+            onDateChange={setBarberViewDate}
+            sortBy={sortBy}
+            onSortChange={setSortBy}
+            onEditAppointment={handleEdit}
+            onDeleteAppointment={handleDelete}
+            deletingId={deletingId}
+          />
         )}
 
         {currentTab === 'services' && selectedShopId !== 'all' && selectedShopId && (

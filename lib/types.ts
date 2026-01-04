@@ -9,6 +9,7 @@ export interface Service {
   name: string;
   duration: string;
   price: string;
+  priceBgn?: number; // Optional: numeric price in BGN for currency conversion
   best?: boolean;
 }
 

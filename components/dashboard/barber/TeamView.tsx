@@ -90,6 +90,36 @@ export default function TeamView({ shopId, currentBarberId }: TeamViewProps) {
     return date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
   };
 
+  const formatTimeRange = (startTime: string, endTime: string) => {
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+    return `${formatTime(startTime)} - ${formatTime(endTime)}`;
+  };
+
+  const getDuration = (startTime: string, endTime: string) => {
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+    const diffMs = end.getTime() - start.getTime();
+    const diffMinutes = Math.round(diffMs / (1000 * 60));
+    return diffMinutes;
+  };
+
+  const parseServicesFromNotes = (notes: string | undefined): string[] => {
+    if (!notes) return [];
+    // Look for "Additional services: Service1, Service2" pattern
+    const match = notes.match(/Additional services:\s*(.+?)(?:\n|$)/i);
+    if (match && match[1]) {
+      return match[1].split(',').map(s => s.trim()).filter(s => s.length > 0);
+    }
+    return [];
+  };
+
+  const getAllServices = (app: Appointment): string[] => {
+    const services = [app.serviceName];
+    const additionalServices = parseServicesFromNotes(app.notes);
+    return [...services, ...additionalServices];
+  };
+
   const handleEdit = (appointment: Appointment) => {
     setEditingAppointment(appointment);
     setIsEditModalOpen(true);
@@ -227,11 +257,12 @@ export default function TeamView({ shopId, currentBarberId }: TeamViewProps) {
               className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4"
             >
               <div className="flex items-start gap-4">
-                <div className="bg-gray-100 p-3 rounded-lg text-center min-w-[100px]">
+                <div className="bg-gray-100 p-3 rounded-lg text-center min-w-[120px]">
                   <p className="text-xs font-bold text-gray-500 uppercase">Time</p>
-                  <p className="font-bold">{formatTime(app.startTime)}</p>
+                  <p className="font-bold text-sm">{formatTimeRange(app.startTime, app.endTime)}</p>
+                  <p className="text-xs text-gray-500 mt-1">{getDuration(app.startTime, app.endTime)} min</p>
                 </div>
-                <div>
+                <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <h3 className="font-bold text-lg">{app.customerName}</h3>
                     {getStatusBadge(app.status)}
@@ -241,9 +272,17 @@ export default function TeamView({ shopId, currentBarberId }: TeamViewProps) {
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-gray-600 flex items-center gap-1">
-                    <Scissors className="w-3 h-3" /> {app.serviceName}
-                  </p>
+                  <div className="text-sm text-gray-600 flex items-start gap-1 mb-1">
+                    <Scissors className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                    <div>
+                      {getAllServices(app).map((service, index) => (
+                        <span key={index}>
+                          {service}
+                          {index < getAllServices(app).length - 1 && ', '}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
                   <p className="text-sm text-gray-400 flex items-center gap-1">
                     <Phone className="w-3 h-3" /> {app.customerPhone}
                   </p>

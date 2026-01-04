@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import DevNav from "@/components/shared/DevNav";
+import { I18nProvider } from "@/contexts/I18nContext";
 
 export const metadata: Metadata = {
   title: "Barber King | Premium Haircuts & Beard Trims in Sofia",
@@ -13,10 +14,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="scroll-smooth">
+    <html lang="bg" className="scroll-smooth">
       <body className="bg-white text-gray-900">
-        {children}
-        <DevNav />
+        <I18nProvider>
+          {children}
+          <DevNav />
+        </I18nProvider>
       </body>
     </html>
   );

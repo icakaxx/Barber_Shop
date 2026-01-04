@@ -279,8 +279,11 @@ export default function ServicesManagementTab({ shopId }: ServicesManagementTabP
                     type="number"
                     min="1"
                     max="480"
-                    value={formData.durationMin}
-                    onChange={(e) => setFormData({ ...formData, durationMin: parseInt(e.target.value) || 0 })}
+                    value={formData.durationMin || ''}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setFormData({ ...formData, durationMin: value === '' ? 0 : parseInt(value) || 0 });
+                    }}
                     className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
                     required
                   />
@@ -293,8 +296,11 @@ export default function ServicesManagementTab({ shopId }: ServicesManagementTabP
                     type="number"
                     min="0"
                     step="0.01"
-                    value={formData.priceBgn}
-                    onChange={(e) => setFormData({ ...formData, priceBgn: parseFloat(e.target.value) || 0 })}
+                    value={formData.priceBgn || ''}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setFormData({ ...formData, priceBgn: value === '' ? 0 : parseFloat(value) || 0 });
+                    }}
                     className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
                     required
                   />
@@ -308,8 +314,11 @@ export default function ServicesManagementTab({ shopId }: ServicesManagementTabP
                 <input
                   type="number"
                   min="0"
-                  value={formData.sortOrder}
-                  onChange={(e) => setFormData({ ...formData, sortOrder: parseInt(e.target.value) || 0 })}
+                  value={formData.sortOrder || ''}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setFormData({ ...formData, sortOrder: value === '' ? 0 : parseInt(value) || 0 });
+                  }}
                   className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
                   placeholder="Lower numbers appear first"
                 />

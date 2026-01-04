@@ -61,18 +61,6 @@ export default function BarberFormModal({ barber, onSave, onClose }: BarberFormM
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  // Mock data for profiles and shops (in real app, this would come from API)
-  const mockProfiles = [
-    { id: 'p1', fullName: 'Alexander Petrov', role: 'BARBER_WORKER' },
-    { id: 'p2', fullName: 'Martin Dimitrov', role: 'BARBER_WORKER' },
-    { id: 'p3', fullName: 'Georgi Kostov', role: 'BARBER_WORKER' }
-  ];
-
-  const mockShops = [
-    { id: 's1', name: 'Sofia Center' },
-    { id: 's2', name: 'Plovdiv Old Town' }
-  ];
-
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />

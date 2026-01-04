@@ -41,17 +41,25 @@ export default function EditAppointmentModal({
     notes: ''
   });
 
+  // Helper function to format date for datetime-local input (local time, not UTC)
+  const formatLocalDateTime = (dateString: string): string => {
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
   useEffect(() => {
     if (appointment) {
-      const startDate = new Date(appointment.startTime);
-      const endDate = new Date(appointment.endTime);
-      
       setFormData({
         customerName: appointment.customerName,
         customerPhone: appointment.customerPhone,
         customerEmail: appointment.customerEmail || '',
-        startTime: startDate.toISOString().slice(0, 16),
-        endTime: endDate.toISOString().slice(0, 16),
+        startTime: formatLocalDateTime(appointment.startTime),
+        endTime: formatLocalDateTime(appointment.endTime),
         status: appointment.status as AppointmentStatus,
         notes: appointment.notes || ''
       });
