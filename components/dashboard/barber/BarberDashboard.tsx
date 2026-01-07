@@ -146,7 +146,9 @@ export default function BarberDashboard({ barberId, barberName }: BarberDashboar
         </div>
 
         {currentTab === 'today' && <TodayAppointments barberId={barber?.id} />}
-        {currentTab === 'calendar' && <ScheduleCalendar barberId={barber?.id} />}
+        {currentTab === 'calendar' && (
+          <ScheduleCalendar barberId={barber?.id} shopId={barber?.shopId} />
+        )}
         {currentTab === 'my-slots' && <ManageAvailability barberId={barber?.id} />}
         {currentTab === 'team' && <TeamView shopId={barber?.shopId} currentBarberId={barber?.id} />}
       </main>

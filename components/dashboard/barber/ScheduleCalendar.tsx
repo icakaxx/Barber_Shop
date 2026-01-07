@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, Users } from 'lucide-react';
+import type { Barber } from '@/lib/types';
+import CreateAppointmentModal from './CreateAppointmentModal';
 
 interface Appointment {
   id: string;
@@ -12,28 +14,80 @@ interface Appointment {
 
 interface ScheduleCalendarProps {
   barberId?: string;
+  shopId?: string;
 }
 
-export default function ScheduleCalendar({ barberId }: ScheduleCalendarProps) {
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+export default function ScheduleCalendar({ barberId, shopId }: ScheduleCalendarProps) {
+  // Store selected date as YYYY-MM-DD in local time (avoid timezone shift issues)
+  const getTodayYMD = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const [selectedDate, setSelectedDate] = useState(getTodayYMD());
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [barbers, setBarbers] = useState<Barber[]>([]);
+  const [selectedBarberId, setSelectedBarberId] = useState<string>(barberId || 'all');
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [modalSelectedDate, setModalSelectedDate] = useState<string | undefined>(undefined);
+  const [modalBarbers, setModalBarbers] = useState<Barber[]>([]);
+
+  // Load barbers for the shop so the barber can view teammates' calendars
+  useEffect(() => {
+    const loadBarbers = async () => {
+      try {
+        const response = await fetch('/api/barbers');
+        if (!response.ok) return;
+        const data: Barber[] = await response.json();
+        // Filter to current shop if provided
+        const filtered = shopId ? data.filter(b => b.shopId === shopId && b.isActive) : data;
+        setBarbers(filtered);
+      } catch (error) {
+        console.error('Error loading barbers for calendar:', error);
+      }
+    };
+
+    loadBarbers();
+  }, [shopId]);
 
   useEffect(() => {
-    if (!barberId) {
+    // Need at least a shop or specific barber to show anything useful
+    if (!shopId && !selectedBarberId) {
       setLoading(false);
       return;
     }
 
     const loadAppointments = async () => {
       try {
-        const response = await fetch(`/api/barbers/${barberId}/appointments?date=${selectedDate}`);
+        let url: string;
+        if (selectedBarberId && selectedBarberId !== 'all') {
+          // Single barber view
+          url = `/api/barbers/${selectedBarberId}/appointments?date=${selectedDate}`;
+        } else if (shopId) {
+          // Team view for shop – show all barbers' appointments as busy slots
+          url = `/api/appointments?shopId=${shopId}&date=${selectedDate}&status=PENDING,CONFIRMED`;
+        } else if (barberId) {
+          // Fallback to current barber only
+          url = `/api/barbers/${barberId}/appointments?date=${selectedDate}`;
+        } else {
+          setAppointments([]);
+          setLoading(false);
+          return;
+        }
+
+        const response = await fetch(url);
         if (response.ok) {
           const data = await response.json();
-          setAppointments(data.filter((apt: Appointment) => 
-            apt.status === 'PENDING' || apt.status === 'CONFIRMED'
-          ));
+          setAppointments(
+            data.filter(
+              (apt: Appointment) => apt.status === 'PENDING' || apt.status === 'CONFIRMED'
+            )
+          );
         }
       } catch (error) {
         console.error('Error loading appointments:', error);
@@ -42,8 +96,56 @@ export default function ScheduleCalendar({ barberId }: ScheduleCalendarProps) {
       }
     };
 
+    setLoading(true);
     loadAppointments();
-  }, [barberId, selectedDate]);
+  }, [barberId, shopId, selectedBarberId, selectedDate]);
+
+  const handleCreate = async (appointmentData: any) => {
+    try {
+      const response = await fetch('/api/appointments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(appointmentData)
+      });
+
+      if (response.ok) {
+        // Reload appointments for current view context
+        try {
+          let url: string;
+          if (selectedBarberId && selectedBarberId !== 'all') {
+            url = `/api/barbers/${selectedBarberId}/appointments?date=${selectedDate}`;
+          } else if (shopId) {
+            url = `/api/appointments?shopId=${shopId}&date=${selectedDate}&status=PENDING,CONFIRMED`;
+          } else if (barberId) {
+            url = `/api/barbers/${barberId}/appointments?date=${selectedDate}`;
+          } else {
+            setAppointments([]);
+            setIsCreateModalOpen(false);
+            return;
+          }
+
+          const reloadResponse = await fetch(url);
+          if (reloadResponse.ok) {
+            const data = await reloadResponse.json();
+            setAppointments(
+              data.filter(
+                (apt: Appointment) => apt.status === 'PENDING' || apt.status === 'CONFIRMED'
+              )
+            );
+          }
+        } catch (error) {
+          console.error('Error reloading appointments after create:', error);
+        }
+        setIsCreateModalOpen(false);
+      } else {
+        const error = await response.json();
+        alert(`Failed to create appointment: ${error.error}`);
+      }
+    } catch (error) {
+      console.error('Error creating appointment from calendar:', error);
+      alert('Failed to create appointment');
+    }
+  };
 
   // Generate time slots (9:00 AM to 6:00 PM in 30-minute intervals)
   const generateTimeSlots = () => {
@@ -59,10 +161,15 @@ export default function ScheduleCalendar({ barberId }: ScheduleCalendarProps) {
 
   const timeSlots = generateTimeSlots();
 
+  const getDateFromYMD = (ymd: string) => {
+    const [year, month, day] = ymd.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  };
+
   // Check if a time slot is taken
   const isTimeSlotTaken = (timeStr: string): boolean => {
     const [hours, minutes] = timeStr.split(':').map(Number);
-    const slotStart = new Date(selectedDate);
+    const slotStart = getDateFromYMD(selectedDate);
     slotStart.setHours(hours, minutes, 0, 0);
     const slotEnd = new Date(slotStart);
     slotEnd.setMinutes(slotEnd.getMinutes() + 30);
@@ -78,7 +185,7 @@ export default function ScheduleCalendar({ barberId }: ScheduleCalendarProps) {
   // Get appointment info for a time slot
   const getAppointmentForSlot = (timeStr: string): Appointment | null => {
     const [hours, minutes] = timeStr.split(':').map(Number);
-    const slotStart = new Date(selectedDate);
+    const slotStart = getDateFromYMD(selectedDate);
     slotStart.setHours(hours, minutes, 0, 0);
     const slotEnd = new Date(slotStart);
     slotEnd.setMinutes(slotEnd.getMinutes() + 30);
@@ -134,12 +241,15 @@ export default function ScheduleCalendar({ barberId }: ScheduleCalendarProps) {
   };
 
   const isSelected = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0];
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
     return dateStr === selectedDate;
   };
 
   const formatDate = (date: Date) => {
-    return date.toLocaleDateString('en-GB', { 
+    return date.toLocaleDateString('bg-BG', { 
       weekday: 'long', 
       day: 'numeric', 
       month: 'long',
@@ -172,8 +282,32 @@ export default function ScheduleCalendar({ barberId }: ScheduleCalendarProps) {
     <div className="space-y-6">
       {/* Calendar Header */}
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Schedule Calendar</h2>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <h2 className="text-2xl font-bold">Schedule Calendar</h2>
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <Users className="w-4 h-4" />
+            <span>
+              {selectedBarberId === 'all'
+                ? 'Всички бръснари'
+                : barbers.find(b => b.id === selectedBarberId)?.displayName || 'Моят график'}
+            </span>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          {barbers.length > 0 && (
+            <select
+              value={selectedBarberId}
+              onChange={e => setSelectedBarberId(e.target.value)}
+              className="bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:ring-1 focus:ring-black outline-none"
+            >
+              <option value="all">Всички бръснари</option>
+              {barbers.map(b => (
+                <option key={b.id} value={b.id}>
+                  {b.displayName}
+                </option>
+              ))}
+            </select>
+          )}
           <button
             onClick={() => navigateMonth('prev')}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -234,7 +368,7 @@ export default function ScheduleCalendar({ barberId }: ScheduleCalendarProps) {
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
         <div className="flex items-center gap-2 mb-6">
           <Calendar className="w-5 h-5" />
-          <h3 className="text-xl font-bold">{formatDate(new Date(selectedDate))}</h3>
+          <h3 className="text-xl font-bold">{formatDate(getDateFromYMD(selectedDate))}</h3>
         </div>
 
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
@@ -243,8 +377,27 @@ export default function ScheduleCalendar({ barberId }: ScheduleCalendarProps) {
             const appointment = getAppointmentForSlot(timeStr);
             
             return (
-              <div
+              <button
                 key={timeStr}
+                type="button"
+                onClick={() => {
+                  if (isTaken) return;
+                  const targetBarberId =
+                    selectedBarberId && selectedBarberId !== 'all'
+                      ? selectedBarberId
+                      : barberId;
+                  if (!shopId || !targetBarberId) return;
+
+                  const targetBarber = barbers.find(b => b.id === targetBarberId);
+                  const orderedBarbers = targetBarber
+                    ? [targetBarber, ...barbers.filter(b => b.id !== targetBarberId)]
+                    : barbers;
+
+                  setModalBarbers(orderedBarbers);
+                  setModalSelectedDate(selectedDate);
+                  setIsCreateModalOpen(true);
+                }}
+                disabled={isTaken || !shopId}
                 className={`
                   py-3 px-2 rounded-lg text-center text-sm font-medium border-2 transition-all
                   ${isTaken 
@@ -255,7 +408,7 @@ export default function ScheduleCalendar({ barberId }: ScheduleCalendarProps) {
                 title={appointment ? `Taken: ${new Date(appointment.startTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })} - ${new Date(appointment.endTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}` : 'Available'}
               >
                 {timeStr}
-              </div>
+              </button>
             );
           })}
         </div>
@@ -272,6 +425,17 @@ export default function ScheduleCalendar({ barberId }: ScheduleCalendarProps) {
           </div>
         </div>
       </div>
+
+      {shopId && barbers.length > 0 && (
+        <CreateAppointmentModal
+          isOpen={isCreateModalOpen}
+          onClose={() => setIsCreateModalOpen(false)}
+          onSave={handleCreate}
+          shopId={shopId}
+          barbers={modalBarbers.length > 0 ? modalBarbers : barbers}
+          selectedDate={modalSelectedDate}
+        />
+      )}
     </div>
   );
 }
