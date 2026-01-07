@@ -1,5 +1,98 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { Resend } from 'resend'
 import { supabaseServer } from '@/lib/supabase/client'
+
+const resendApiKey = process.env.RESEND_API_KEY
+const emailFrom =
+  process.env.EMAIL_FROM || 'Barber Studio Kalchev Style <kalchevstylestudio@parfumcho.com>'
+const resendClient = resendApiKey ? new Resend(resendApiKey) : null
+
+type AppointmentEmailPayload = {
+  customerEmail: string
+  customerName: string
+  barberName: string
+  shopName: string
+  services: string[]
+  startTime: string
+  endTime: string
+}
+
+const formatAppointmentWindow = (start: string, end: string) => {
+  const startDate = new Date(start)
+  const endDate = new Date(end)
+
+  const datePart = startDate.toLocaleDateString('bg-BG', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  })
+
+  const startTimePart = startDate.toLocaleTimeString('bg-BG', {
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+
+  const endTimePart = endDate.toLocaleTimeString('bg-BG', {
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+
+  return `${datePart}, ${startTimePart} - ${endTimePart}`
+}
+
+const sendAppointmentEmail = async (payload: AppointmentEmailPayload) => {
+  if (!resendClient) {
+    console.warn('Resend is not configured; skipping confirmation email.')
+    return { success: false, error: 'Resend not configured' }
+  }
+
+  const { customerEmail, customerName, barberName, shopName, services, startTime, endTime } =
+    payload
+
+  const timeWindow = formatAppointmentWindow(startTime, endTime)
+  const servicesListHtml =
+    services && services.length
+      ? services.map(service => `<li>${service}</li>`).join('')
+      : ''
+
+  console.log(`Attempting to send email to: ${customerEmail}`)
+
+  const { data, error } = await resendClient.emails.send({
+    from: emailFrom,
+    to: [customerEmail],
+    subject: `Потвърждение на час в ${shopName}`,
+    html: `
+      <h2>Здравей, ${customerName}!</h2>
+      <p>Потвърждаваме твоя час в <strong>${shopName}</strong>.</p>
+      <p>Детайли за твоя час:</p>
+      <ul>
+        <li><strong>Салон:</strong> ${shopName}</li>
+        <li><strong>Барбер:</strong> ${barberName}</li>
+        <li><strong>Кога:</strong> ${timeWindow}</li>
+      </ul>
+      ${
+        servicesListHtml
+          ? `
+      <p><strong>Услуги:</strong></p>
+      <ul>
+        ${servicesListHtml}
+      </ul>`
+          : ''
+      }
+      <p>Ако се наложи да промениш или отмениш часа, моля свържи се със салона възможно най-скоро.</p>
+      <p>Поздрави,<br/>Barber Studio Kalchev Style</p>
+    `
+  })
+
+  if (error) {
+    console.error('Failed to send appointment email:', error)
+    return { success: false, error }
+  }
+
+  console.log('Email sent successfully:', data)
+  return { success: true, data }
+}
 
 // GET /api/appointments - Get all appointments (admin view)
 export async function GET(request: NextRequest) {
@@ -138,7 +231,8 @@ export async function POST(request: NextRequest) {
       customerEmail,
       startTime,
       endTime,
-      notes
+      notes,
+      allServiceNames
     } = body
 
     // Validate required fields
@@ -225,6 +319,30 @@ export async function POST(request: NextRequest) {
       notes: data.notes,
       createdAt: data.created_at,
       updatedAt: data.updated_at
+    }
+
+    const servicesForEmail =
+      Array.isArray(allServiceNames) && allServiceNames.length
+        ? allServiceNames
+        : [appointment.serviceName]
+
+    if (appointment.customerEmail) {
+      const emailResult = await sendAppointmentEmail({
+        customerEmail: appointment.customerEmail,
+        customerName: appointment.customerName,
+        barberName: appointment.barberName,
+        shopName: appointment.shopName,
+        services: servicesForEmail,
+        startTime: appointment.startTime,
+        endTime: appointment.endTime
+      })
+      
+      // Log email result for debugging
+      if (emailResult && !emailResult.success) {
+        console.error('Email sending failed:', emailResult.error)
+      }
+    } else {
+      console.warn('No customer email provided, skipping email notification')
     }
 
     return NextResponse.json(appointment, { status: 201 })

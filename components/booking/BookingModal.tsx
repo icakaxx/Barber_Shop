@@ -394,9 +394,10 @@ export default function BookingModal() {
   const confirmBooking = async () => {
     const nameInput = document.getElementById('custName') as HTMLInputElement;
     const phoneInput = document.getElementById('custPhone') as HTMLInputElement;
+    const emailInput = document.getElementById('custEmail') as HTMLInputElement;
 
-    if (!nameInput?.value || !phoneInput?.value) {
-      alert('Please fill in your details.');
+    if (!nameInput?.value || !phoneInput?.value || !emailInput?.value) {
+      alert('Please fill in your name, phone, and email.');
       return;
     }
 
@@ -453,6 +454,7 @@ export default function BookingModal() {
       const serviceNotes = otherServices.length > 0 
         ? `Additional services: ${otherServices.map(s => s.name).join(', ')}`
         : null;
+      const allServiceNames = bookingState.services.map(s => s.name);
 
       // Create appointment
       const appointmentData = {
@@ -461,10 +463,11 @@ export default function BookingModal() {
         barberId: bookingState.barber.id,
         customerName: nameInput.value,
         customerPhone: phoneInput.value,
-        customerEmail: '', // Can be added later
+        customerEmail: emailInput.value,
         startTime: startTime.toISOString(),
         endTime: endTime.toISOString(),
-        notes: serviceNotes
+        notes: serviceNotes,
+        allServiceNames
       };
 
       const response = await fetch('/api/appointments', {
@@ -687,6 +690,15 @@ export default function BookingModal() {
                     placeholder="+359 ..."
                   />
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <input
+                    type="email"
+                    id="custEmail"
+                    className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
+                    placeholder="you@example.com"
+                  />
+                </div>
                 <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 mt-6">
                   <p className="text-xs font-bold text-gray-400 uppercase mb-3">Summary</p>
                   <div className="space-y-2 mb-3">
@@ -720,7 +732,7 @@ export default function BookingModal() {
               </div>
               <h3 className="text-3xl font-bold mb-2">Confirmed!</h3>
               <p className="text-gray-500 mb-8 px-8">
-                Your appointment is booked. We&apos;ve sent the details to your phone.
+                Your appointment is booked. We&apos;ll send the details to your email.
               </p>
               <button
                 onClick={closeModal}
