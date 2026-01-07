@@ -4,12 +4,22 @@ import { useState, useEffect } from 'react';
 import { Calendar, ChevronLeft, ChevronRight, Users } from 'lucide-react';
 import type { Barber } from '@/lib/types';
 import CreateAppointmentModal from './CreateAppointmentModal';
+import AppointmentDetailsModal from './AppointmentDetailsModal';
 
 interface Appointment {
   id: string;
   startTime: string;
   endTime: string;
   status: string;
+  customerName?: string;
+  customerPhone?: string;
+  customerEmail?: string;
+  serviceName?: string;
+  serviceDuration?: number;
+  servicePrice?: number;
+  notes?: string;
+  barberName?: string;
+  shopName?: string;
 }
 
 interface ScheduleCalendarProps {
@@ -36,6 +46,8 @@ export default function ScheduleCalendar({ barberId, shopId }: ScheduleCalendarP
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [modalSelectedDate, setModalSelectedDate] = useState<string | undefined>(undefined);
   const [modalBarbers, setModalBarbers] = useState<Barber[]>([]);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
 
   // Load barbers for the shop so the barber can view teammates' calendars
   useEffect(() => {
@@ -83,11 +95,23 @@ export default function ScheduleCalendar({ barberId, shopId }: ScheduleCalendarP
         const response = await fetch(url);
         if (response.ok) {
           const data = await response.json();
-          setAppointments(
-            data.filter(
-              (apt: Appointment) => apt.status === 'PENDING' || apt.status === 'CONFIRMED'
-            )
+          // Store full appointment data (not just basic fields)
+          let filtered = data.filter(
+            (apt: Appointment) => apt.status === 'PENDING' || apt.status === 'CONFIRMED'
           );
+          
+          // Enrich with barber name if viewing a specific barber and it's missing
+          if (selectedBarberId && selectedBarberId !== 'all' && barbers.length > 0) {
+            const barber = barbers.find(b => b.id === selectedBarberId);
+            if (barber) {
+              filtered = filtered.map((apt: Appointment) => ({
+                ...apt,
+                barberName: apt.barberName || barber.displayName
+              }));
+            }
+          }
+          
+          setAppointments(filtered);
         }
       } catch (error) {
         console.error('Error loading appointments:', error);
@@ -98,7 +122,7 @@ export default function ScheduleCalendar({ barberId, shopId }: ScheduleCalendarP
 
     setLoading(true);
     loadAppointments();
-  }, [barberId, shopId, selectedBarberId, selectedDate]);
+  }, [barberId, shopId, selectedBarberId, selectedDate, barbers]);
 
   const handleCreate = async (appointmentData: any) => {
     try {
@@ -381,7 +405,14 @@ export default function ScheduleCalendar({ barberId, shopId }: ScheduleCalendarP
                 key={timeStr}
                 type="button"
                 onClick={() => {
-                  if (isTaken) return;
+                  if (isTaken && appointment) {
+                    // Open details modal for taken slots
+                    setSelectedAppointment(appointment);
+                    setIsDetailsModalOpen(true);
+                    return;
+                  }
+                  
+                  // Open create modal for available slots
                   const targetBarberId =
                     selectedBarberId && selectedBarberId !== 'all'
                       ? selectedBarberId
@@ -397,15 +428,17 @@ export default function ScheduleCalendar({ barberId, shopId }: ScheduleCalendarP
                   setModalSelectedDate(selectedDate);
                   setIsCreateModalOpen(true);
                 }}
-                disabled={isTaken || !shopId}
+                disabled={!isTaken && !shopId}
                 className={`
-                  py-3 px-2 rounded-lg text-center text-sm font-medium border-2 transition-all
+                  py-3 px-2 rounded-lg text-center text-sm font-medium border-2 transition-all cursor-pointer
                   ${isTaken 
-                    ? 'border-red-300 bg-red-50 text-red-700' 
-                    : 'border-green-300 bg-green-50 text-green-700'
+                    ? 'border-red-300 bg-red-50 text-red-700 hover:bg-red-100' 
+                    : 'border-green-300 bg-green-50 text-green-700 hover:bg-green-100'
                   }
                 `}
-                title={appointment ? `Taken: ${new Date(appointment.startTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })} - ${new Date(appointment.endTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}` : 'Available'}
+                title={appointment 
+                  ? `Зает: ${new Date(appointment.startTime).toLocaleTimeString('bg-BG', { hour: '2-digit', minute: '2-digit' })} - ${new Date(appointment.endTime).toLocaleTimeString('bg-BG', { hour: '2-digit', minute: '2-digit' })}` 
+                  : 'Свободен'}
               >
                 {timeStr}
               </button>
@@ -436,6 +469,15 @@ export default function ScheduleCalendar({ barberId, shopId }: ScheduleCalendarP
           selectedDate={modalSelectedDate}
         />
       )}
+
+      <AppointmentDetailsModal
+        appointment={selectedAppointment}
+        isOpen={isDetailsModalOpen}
+        onClose={() => {
+          setIsDetailsModalOpen(false);
+          setSelectedAppointment(null);
+        }}
+      />
     </div>
   );
 }

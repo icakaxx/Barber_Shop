@@ -2,10 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Calendar, User } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import TodayAppointments from './TodayAppointments';
-import ManageAvailability from './ManageAvailability';
-import TeamView from './TeamView';
 import ScheduleCalendar from './ScheduleCalendar';
 import LanguageCurrencySwitcher from '@/components/shared/LanguageCurrencySwitcher';
 import { useI18n } from '@/contexts/I18nContext';
@@ -18,7 +16,7 @@ interface BarberDashboardProps {
 
 export default function BarberDashboard({ barberId, barberName }: BarberDashboardProps) {
   const { t } = useI18n();
-  const [currentTab, setCurrentTab] = useState<'today' | 'calendar' | 'my-slots' | 'team'>('today');
+  const [currentTab, setCurrentTab] = useState<'today' | 'calendar'>('today');
   const [barber, setBarber] = useState<Barber | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -127,30 +125,12 @@ export default function BarberDashboard({ barberId, barberName }: BarberDashboar
           >
             {t('dashboard.barber.calendarView')}
           </button>
-          <button
-            onClick={() => setCurrentTab('my-slots')}
-            className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
-              currentTab === 'my-slots' ? 'border-black text-black' : 'border-transparent text-gray-500 hover:text-black'
-            }`}
-          >
-            {t('dashboard.barber.manageAvailability')}
-          </button>
-          <button
-            onClick={() => setCurrentTab('team')}
-            className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
-              currentTab === 'team' ? 'border-black text-black' : 'border-transparent text-gray-500 hover:text-black'
-            }`}
-          >
-            {t('dashboard.barber.teamView')}
-          </button>
         </div>
 
         {currentTab === 'today' && <TodayAppointments barberId={barber?.id} />}
         {currentTab === 'calendar' && (
           <ScheduleCalendar barberId={barber?.id} shopId={barber?.shopId} />
         )}
-        {currentTab === 'my-slots' && <ManageAvailability barberId={barber?.id} />}
-        {currentTab === 'team' && <TeamView shopId={barber?.shopId} currentBarberId={barber?.id} />}
       </main>
     </div>
   );
