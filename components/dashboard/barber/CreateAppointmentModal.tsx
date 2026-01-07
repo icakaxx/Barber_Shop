@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Check } from 'lucide-react';
+import { X, Check, Calendar } from 'lucide-react';
 import type { Barber } from '@/lib/types';
 
 interface Service {
@@ -11,12 +11,20 @@ interface Service {
   priceBgn?: number;
 }
 
+interface Appointment {
+  id: string;
+  startTime: string;
+  endTime: string;
+  status: string;
+}
+
 interface CreateAppointmentModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (appointment: any) => void;
   shopId?: string;
   barbers: Barber[];
+  selectedDate?: string; // Add this prop to pass the selected date
 }
 
 export default function CreateAppointmentModal({
@@ -24,10 +32,13 @@ export default function CreateAppointmentModal({
   onClose,
   onSave,
   shopId,
-  barbers
+  barbers,
+  selectedDate: initialSelectedDate
 }: CreateAppointmentModalProps) {
   const [services, setServices] = useState<Service[]>([]);
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [selectedDate, setSelectedDate] = useState(initialSelectedDate || new Date().toISOString().split('T')[0]);
   const [formData, setFormData] = useState({
     barberId: barbers[0]?.id || '',
     customerName: '',
@@ -55,15 +66,39 @@ export default function CreateAppointmentModal({
       loadServices();
       // Reset selections when modal opens
       setSelectedServiceIds([]);
+      setSelectedDate(initialSelectedDate || new Date().toISOString().split('T')[0]);
       setFormData(prev => ({ ...prev, startTime: '', endTime: '' }));
     }
-  }, [isOpen, shopId]);
+  }, [isOpen, shopId, initialSelectedDate]);
 
   useEffect(() => {
     if (barbers.length > 0 && !formData.barberId) {
       setFormData(prev => ({ ...prev, barberId: barbers[0].id }));
     }
   }, [barbers]);
+
+  // Load appointments when barber or date changes
+  useEffect(() => {
+    const loadAppointments = async () => {
+      if (!formData.barberId || !selectedDate) return;
+      
+      try {
+        const response = await fetch(`/api/barbers/${formData.barberId}/appointments?date=${selectedDate}`);
+        if (response.ok) {
+          const data = await response.json();
+          setAppointments(data.filter((apt: Appointment) => 
+            apt.status === 'PENDING' || apt.status === 'CONFIRMED'
+          ));
+        }
+      } catch (error) {
+        console.error('Error loading appointments:', error);
+      }
+    };
+
+    if (isOpen && formData.barberId && selectedDate) {
+      loadAppointments();
+    }
+  }, [isOpen, formData.barberId, selectedDate]);
 
   const handleClose = () => {
     setSelectedServiceIds([]);
@@ -81,6 +116,103 @@ export default function CreateAppointmentModal({
 
   if (!isOpen) return null;
 
+  // Generate time slots (9:00 AM to 6:00 PM in 5-minute intervals)
+  const generateTimeSlots = () => {
+    const slots: string[] = [];
+    for (let hour = 9; hour < 18; hour++) {
+      for (let minute = 0; minute < 60; minute += 5) {
+        const timeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+        slots.push(timeStr);
+      }
+    }
+    return slots;
+  };
+
+  const timeSlots = generateTimeSlots();
+
+  // Check if a time slot is taken
+  const isTimeSlotTaken = (timeStr: string): boolean => {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    const slotStart = new Date(selectedDate);
+    slotStart.setHours(hours, minutes, 0, 0);
+    const slotEnd = new Date(slotStart.getTime() + 5 * 60000); // 5 minutes
+
+    return appointments.some(apt => {
+      const aptStart = new Date(apt.startTime);
+      const aptEnd = new Date(apt.endTime);
+      // Check if the slot overlaps with any appointment
+      return (slotStart < aptEnd && slotEnd > aptStart);
+    });
+  };
+
+  // Check if a slot can fit the selected services
+  const canFitServices = (timeStr: string): boolean => {
+    if (selectedServiceIds.length === 0) return true;
+    
+    const totalDuration = selectedServiceIds.reduce((total, id) => {
+      const service = services.find(s => s.id === id);
+      return total + (service?.durationMin || 0);
+    }, 0);
+
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    const slotStart = new Date(selectedDate);
+    slotStart.setHours(hours, minutes, 0, 0);
+    const slotEnd = new Date(slotStart.getTime() + totalDuration * 60000);
+
+    // Check if end time goes beyond business hours (18:00)
+    if (slotEnd.getHours() >= 18 || (slotEnd.getHours() === 18 && slotEnd.getMinutes() > 0)) {
+      return false;
+    }
+
+    // Check if the appointment would overlap with any existing appointment
+    const wouldOverlap = appointments.some(apt => {
+      const aptStart = new Date(apt.startTime);
+      const aptEnd = new Date(apt.endTime);
+      return (slotStart < aptEnd && slotEnd > aptStart);
+    });
+
+    return !wouldOverlap;
+  };
+
+  const handleTimeSlotClick = (timeStr: string) => {
+    if (selectedServiceIds.length === 0) {
+      alert('Please select at least one service first');
+      return;
+    }
+
+    if (!canFitServices(timeStr)) {
+      alert('Selected services cannot fit in this time slot');
+      return;
+    }
+
+    const totalDuration = selectedServiceIds.reduce((total, id) => {
+      const service = services.find(s => s.id === id);
+      return total + (service?.durationMin || 0);
+    }, 0);
+
+    // Create date in local timezone to avoid timezone conversion issues
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    const start = new Date(selectedDate);
+    start.setHours(hours, minutes, 0, 0);
+    const end = new Date(start.getTime() + totalDuration * 60000);
+
+    // Format as local datetime-local string (YYYY-MM-DDTHH:mm)
+    const formatLocalDateTime = (date: Date): string => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hour = String(date.getHours()).padStart(2, '0');
+      const minute = String(date.getMinutes()).padStart(2, '0');
+      return `${year}-${month}-${day}T${hour}:${minute}`;
+    };
+
+    setFormData({
+      ...formData,
+      startTime: formatLocalDateTime(start),
+      endTime: formatLocalDateTime(end)
+    });
+  };
+
   const toggleService = (serviceId: string) => {
     setSelectedServiceIds(prev => {
       const newSelection = prev.includes(serviceId)
@@ -96,30 +228,24 @@ export default function CreateAppointmentModal({
         
         const start = new Date(formData.startTime);
         const end = new Date(start.getTime() + totalDuration * 60000);
-        setFormData(prev => ({ ...prev, endTime: end.toISOString().slice(0, 16) }));
+        
+        // Format as local datetime-local string
+        const formatLocalDateTime = (date: Date): string => {
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          const hour = String(date.getHours()).padStart(2, '0');
+          const minute = String(date.getMinutes()).padStart(2, '0');
+          return `${year}-${month}-${day}T${hour}:${minute}`;
+        };
+        
+        setFormData(prev => ({ ...prev, endTime: formatLocalDateTime(end) }));
+      } else if (newSelection.length === 0) {
+        setFormData(prev => ({ ...prev, startTime: '', endTime: '' }));
       }
       
       return newSelection;
     });
-  };
-
-  const handleStartTimeChange = (startTime: string) => {
-    if (selectedServiceIds.length > 0) {
-      const totalDuration = selectedServiceIds.reduce((total, id) => {
-        const service = services.find(s => s.id === id);
-        return total + (service?.durationMin || 0);
-      }, 0);
-      
-      const start = new Date(startTime);
-      const end = new Date(start.getTime() + totalDuration * 60000);
-      setFormData({
-        ...formData,
-        startTime,
-        endTime: end.toISOString().slice(0, 16)
-      });
-    } else {
-      setFormData({ ...formData, startTime, endTime: '' });
-    }
   };
 
   const selectedServices = services.filter(s => selectedServiceIds.includes(s.id));
@@ -129,8 +255,8 @@ export default function CreateAppointmentModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!shopId || !formData.barberId || selectedServiceIds.length === 0) {
-      alert('Please select at least one service and fill in all required fields');
+    if (!shopId || !formData.barberId || selectedServiceIds.length === 0 || !formData.startTime) {
+      alert('Please select at least one service, fill in all required fields, and select a start time');
       return;
     }
 
@@ -160,9 +286,17 @@ export default function CreateAppointmentModal({
     });
   };
 
+  const isSelectedTime = (timeStr: string): boolean => {
+    if (!formData.startTime) return false;
+    // Parse the datetime-local string as local time
+    const selectedTime = new Date(formData.startTime);
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return selectedTime.getHours() === hours && selectedTime.getMinutes() === minutes;
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
         <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between sticky top-0 bg-white">
           <h2 className="text-xl font-bold">Create New Appointment</h2>
           <button
@@ -180,7 +314,9 @@ export default function CreateAppointmentModal({
             </label>
             <select
               value={formData.barberId}
-              onChange={(e) => setFormData({ ...formData, barberId: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, barberId: e.target.value, startTime: '', endTime: '' });
+              }}
               className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
               required
             >
@@ -190,6 +326,22 @@ export default function CreateAppointmentModal({
                 </option>
               ))}
             </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Date *
+            </label>
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => {
+                setSelectedDate(e.target.value);
+                setFormData(prev => ({ ...prev, startTime: '', endTime: '' }));
+              }}
+              className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
+              required
+            />
           </div>
 
           <div>
@@ -255,6 +407,73 @@ export default function CreateAppointmentModal({
             )}
           </div>
 
+          {/* Time Slot Selector */}
+          {selectedServiceIds.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select Start Time * (Click on an available slot)
+              </label>
+              <div className="border border-gray-200 rounded-lg p-4">
+                <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 max-h-64 overflow-y-auto">
+                  {timeSlots.map((timeStr) => {
+                    const isTaken = isTimeSlotTaken(timeStr);
+                    const canFit = canFitServices(timeStr);
+                    const isSelected = isSelectedTime(timeStr);
+                    
+                    return (
+                      <button
+                        key={timeStr}
+                        type="button"
+                        onClick={() => handleTimeSlotClick(timeStr)}
+                        disabled={isTaken || !canFit}
+                        className={`
+                          py-2 px-2 rounded-lg text-center text-xs font-medium border-2 transition-all
+                          ${isSelected
+                            ? 'border-black bg-black text-white'
+                            : isTaken
+                            ? 'border-red-300 bg-red-50 text-red-700 cursor-not-allowed opacity-60'
+                            : canFit
+                            ? 'border-green-300 bg-green-50 text-green-700 hover:border-green-400 hover:bg-green-100 cursor-pointer'
+                            : 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed opacity-50'
+                          }
+                        `}
+                        title={isTaken ? 'Time slot is taken' : !canFit ? 'Services cannot fit in this slot' : 'Click to select'}
+                      >
+                        {timeStr}
+                      </button>
+                    );
+                  })}
+                </div>
+                {formData.startTime && (
+                  <div className="mt-3 p-2 bg-gray-50 rounded-lg text-xs text-gray-600">
+                    <span className="font-medium">Selected: </span>
+                    {(() => {
+                      // Parse datetime-local strings as local time and format
+                      const start = new Date(formData.startTime);
+                      const end = new Date(formData.endTime);
+                      const formatTime = (date: Date) => {
+                        const hours = String(date.getHours()).padStart(2, '0');
+                        const minutes = String(date.getMinutes()).padStart(2, '0');
+                        return `${hours}:${minutes}`;
+                      };
+                      return `${formatTime(start)} - ${formatTime(end)}`;
+                    })()}
+                  </div>
+                )}
+                <div className="mt-3 flex items-center gap-4 text-xs">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded border-2 border-green-300 bg-green-50"></div>
+                    <span className="text-gray-600">Available</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded border-2 border-red-300 bg-red-50"></div>
+                    <span className="text-gray-600">Taken</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Customer Name *
@@ -293,33 +512,6 @@ export default function CreateAppointmentModal({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Start Time *
-              </label>
-              <input
-                type="datetime-local"
-                value={formData.startTime}
-                onChange={(e) => handleStartTimeChange(e.target.value)}
-                className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                End Time *
-              </label>
-              <input
-                type="datetime-local"
-                value={formData.endTime}
-                onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
-                className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
-                required
-              />
-            </div>
-          </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Notes (optional)
@@ -352,4 +544,3 @@ export default function CreateAppointmentModal({
     </div>
   );
 }
-

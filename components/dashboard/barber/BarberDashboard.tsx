@@ -7,6 +7,8 @@ import TodayAppointments from './TodayAppointments';
 import ManageAvailability from './ManageAvailability';
 import TeamView from './TeamView';
 import ScheduleCalendar from './ScheduleCalendar';
+import LanguageCurrencySwitcher from '@/components/shared/LanguageCurrencySwitcher';
+import { useI18n } from '@/contexts/I18nContext';
 import type { Barber } from '@/lib/types';
 
 interface BarberDashboardProps {
@@ -15,6 +17,7 @@ interface BarberDashboardProps {
 }
 
 export default function BarberDashboard({ barberId, barberName }: BarberDashboardProps) {
+  const { t } = useI18n();
   const [currentTab, setCurrentTab] = useState<'today' | 'calendar' | 'my-slots' | 'team'>('today');
   const [barber, setBarber] = useState<Barber | null>(null);
   const [loading, setLoading] = useState(true);
@@ -82,9 +85,10 @@ export default function BarberDashboard({ barberId, barberName }: BarberDashboar
               <Link href="/" className="p-2 hover:bg-gray-100 rounded-full">
                 <ArrowLeft className="w-5 h-5" />
               </Link>
-              <h1 className="text-xl font-bold tracking-tight">Barber Dashboard</h1>
+              <h1 className="text-xl font-bold tracking-tight">{t('nav.barberDashboard')}</h1>
             </div>
             <div className="flex items-center gap-3">
+              <LanguageCurrencySwitcher />
               <div className="hidden sm:block text-right">
                 <p className="text-sm font-bold">{displayName}</p>
                 <p className="text-xs text-gray-500">{shopName}</p>
@@ -113,7 +117,7 @@ export default function BarberDashboard({ barberId, barberName }: BarberDashboar
               currentTab === 'today' ? 'border-black text-black' : 'border-transparent text-gray-500 hover:text-black'
             }`}
           >
-            Today&apos;s Schedule
+            {t('dashboard.barber.todaySchedule')}
           </button>
           <button
             onClick={() => setCurrentTab('calendar')}
@@ -121,7 +125,7 @@ export default function BarberDashboard({ barberId, barberName }: BarberDashboar
               currentTab === 'calendar' ? 'border-black text-black' : 'border-transparent text-gray-500 hover:text-black'
             }`}
           >
-            Calendar View
+            {t('dashboard.barber.calendarView')}
           </button>
           <button
             onClick={() => setCurrentTab('my-slots')}
@@ -129,7 +133,7 @@ export default function BarberDashboard({ barberId, barberName }: BarberDashboar
               currentTab === 'my-slots' ? 'border-black text-black' : 'border-transparent text-gray-500 hover:text-black'
             }`}
           >
-            Manage My Availability
+            {t('dashboard.barber.manageAvailability')}
           </button>
           <button
             onClick={() => setCurrentTab('team')}
@@ -137,7 +141,7 @@ export default function BarberDashboard({ barberId, barberName }: BarberDashboar
               currentTab === 'team' ? 'border-black text-black' : 'border-transparent text-gray-500 hover:text-black'
             }`}
           >
-            Team View
+            {t('dashboard.barber.teamView')}
           </button>
         </div>
 

@@ -7,6 +7,8 @@ import EditAppointmentModal from '@/components/dashboard/barber/EditAppointmentM
 import CreateAppointmentModal from '@/components/dashboard/barber/CreateAppointmentModal';
 import ServicesManagementTab from './ServicesManagementTab';
 import BarbersTab from './BarbersTab';
+import LanguageCurrencySwitcher from '@/components/shared/LanguageCurrencySwitcher';
+import { useI18n } from '@/contexts/I18nContext';
 import type { Barber, AppointmentStatus } from '@/lib/types';
 
 interface Shop {
@@ -33,8 +35,9 @@ interface Appointment {
 }
 
 export default function OwnerDashboard() {
+  const { t } = useI18n();
   const [shops, setShops] = useState<Shop[]>([]);
-  const [selectedShopId, setSelectedShopId] = useState<string>('all');
+  const [selectedShopId, setSelectedShopId] = useState<string>('');
   const [barbers, setBarbers] = useState<Barber[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
@@ -82,39 +85,25 @@ export default function OwnerDashboard() {
 
   useEffect(() => {
     const loadBarbers = async () => {
-      if (selectedShopId === 'all') {
-        // Load all barbers from all shops
-        try {
-          const response = await fetch('/api/barbers');
-          if (response.ok) {
-            const data = await response.json();
-            // Filter barbers that belong to owner's shops
-            const shopIds = shops.map(s => s.id);
-            const filteredBarbers = data.filter((b: Barber) => shopIds.includes(b.shopId));
-            setBarbers(filteredBarbers);
-          }
-        } catch (error) {
-          console.error('Error loading barbers:', error);
+      if (!selectedShopId) return;
+      
+      // Load barbers for selected shop
+      try {
+        const response = await fetch('/api/barbers');
+        if (response.ok) {
+          const data = await response.json();
+          const shopBarbers = data.filter((b: Barber) => b.shopId === selectedShopId);
+          setBarbers(shopBarbers);
         }
-      } else {
-        // Load barbers for selected shop
-        try {
-          const response = await fetch('/api/barbers');
-          if (response.ok) {
-            const data = await response.json();
-            const shopBarbers = data.filter((b: Barber) => b.shopId === selectedShopId);
-            setBarbers(shopBarbers);
-          }
-        } catch (error) {
-          console.error('Error loading barbers:', error);
-        }
+      } catch (error) {
+        console.error('Error loading barbers:', error);
       }
     };
 
-    if (shops.length > 0) {
+    if (selectedShopId) {
       loadBarbers();
     }
-  }, [selectedShopId, shops]);
+  }, [selectedShopId]);
 
   useEffect(() => {
     const loadAppointments = async () => {
@@ -126,16 +115,7 @@ export default function OwnerDashboard() {
       try {
         let allAppointments: Appointment[] = [];
 
-        if (selectedShopId === 'all') {
-          // Load appointments from all shops
-          for (const shop of shops) {
-            const response = await fetch(`/api/appointments?shopId=${shop.id}&date=${selectedDate}`);
-            if (response.ok) {
-              const data = await response.json();
-              allAppointments = [...allAppointments, ...data];
-            }
-          }
-        } else {
+        if (selectedShopId) {
           // Load appointments for selected shop
           const response = await fetch(`/api/appointments?shopId=${selectedShopId}&date=${selectedDate}`);
           if (response.ok) {
@@ -240,20 +220,7 @@ export default function OwnerDashboard() {
 
       if (response.ok) {
         // Reload appointments
-        let allAppointments: Appointment[] = [];
-        if (selectedShopId === 'all') {
-          for (const shop of shops) {
-            const reloadResponse = await fetch(`/api/appointments?shopId=${shop.id}&date=${selectedDate}`);
-            if (reloadResponse.ok) {
-              const data = await reloadResponse.json();
-              allAppointments = [...allAppointments, ...data];
-            }
-          }
-          allAppointments.sort((a, b) => 
-            new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
-          );
-          setAppointments(allAppointments);
-        } else {
+        if (selectedShopId) {
           const reloadResponse = await fetch(`/api/appointments?shopId=${selectedShopId}&date=${selectedDate}`);
           if (reloadResponse.ok) {
             const data = await reloadResponse.json();
@@ -282,20 +249,7 @@ export default function OwnerDashboard() {
 
       if (response.ok) {
         // Reload appointments
-        let allAppointments: Appointment[] = [];
-        if (selectedShopId === 'all') {
-          for (const shop of shops) {
-            const reloadResponse = await fetch(`/api/appointments?shopId=${shop.id}&date=${selectedDate}`);
-            if (reloadResponse.ok) {
-              const data = await reloadResponse.json();
-              allAppointments = [...allAppointments, ...data];
-            }
-          }
-          allAppointments.sort((a, b) => 
-            new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
-          );
-          setAppointments(allAppointments);
-        } else {
+        if (selectedShopId) {
           const reloadResponse = await fetch(`/api/appointments?shopId=${selectedShopId}&date=${selectedDate}`);
           if (reloadResponse.ok) {
             const data = await reloadResponse.json();
@@ -325,20 +279,7 @@ export default function OwnerDashboard() {
 
       if (response.ok) {
         // Reload appointments
-        let allAppointments: Appointment[] = [];
-        if (selectedShopId === 'all') {
-          for (const shop of shops) {
-            const reloadResponse = await fetch(`/api/appointments?shopId=${shop.id}&date=${selectedDate}`);
-            if (reloadResponse.ok) {
-              const data = await reloadResponse.json();
-              allAppointments = [...allAppointments, ...data];
-            }
-          }
-          allAppointments.sort((a, b) => 
-            new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
-          );
-          setAppointments(allAppointments);
-        } else {
+        if (selectedShopId) {
           const reloadResponse = await fetch(`/api/appointments?shopId=${selectedShopId}&date=${selectedDate}`);
           if (reloadResponse.ok) {
             const data = await reloadResponse.json();
@@ -401,14 +342,17 @@ export default function OwnerDashboard() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="bg-black p-3 rounded-lg">
-              <Building2 className="w-6 h-6 text-white" />
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-3">
+              <div className="bg-black p-3 rounded-lg">
+                <Building2 className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold">{t('dashboard.owner.title')}</h1>
+                <p className="text-gray-500">{t('dashboard.owner.subtitle')}</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-3xl font-bold">Owner Dashboard</h1>
-              <p className="text-gray-500">Manage all appointments across your shops</p>
-            </div>
+            <LanguageCurrencySwitcher />
           </div>
         </div>
 
@@ -417,24 +361,7 @@ export default function OwnerDashboard() {
           <div className="flex flex-wrap gap-4 items-end">
             <div className="flex-1 min-w-[200px]">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Shop
-              </label>
-              <select
-                value={selectedShopId}
-                onChange={(e) => setSelectedShopId(e.target.value)}
-                className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
-              >
-                <option value="all">All Shops</option>
-                {shops.map((shop) => (
-                  <option key={shop.id} value={shop.id}>
-                    {shop.name} {shop.city ? `- ${shop.city}` : ''}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex-1 min-w-[200px]">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Date
+                {t('dashboard.owner.date')}
               </label>
               <input
                 type="date"
@@ -449,32 +376,25 @@ export default function OwnerDashboard() {
                 className="bg-black text-white px-6 py-3 rounded-lg font-bold flex items-center gap-2 hover:bg-black/90 transition-all"
                 disabled={activeBarbers.length === 0}
               >
-                <Plus className="w-4 h-4" /> New Appointment
+                <Plus className="w-4 h-4" /> {t('dashboard.owner.newAppointment')}
               </button>
             </div>
           </div>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-            <div className="flex items-center gap-3 mb-2">
-              <Building2 className="w-5 h-5 text-gray-400" />
-              <span className="text-sm text-gray-500">Shops</span>
-            </div>
-            <p className="text-2xl font-bold">{shops.length}</p>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
             <div className="flex items-center gap-3 mb-2">
               <Users className="w-5 h-5 text-gray-400" />
-              <span className="text-sm text-gray-500">Active Workers</span>
+              <span className="text-sm text-gray-500">{t('dashboard.owner.activeWorkers')}</span>
             </div>
             <p className="text-2xl font-bold">{activeBarbers.length}</p>
           </div>
           <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
             <div className="flex items-center gap-3 mb-2">
               <Calendar className="w-5 h-5 text-gray-400" />
-              <span className="text-sm text-gray-500">Appointments Today</span>
+              <span className="text-sm text-gray-500">{t('dashboard.owner.appointmentsToday')}</span>
             </div>
             <p className="text-2xl font-bold">{appointments.length}</p>
           </div>
@@ -492,7 +412,7 @@ export default function OwnerDashboard() {
               }`}
             >
               <Calendar className="w-4 h-4" />
-              Appointments
+              {t('dashboard.owner.appointments')}
             </button>
             <button
               onClick={() => {
@@ -506,7 +426,7 @@ export default function OwnerDashboard() {
               }`}
             >
               <Users className="w-4 h-4" />
-              Barbers
+              {t('dashboard.owner.barbers')}
             </button>
             <button
               onClick={() => setCurrentTab('services')}
@@ -517,7 +437,7 @@ export default function OwnerDashboard() {
               }`}
             >
               <Scissors className="w-4 h-4" />
-              Services
+              {t('dashboard.owner.services')}
             </button>
           </nav>
         </div>
@@ -529,7 +449,7 @@ export default function OwnerDashboard() {
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
               <div className="p-6 border-b border-gray-200">
                 <h2 className="text-xl font-bold">
-                  Appointments {selectedShopId !== 'all' && `- ${selectedShop?.name}`}
+                  {t('dashboard.owner.appointments')} {selectedShop && `- ${selectedShop.name}`}
                 </h2>
                 <p className="text-sm text-gray-500 mt-1">
                   {new Date(selectedDate).toLocaleDateString('en-GB', { 
@@ -547,9 +467,9 @@ export default function OwnerDashboard() {
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Calendar className="w-8 h-8 text-gray-400" />
                 </div>
-                <h3 className="font-bold text-lg mb-2">No Appointments</h3>
+                <h3 className="font-bold text-lg mb-2">{t('appointments.noAppointments')}</h3>
                 <p className="text-gray-500 max-w-sm mx-auto">
-                  No appointments found for the selected date and shop.
+                  {t('appointments.noAppointments')}
                 </p>
               </div>
             ) : (
@@ -561,7 +481,7 @@ export default function OwnerDashboard() {
                   >
                     <div className="flex items-start gap-4 flex-1">
                       <div className="bg-white p-3 rounded-lg text-center min-w-[100px]">
-                        <p className="text-xs font-bold text-gray-500 uppercase">Time</p>
+                        <p className="text-xs font-bold text-gray-500 uppercase">{t('appointments.time')}</p>
                         <p className="font-bold">{formatTime(app.startTime)}</p>
                       </div>
                       <div className="flex-1">
@@ -571,11 +491,6 @@ export default function OwnerDashboard() {
                           <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold">
                             {app.barberName}
                           </span>
-                          {selectedShopId === 'all' && (
-                            <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded font-bold">
-                              {app.shopName}
-                            </span>
-                          )}
                         </div>
                         <div className="text-sm text-gray-600 flex items-start gap-1 mb-1">
                           <Scissors className="w-3 h-3 mt-0.5 flex-shrink-0" />
@@ -599,14 +514,14 @@ export default function OwnerDashboard() {
                         onClick={() => handleEdit(app)}
                         className="px-4 py-2 border border-gray-200 text-sm font-bold rounded-lg hover:bg-gray-50 transition-all flex items-center gap-2"
                       >
-                        <Edit2 className="w-4 h-4" /> Edit
+                        <Edit2 className="w-4 h-4" /> {t('common.edit')}
                       </button>
                       <button
                         onClick={() => handleDelete(app.id)}
                         disabled={deletingId === app.id}
                         className="px-4 py-2 border border-red-200 text-red-600 text-sm font-bold rounded-lg hover:bg-red-50 transition-all flex items-center gap-2 disabled:opacity-50"
                       >
-                        <Trash2 className="w-4 h-4" /> {deletingId === app.id ? 'Deleting...' : 'Delete'}
+                        <Trash2 className="w-4 h-4" /> {deletingId === app.id ? t('common.loading') : t('common.delete')}
                       </button>
                     </div>
                   </div>
@@ -643,17 +558,6 @@ export default function OwnerDashboard() {
           <ServicesManagementTab shopId={selectedShopId} />
         )}
 
-        {currentTab === 'services' && selectedShopId === 'all' && (
-          <div className="bg-white p-12 rounded-xl border border-gray-200 shadow-sm text-center">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Scissors className="w-8 h-8 text-gray-400" />
-            </div>
-            <h3 className="font-bold text-lg mb-2">Select a Shop</h3>
-            <p className="text-gray-500 max-w-sm mx-auto">
-              Please select a specific shop from the dropdown above to manage its services.
-            </p>
-          </div>
-        )}
       </div>
 
       {/* Modals */}
@@ -671,8 +575,9 @@ export default function OwnerDashboard() {
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onSave={handleCreate}
-        shopId={selectedShopId === 'all' ? shops[0]?.id : selectedShopId}
+        shopId={selectedShopId}
         barbers={activeBarbers}
+        selectedDate={selectedDate}
       />
     </div>
   );

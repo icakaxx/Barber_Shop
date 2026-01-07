@@ -7,8 +7,10 @@ import { getBarbers, createBarber, updateBarber, deleteBarber } from '@/lib/supa
 import type { Barber, BarberSchedule } from '@/lib/types';
 import BarberFormModal from './BarberFormModal_new';
 import BarberScheduleModal from './BarberScheduleModal';
+import { useI18n } from '@/contexts/I18nContext';
 
 export default function BarberManagementTab() {
+  const { t } = useI18n();
   const [barbers, setBarbers] = useState<Barber[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedBarber, setSelectedBarber] = useState<Barber | null>(null);
@@ -57,7 +59,7 @@ export default function BarberManagementTab() {
   };
 
   const handleDeleteBarber = async (barberId: string) => {
-    if (confirm('Are you sure you want to delete this barber? This will set them as inactive.')) {
+    if (confirm(t('admin.deleteBarberConfirm'))) {
       try {
         const success = await deleteBarber(barberId);
         if (success) {
@@ -65,11 +67,11 @@ export default function BarberManagementTab() {
             b.id === barberId ? { ...b, status: 'Inactive' } : b
           ));
         } else {
-          alert('Failed to delete barber');
+          alert(t('admin.failedDeleteBarber'));
         }
       } catch (error) {
         console.error('Error deleting barber:', error);
-        alert('Error deleting barber');
+        alert(t('admin.failedDeleteBarber'));
       }
     }
   };
@@ -89,7 +91,7 @@ export default function BarberManagementTab() {
             b.id === editingBarber.id ? updatedBarber : b
           ));
         } else {
-          alert('Failed to update barber');
+          alert(t('admin.failedUpdateBarber'));
         }
       } else {
         // Add new barber
@@ -97,13 +99,13 @@ export default function BarberManagementTab() {
         if (newBarber) {
           setBarbers([...barbers, newBarber]);
         } else {
-          alert('Failed to create barber');
+          alert(t('admin.failedCreateBarber'));
         }
       }
       setShowFormModal(false);
     } catch (error) {
       console.error('Error saving barber:', error);
-      alert('Error saving barber');
+      alert(t('admin.failedSaveBarber'));
     }
   };
 
@@ -120,12 +122,12 @@ export default function BarberManagementTab() {
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold">Barber Management</h2>
+          <h2 className="text-2xl font-bold">{t('admin.barberManagement')}</h2>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8">
           <div className="flex items-center justify-center">
             <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
-            <span className="ml-2 text-gray-600">Loading barbers...</span>
+            <span className="ml-2 text-gray-600">{t('admin.loadingBarbers')}</span>
           </div>
         </div>
       </div>
@@ -135,12 +137,12 @@ export default function BarberManagementTab() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Barber Management</h2>
+        <h2 className="text-2xl font-bold">{t('admin.barberManagement')}</h2>
         <button
           onClick={handleAddBarber}
           className="bg-black text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-black/90 transition-all"
         >
-          <UserPlus className="w-4 h-4" /> Add Barber
+          <UserPlus className="w-4 h-4" /> {t('admin.addBarber')}
         </button>
       </div>
 
@@ -148,11 +150,11 @@ export default function BarberManagementTab() {
         <table className="w-full text-left">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
-              <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Barber</th>
-              <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Role</th>
-              <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Shop</th>
-              <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Status</th>
-              <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase text-right">Actions</th>
+              <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">{t('admin.barber')}</th>
+              <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">{t('admin.role')}</th>
+              <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">{t('admin.shop')}</th>
+              <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">{t('admin.status')}</th>
+              <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase text-right">{t('admin.actions')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -200,6 +202,7 @@ function BarberRow({
   onDelete: (id: string) => void;
   onViewSchedule: (barber: Barber) => void;
 }) {
+  const { t } = useI18n();
   return (
     <tr className="hover:bg-gray-50">
       <td className="px-6 py-4">
@@ -213,7 +216,7 @@ function BarberRow({
       <td className="px-6 py-4 text-sm">{barber.shop?.name}</td>
       <td className="px-6 py-4">
         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${barber.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-          {barber.isActive ? 'Active' : 'Inactive'}
+          {barber.isActive ? t('status.active') : t('status.inactive')}
         </span>
       </td>
       <td className="px-6 py-4 text-right">
@@ -221,21 +224,21 @@ function BarberRow({
           <button
             onClick={() => onViewSchedule(barber)}
             className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
-            title="View Schedule"
+            title={t('admin.viewSchedule')}
           >
             <Eye className="w-4 h-4" />
           </button>
           <button
             onClick={() => onEdit(barber)}
             className="p-1 text-gray-400 hover:text-green-600 transition-colors"
-            title="Edit Barber"
+            title={t('admin.editBarber')}
           >
             <Edit className="w-4 h-4" />
           </button>
           <button
             onClick={() => onDelete(barber.id)}
             className="p-1 text-gray-400 hover:text-red-600 transition-colors"
-            title="Delete Barber"
+            title={t('admin.deleteBarber')}
           >
             <Trash2 className="w-4 h-4" />
           </button>

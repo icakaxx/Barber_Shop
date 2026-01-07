@@ -6,6 +6,8 @@ import { ArrowLeft, Users, Calendar, Scissors } from 'lucide-react';
 import BarberManagementTab from './BarberManagementTab';
 import AppointmentsTab from './AppointmentsTab';
 import ServicesManagementTab from '@/components/dashboard/owner/ServicesManagementTab';
+import LanguageCurrencySwitcher from '@/components/shared/LanguageCurrencySwitcher';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface Shop {
   id: string;
@@ -14,6 +16,7 @@ interface Shop {
 }
 
 export default function SuperAdminDashboard() {
+  const { t } = useI18n();
   const [currentTab, setCurrentTab] = useState<'barbers' | 'appointments' | 'services'>('barbers');
   const [selectedShopId, setSelectedShopId] = useState<string>('');
   const [shops, setShops] = useState<Shop[]>([]);
@@ -48,12 +51,13 @@ export default function SuperAdminDashboard() {
               <Link href="/" className="p-2 hover:bg-gray-100 rounded-full">
                 <ArrowLeft className="w-5 h-5" />
               </Link>
-              <h1 className="text-xl font-bold tracking-tight">Super Admin Panel</h1>
+              <h1 className="text-xl font-bold tracking-tight">{t('dashboard.admin.title')}</h1>
             </div>
             <div className="flex items-center gap-3">
+              <LanguageCurrencySwitcher />
               <div className="hidden sm:block text-right">
-                <p className="text-sm font-bold">Global Admin</p>
-                <p className="text-xs text-gray-500">System Root</p>
+                <p className="text-sm font-bold">{t('dashboard.admin.globalAdmin')}</p>
+                <p className="text-xs text-gray-500">{t('dashboard.admin.systemRoot')}</p>
               </div>
               <div className="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center font-bold">
                 SA
@@ -76,7 +80,7 @@ export default function SuperAdminDashboard() {
               }`}
             >
               <Users className="w-4 h-4" />
-              Barbers
+              {t('dashboard.admin.barbers')}
             </button>
             <button
               onClick={() => setCurrentTab('appointments')}
@@ -87,7 +91,7 @@ export default function SuperAdminDashboard() {
               }`}
             >
               <Calendar className="w-4 h-4" />
-              Appointments
+              {t('dashboard.admin.appointments')}
             </button>
             <button
               onClick={() => setCurrentTab('services')}
@@ -98,7 +102,7 @@ export default function SuperAdminDashboard() {
               }`}
             >
               <Scissors className="w-4 h-4" />
-              Services
+              {t('dashboard.admin.services')}
             </button>
           </nav>
         </div>
@@ -110,14 +114,14 @@ export default function SuperAdminDashboard() {
           <div className="space-y-4">
             <div className="bg-white p-4 rounded-xl border border-gray-200">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Select Shop to Manage Services
+                {t('dashboard.admin.selectShop')}
               </label>
               <select
                 value={selectedShopId}
                 onChange={(e) => setSelectedShopId(e.target.value)}
                 className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
               >
-                <option value="">-- Select a shop --</option>
+                <option value="">{t('dashboard.admin.selectShopPlaceholder')}</option>
                 {shops.map((shop) => (
                   <option key={shop.id} value={shop.id}>
                     {shop.name} {shop.city ? `- ${shop.city}` : ''}
@@ -130,7 +134,7 @@ export default function SuperAdminDashboard() {
             )}
             {!selectedShopId && (
               <div className="bg-white p-12 rounded-xl border border-gray-200 shadow-sm text-center">
-                <p className="text-gray-500">Please select a shop to manage services.</p>
+                <p className="text-gray-500">{t('dashboard.admin.selectShopMessage')}</p>
               </div>
             )}
           </div>

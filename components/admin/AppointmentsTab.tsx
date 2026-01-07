@@ -5,6 +5,7 @@ import { Calendar, Clock, User, Phone, Mail, Scissors, Filter, X } from 'lucide-
 import { getBarbers } from '@/lib/supabase/barbers';
 import type { Barber } from '@/lib/types';
 import { getStatusBadge } from '@/lib/utils';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface Appointment {
   id: string;
@@ -25,6 +26,7 @@ interface Appointment {
 }
 
 export default function AppointmentsTab() {
+  const { t } = useI18n();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [barbers, setBarbers] = useState<Barber[]>([]);
   const [loading, setLoading] = useState(true);
@@ -87,27 +89,27 @@ export default function AppointmentsTab() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Appointments Management</h2>
+        <h2 className="text-2xl font-bold">{t('admin.appointmentsManagement')}</h2>
       </div>
 
       {/* Filters */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
         <div className="flex items-center gap-2 mb-4">
           <Filter className="w-5 h-5 text-gray-500" />
-          <h3 className="font-bold text-gray-900">Filters</h3>
+          <h3 className="font-bold text-gray-900">{t('admin.filters')}</h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Barber Filter */}
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-2">
-              Barber
+              {t('admin.barber')}
             </label>
             <select
               value={selectedBarber}
               onChange={(e) => setSelectedBarber(e.target.value)}
               className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
             >
-              <option value="all">All Barbers</option>
+              <option value="all">{t('admin.allBarbers')}</option>
               {barbers.map(barber => (
                 <option key={barber.id} value={barber.id}>
                   {barber.displayName}
@@ -119,7 +121,7 @@ export default function AppointmentsTab() {
           {/* Date Filter */}
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-2">
-              Date
+              {t('dashboard.owner.date')}
             </label>
             <input
               type="date"
@@ -132,18 +134,18 @@ export default function AppointmentsTab() {
           {/* Status Filter */}
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-2">
-              Status
+              {t('admin.status')}
             </label>
             <select
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
               className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
             >
-              <option value="all">All Statuses</option>
-              <option value="PENDING">Pending</option>
-              <option value="CONFIRMED">Confirmed</option>
-              <option value="DONE">Done</option>
-              <option value="CANCELLED">Cancelled</option>
+              <option value="all">{t('admin.allStatuses')}</option>
+              <option value="PENDING">{t('appointments.pending')}</option>
+              <option value="CONFIRMED">{t('appointments.confirmed')}</option>
+              <option value="DONE">{t('appointments.done')}</option>
+              <option value="CANCELLED">{t('admin.cancelled')}</option>
             </select>
           </div>
         </div>
@@ -159,7 +161,7 @@ export default function AppointmentsTab() {
             className="mt-4 flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
           >
             <X className="w-4 h-4" />
-            Clear Filters
+            {t('admin.clearFilters')}
           </button>
         )}
       </div>
@@ -168,13 +170,13 @@ export default function AppointmentsTab() {
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
         {loading ? (
           <div className="p-8 text-center text-gray-500">
-            Loading appointments...
+            {t('admin.loadingAppointments')}
           </div>
         ) : appointments.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
             <Calendar className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-            <p className="font-bold">No appointments found</p>
-            <p className="text-sm">Try adjusting your filters</p>
+            <p className="font-bold">{t('admin.noAppointmentsFound')}</p>
+            <p className="text-sm">{t('admin.tryAdjustingFilters')}</p>
           </div>
         ) : (
           <div className="divide-y divide-gray-100">
@@ -187,7 +189,7 @@ export default function AppointmentsTab() {
                   <div className="flex-1">
                     <div className="flex items-start gap-4">
                       <div className="bg-gray-100 p-3 rounded-lg text-center min-w-[100px]">
-                        <p className="text-xs font-bold text-gray-500 uppercase">Time</p>
+                        <p className="text-xs font-bold text-gray-500 uppercase">{t('admin.time')}</p>
                         <p className="font-bold">{formatTime(apt.startTime)}</p>
                         <p className="text-xs text-gray-400">{formatDate(apt.startTime)}</p>
                       </div>
@@ -199,12 +201,12 @@ export default function AppointmentsTab() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
                           <div className="flex items-center gap-2">
                             <User className="w-4 h-4" />
-                            <span className="font-bold">Barber:</span>
+                            <span className="font-bold">{t('admin.barber')}:</span>
                             <span>{apt.barberName}</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <Scissors className="w-4 h-4" />
-                            <span className="font-bold">Service:</span>
+                            <span className="font-bold">{t('admin.service')}:</span>
                             <span>{apt.serviceName}</span>
                           </div>
                           <div className="flex items-center gap-2">
@@ -224,18 +226,18 @@ export default function AppointmentsTab() {
                             <span className="font-bold">{apt.servicePrice} BGN</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="font-bold">Shop:</span>
+                            <span className="font-bold">{t('admin.shop')}:</span>
                             <span>{apt.shopName}</span>
                           </div>
                         </div>
                         {apt.notes && (
                           <div className="mt-2 text-sm text-gray-500 italic">
-                            Note: {apt.notes}
+                            {t('admin.note')}: {apt.notes}
                           </div>
                         )}
                         {apt.cancelReason && (
                           <div className="mt-2 text-sm text-red-600">
-                            Cancelled: {apt.cancelReason}
+                            {t('admin.cancelled')}: {apt.cancelReason}
                           </div>
                         )}
                       </div>
@@ -245,10 +247,10 @@ export default function AppointmentsTab() {
                     {(apt.status === 'CONFIRMED' || apt.status === 'PENDING') && (
                       <>
                         <button className="px-4 py-2 bg-black text-white text-sm font-bold rounded-lg hover:bg-black/90 transition-all">
-                          Mark Done
+                          {t('admin.markDone')}
                         </button>
                         <button className="px-4 py-2 border border-gray-200 text-sm font-bold rounded-lg hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all">
-                          Cancel
+                          {t('common.cancel')}
                         </button>
                       </>
                     )}
