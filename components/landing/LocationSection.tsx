@@ -1,13 +1,15 @@
 'use client';
 
 import { MapPin, Clock, Phone, Navigation } from 'lucide-react';
+import { useI18n } from '@/contexts/I18nContext';
 
 export default function LocationSection() {
+  const { t } = useI18n();
   return (
     <section id="location" className="py-20 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-gray-900">Find Us</h2>
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-gray-900">{t('location.title')}</h2>
           <div className="mt-2 w-20 h-1 bg-black mx-auto" />
         </div>
 
@@ -27,22 +29,22 @@ export default function LocationSection() {
           <div className="flex flex-col space-y-8 order-1 md:order-2">
             <div>
               <h3 className="text-2xl font-bold mb-3 flex items-center gap-2">
-                <MapPin className="w-6 h-6" /> Visit Us
+                <MapPin className="w-6 h-6" /> {t('location.visitUs')}
               </h3>
-              <p className="text-xl text-gray-600">Sofia, ul. Example 12, 1000 Center</p>
+              <p className="text-xl text-gray-600">{t('location.address')}</p>
             </div>
 
             <div>
               <h3 className="text-2xl font-bold mb-3 flex items-center gap-2">
-                <Clock className="w-6 h-6" /> Working Hours
+                <Clock className="w-6 h-6" /> {t('location.workingHours')}
               </h3>
-              <p className="text-xl text-gray-600">Mon–Sat: 09:00 – 19:00</p>
-              <p className="text-lg text-gray-400">Sunday: Closed</p>
+              <p className="text-xl text-gray-600">{t('location.hours')}</p>
+              <p className="text-lg text-gray-400">{t('location.sunday')}</p>
             </div>
 
             <div>
               <h3 className="text-2xl font-bold mb-3 flex items-center gap-2">
-                <Phone className="w-6 h-6" /> Contact
+                <Phone className="w-6 h-6" /> {t('location.contact')}
               </h3>
               <a
                 href="tel:+359888123456"
@@ -60,7 +62,7 @@ export default function LocationSection() {
                 className="inline-flex items-center justify-center rounded-md bg-white border border-gray-200 px-8 py-3 text-lg font-semibold text-black shadow-sm hover:bg-gray-50 transition-all gap-2"
               >
                 <Navigation className="w-5 h-5" />
-                Open in Google Maps
+                {t('location.openInMaps')}
               </a>
             </div>
           </div>

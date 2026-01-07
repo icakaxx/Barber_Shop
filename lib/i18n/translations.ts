@@ -38,6 +38,10 @@ export const translations = {
       subtitle: 'Професионални прически и поддръжка на брада',
       cta: 'Резервирай час',
       location: 'София, България',
+      premiumCuts: 'Премиум прически и класически стил',
+      scheduleNow: 'Резервирай сега',
+      viewServices: 'Виж услуги',
+      rating: '4.9 рейтинг • 500+ доволни клиенти',
     },
     // Services
     services: {
@@ -46,6 +50,9 @@ export const translations = {
       duration: 'Продължителност',
       price: 'Цена',
       min: 'мин',
+      theWorks: 'Пълна услуга',
+      bestValue: 'Най-добра стойност',
+      professionalCut: 'Професионална прическа и стил',
     },
     // Booking
     booking: {
@@ -157,6 +164,53 @@ export const translations = {
       active: 'Активен',
       inactive: 'Неактивен',
     },
+    // Trust Section
+    trust: {
+      title: 'Защо да изберете нас',
+      professionalBarbers: {
+        title: 'Професионални бръснари',
+        description: 'Години опит, внимание към детайла във всяка прическа.',
+      },
+      cleanModern: {
+        title: 'Чисто и модерно',
+        description: 'Релаксираща атмосфера с най-високи стандарти за хигиена.',
+      },
+      onlineBooking: {
+        title: 'Онлайн резервация',
+        description: 'Резервирайте за секунди от телефона си, без чакане на опашка.',
+      },
+      premiumProducts: {
+        title: 'Премиум продукти',
+        description: 'Използваме само най-добрите продукти за косата и брадата ви.',
+      },
+    },
+    // Location
+    location: {
+      title: 'Намерете ни',
+      visitUs: 'Посетете ни',
+      address: 'София, ул. Пример 12, 1000 Център',
+      workingHours: 'Работно време',
+      hours: 'Пон–Съб: 09:00 – 19:00',
+      sunday: 'Неделя: Затворено',
+      contact: 'Контакт',
+      openInMaps: 'Отвори в Google Maps',
+    },
+    // Footer
+    footer: {
+      description: 'Премиум прически и класически стил за модерния мъж. Усетете разликата на професионален бръснарски салон.',
+      quickLinks: 'Бързи връзки',
+      home: 'Начало',
+      services: 'Услуги',
+      location: 'Локация',
+      privacyPolicy: 'Политика за поверителност',
+      followUs: 'Следвайте ни',
+      newsletter: 'Абонирайте се за нашия бюлетин за съвети за стил и ексклузивни оферти.',
+      emailPlaceholder: 'Имейл адрес',
+      join: 'Присъединете се',
+      allRightsReserved: 'Всички права запазени.',
+      barberView: 'Табло на бръснаря',
+      barberManagement: 'Управление на бръснари',
+    },
   },
   en: {
     // Common
@@ -194,6 +248,10 @@ export const translations = {
       subtitle: 'Professional Haircuts & Beard Trims',
       cta: 'Book Appointment',
       location: 'Sofia, Bulgaria',
+      premiumCuts: 'Premium cuts & classic style',
+      scheduleNow: 'Schedule Now',
+      viewServices: 'View Services',
+      rating: '4.9 rating • 500+ happy clients',
     },
     // Services
     services: {
@@ -202,6 +260,9 @@ export const translations = {
       duration: 'Duration',
       price: 'Price',
       min: 'min',
+      theWorks: 'The works',
+      bestValue: 'Best Value',
+      professionalCut: 'Professional cut & style',
     },
     // Booking
     booking: {
@@ -312,6 +373,53 @@ export const translations = {
     status: {
       active: 'Active',
       inactive: 'Inactive',
+    },
+    // Trust Section
+    trust: {
+      title: 'Why Choose Us',
+      professionalBarbers: {
+        title: 'Professional Barbers',
+        description: 'Years of experience, attention to detail in every cut.',
+      },
+      cleanModern: {
+        title: 'Clean & Modern',
+        description: 'Relaxing atmosphere with the highest hygiene standards.',
+      },
+      onlineBooking: {
+        title: 'Online Booking',
+        description: 'Schedule in seconds from your phone, no waiting in line.',
+      },
+      premiumProducts: {
+        title: 'Premium Products',
+        description: 'We use only the best products for your hair and beard.',
+      },
+    },
+    // Location
+    location: {
+      title: 'Find Us',
+      visitUs: 'Visit Us',
+      address: 'Sofia, ul. Example 12, 1000 Center',
+      workingHours: 'Working Hours',
+      hours: 'Mon–Sat: 09:00 – 19:00',
+      sunday: 'Sunday: Closed',
+      contact: 'Contact',
+      openInMaps: 'Open in Google Maps',
+    },
+    // Footer
+    footer: {
+      description: 'Premium cuts and classic style for the modern man. Experience the difference of a professional barber shop.',
+      quickLinks: 'Quick Links',
+      home: 'Home',
+      services: 'Services',
+      location: 'Location',
+      privacyPolicy: 'Privacy Policy',
+      followUs: 'Follow Us',
+      newsletter: 'Subscribe to our newsletter for style tips and exclusive offers.',
+      emailPlaceholder: 'Email address',
+      join: 'Join',
+      allRightsReserved: 'All rights reserved.',
+      barberView: 'Barber View',
+      barberManagement: 'Barber Management',
     },
   },
 };

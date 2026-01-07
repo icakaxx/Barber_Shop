@@ -92,7 +92,7 @@ export default function ServicesSection() {
     <section id="services" className="py-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-gray-900">Our Services</h2>
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-gray-900">{t('services.title')}</h2>
           <div className="mt-2 w-20 h-1 bg-black mx-auto" />
         </div>
 
@@ -111,17 +111,17 @@ export default function ServicesSection() {
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <h3 className="text-xl font-bold mb-1">{service.name}</h3>
-                    <p className="text-sm text-gray-400 mb-4">{service.duration} • The works</p>
+                    <p className="text-sm text-gray-400 mb-4">{service.duration} • {t('services.theWorks')}</p>
                   </div>
                   <span className="bg-white text-black text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">
-                    Best Value
+                    {t('services.bestValue')}
                   </span>
                 </div>
               )}
               {!service.best && (
                 <>
                   <h3 className="text-xl font-bold mb-1">{service.name}</h3>
-                  <p className="text-sm text-gray-500 mb-4">{service.duration} • Professional cut & style</p>
+                  <p className="text-sm text-gray-500 mb-4">{service.duration} • {t('services.professionalCut')}</p>
                 </>
               )}
               <div className="flex justify-between items-end">
