@@ -1259,7 +1259,7 @@
                         </div>
                         <div>
                             <div class="flex items-center gap-2 mb-1">
-                                <h3 class="font-bold text-lg">${app.customer}</h3>
+                                <h3 class="font-bold text-lg">${app.customer}</h2>
                                 ${getStatusBadge(app.status)}
                             </div>
                             <p class="text-sm text-gray-600 flex items-center gap-1"><i data-lucide="scissors" class="w-3 h-3"></i> ${app.service}</p>

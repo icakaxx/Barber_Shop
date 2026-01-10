@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Calendar, Scissors, Phone, Edit2, Check, X } from 'lucide-react';
 import { getStatusBadge } from '@/lib/utils';
 import type { AppointmentStatus } from '@/lib/types';
+import { useI18n } from '@/contexts/I18nContext';
 import EditAppointmentModal from './EditAppointmentModal';
 
 interface Appointment {
@@ -23,6 +24,7 @@ interface TodayAppointmentsProps {
 }
 
 export default function TodayAppointments({ barberId }: TodayAppointmentsProps) {
+  const { t, locale } = useI18n();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
@@ -63,7 +65,16 @@ export default function TodayAppointments({ barberId }: TodayAppointmentsProps) 
 
   const formatTime = (timeString: string) => {
     const date = new Date(timeString);
-    return date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleTimeString(locale === 'bg' ? 'bg-BG' : 'en-GB', { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const formatDate = (date: Date) => {
+    if (locale === 'bg') {
+      const bgMonths = ['януари', 'февруари', 'март', 'април', 'май', 'юни', 'юли', 'август', 'септември', 'октомври', 'ноември', 'декември'];
+      const bgDays = ['неделя', 'понеделник', 'вторник', 'сряда', 'четвъртък', 'петък', 'събота'];
+      return `${bgDays[date.getDay()]}, ${date.getDate()} ${bgMonths[date.getMonth()]}`;
+    }
+    return date.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
   };
 
   const formatTimeRange = (startTime: string, endTime: string) => {
@@ -82,7 +93,8 @@ export default function TodayAppointments({ barberId }: TodayAppointmentsProps) 
 
   const parseServicesFromNotes = (notes: string | undefined): string[] => {
     if (!notes) return [];
-    const match = notes.match(/Additional services:\s*(.+?)(?:\n|$)/i);
+    // Handle both English and Bulgarian
+    const match = notes.match(/(?:Additional services|Допълнителни услуги|Services|Услуги):\s*(.+?)(?:\n|$)/i);
     if (match && match[1]) {
       return match[1].split(',').map(s => s.trim()).filter(s => s.length > 0);
     }
@@ -192,11 +204,11 @@ export default function TodayAppointments({ barberId }: TodayAppointmentsProps) 
         setEditingAppointment(null);
       } else {
         const error = await response.json();
-        alert(`Failed to update appointment: ${error.error}`);
+        alert(`${t('dashboard.barber.failedToUpdate')}: ${error.error}`);
       }
     } catch (error) {
       console.error('Error updating appointment:', error);
-      alert('Failed to update appointment');
+      alert(t('dashboard.barber.failedToUpdate'));
     }
   };
 
@@ -226,7 +238,7 @@ export default function TodayAppointments({ barberId }: TodayAppointmentsProps) 
   };
 
   const handleCancel = async (appointmentId: string) => {
-    if (!confirm('Are you sure you want to cancel this appointment?')) return;
+    if (!confirm(t('dashboard.barber.areYouSureCancel'))) return;
 
     try {
       const response = await fetch(`/api/appointments/${appointmentId}`, {
@@ -234,7 +246,7 @@ export default function TodayAppointments({ barberId }: TodayAppointmentsProps) 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           status: 'CANCELLED',
-          cancelReason: 'Cancelled by barber'
+          cancelReason: locale === 'bg' ? 'Отменено от бръснар' : 'Cancelled by barber'
         })
       });
 
@@ -249,9 +261,12 @@ export default function TodayAppointments({ barberId }: TodayAppointmentsProps) 
           const data = await reloadResponse.json();
           setAppointments(data);
         }
+      } else {
+        alert(t('dashboard.barber.failedToCancel'));
       }
     } catch (error) {
       console.error('Error cancelling appointment:', error);
+      alert(t('dashboard.barber.failedToCancel'));
     }
   };
 
@@ -259,13 +274,13 @@ export default function TodayAppointments({ barberId }: TodayAppointmentsProps) 
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold">Today&apos;s Appointments</h2>
+          <h2 className="text-2xl font-bold">{t('appointments.todayAppointments')}</h2>
           <div className="flex items-center gap-2 text-sm text-gray-500">
             <Calendar className="w-4 h-4" />
-            <span>Today, {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
+            <span>{t('booking.today')}, {new Date().toLocaleDateString(locale === 'bg' ? 'bg-BG' : 'en-GB', { day: 'numeric', month: 'short' })}</span>
           </div>
         </div>
-        <div className="text-center py-12 text-gray-400">Loading appointments...</div>
+        <div className="text-center py-12 text-gray-400">{t('dashboard.barber.loadingAppointments')}</div>
       </div>
     );
   }
@@ -277,7 +292,7 @@ export default function TodayAppointments({ barberId }: TodayAppointmentsProps) 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap justify-between items-center gap-4">
-        <h2 className="text-2xl font-bold">Appointments Schedule</h2>
+        <h2 className="text-2xl font-bold">{t('dashboard.barber.appointmentsSchedule')}</h2>
         <div className="flex items-center gap-3">
           <input
             type="date"
@@ -290,11 +305,11 @@ export default function TodayAppointments({ barberId }: TodayAppointmentsProps) 
             onChange={(e) => setStatusFilter(e.target.value)}
             className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-black focus:outline-none"
           >
-            <option value="all">All Status</option>
-            <option value="PENDING">Pending</option>
-            <option value="CONFIRMED">Confirmed</option>
-            <option value="DONE">Done</option>
-            <option value="CANCELLED">Cancelled</option>
+            <option value="all">{t('common.all')} {t('appointments.status')}</option>
+            <option value="PENDING">{t('appointments.pending')}</option>
+            <option value="CONFIRMED">{t('appointments.confirmed')}</option>
+            <option value="DONE">{t('appointments.done')}</option>
+            <option value="CANCELLED">{t('appointments.cancelled')}</option>
           </select>
         </div>
       </div>
@@ -302,7 +317,7 @@ export default function TodayAppointments({ barberId }: TodayAppointmentsProps) 
       {/* Free Time Slots Section */}
       {freeSlots.length > 0 && (
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-          <h3 className="font-bold text-sm text-blue-900 mb-3 uppercase">Available Time Slots</h3>
+          <h3 className="font-bold text-sm text-blue-900 mb-3 uppercase">{t('dashboard.barber.availableTimeSlots')}</h3>
           <div className="flex flex-wrap gap-2">
             {freeSlots.map((slot, index) => {
               const start = new Date(slot.start);
@@ -327,10 +342,10 @@ export default function TodayAppointments({ barberId }: TodayAppointmentsProps) 
           <div className="bg-white p-12 rounded-xl border border-dashed border-gray-300 text-center">
             <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-4" />
             <p className="text-gray-400 font-medium">
-              No appointments for {isToday ? 'today' : displayDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}.
+              {isToday ? t('dashboard.barber.noAppointmentsForToday') : `${t('dashboard.barber.noAppointmentsForDate')} ${formatDate(displayDate)}`}.
             </p>
             {freeSlots.length === 0 && (
-              <p className="text-sm text-gray-400 mt-2">No free time slots available.</p>
+              <p className="text-sm text-gray-400 mt-2">{t('dashboard.barber.noFreeTimeSlotsAvailable')}</p>
             )}
           </div>
         ) : (
@@ -341,9 +356,9 @@ export default function TodayAppointments({ barberId }: TodayAppointmentsProps) 
             >
               <div className="flex items-start gap-4">
                 <div className="bg-gray-100 p-3 rounded-lg text-center min-w-[120px]">
-                  <p className="text-xs font-bold text-gray-500 uppercase">Time</p>
+                  <p className="text-xs font-bold text-gray-500 uppercase">{t('dashboard.barber.time')}</p>
                   <p className="font-bold text-sm">{formatTimeRange(app.startTime, app.endTime)}</p>
-                  <p className="text-xs text-gray-500 mt-1">{getDuration(app.startTime, app.endTime)} min</p>
+                  <p className="text-xs text-gray-500 mt-1">{getDuration(app.startTime, app.endTime)} {t('services.min')}</p>
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
@@ -371,7 +386,7 @@ export default function TodayAppointments({ barberId }: TodayAppointmentsProps) 
                   onClick={() => handleEdit(app)}
                   className="flex-1 md:flex-none px-4 py-2 border border-gray-200 text-sm font-bold rounded-lg hover:bg-gray-50 transition-all flex items-center gap-2"
                 >
-                  <Edit2 className="w-4 h-4" /> Edit
+                  <Edit2 className="w-4 h-4" /> {t('dashboard.barber.edit')}
                 </button>
                 {(app.status === 'CONFIRMED' || app.status === 'PENDING') && (
                   <>
@@ -379,13 +394,13 @@ export default function TodayAppointments({ barberId }: TodayAppointmentsProps) 
                       onClick={() => handleMarkDone(app.id)}
                       className="flex-1 md:flex-none px-4 py-2 bg-black text-white text-sm font-bold rounded-lg hover:bg-black/90 transition-all flex items-center gap-2"
                     >
-                      <Check className="w-4 h-4" /> Done
+                      <Check className="w-4 h-4" /> {t('dashboard.barber.done')}
                     </button>
                     <button
                       onClick={() => handleCancel(app.id)}
                       className="flex-1 md:flex-none px-4 py-2 border border-gray-200 text-sm font-bold rounded-lg hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all flex items-center gap-2"
                     >
-                      <X className="w-4 h-4" /> Cancel
+                      <X className="w-4 h-4" /> {t('dashboard.barber.cancel')}
                     </button>
                   </>
                 )}

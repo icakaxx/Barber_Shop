@@ -10,6 +10,7 @@ interface I18nContextType {
   setCurrency: (currency: Currency) => void;
   t: (key: string) => string;
   formatPrice: (amountBgn: number) => string;
+  translateServiceName: (serviceName: string) => string;
 }
 
 const I18nContext = createContext<I18nContextType | undefined>(undefined);
@@ -66,6 +67,30 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     };
   }, [currency, locale]);
 
+  const translateServiceName = useMemo(() => {
+    return (serviceName: string): string => {
+      // Get serviceNames mapping directly from translations
+      const serviceNames = translations[locale]?.serviceNames || {};
+      if (typeof serviceNames === 'object') {
+        // Check for exact match
+        if (serviceName in serviceNames) {
+          return serviceNames[serviceName as keyof typeof serviceNames] as string;
+        }
+        
+        // Try case-insensitive match
+        for (const [key, value] of Object.entries(serviceNames)) {
+          if (serviceName.toLowerCase() === key.toLowerCase()) {
+            return value as string;
+          }
+        }
+      }
+      
+      // If no match found, return the original name
+      // This allows new services to display their original name until translation is added
+      return serviceName;
+    };
+  }, [locale]);
+
   const value = useMemo(() => ({
     locale,
     currency,
@@ -73,7 +98,8 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     setCurrency,
     t,
     formatPrice,
-  }), [locale, currency, formatPrice]);
+    translateServiceName,
+  }), [locale, currency, formatPrice, translateServiceName]);
 
   return (
     <I18nContext.Provider value={value}>

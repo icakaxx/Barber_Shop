@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { X, Check, Calendar } from 'lucide-react';
 import type { Barber } from '@/lib/types';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface Service {
   id: string;
@@ -35,6 +36,7 @@ export default function CreateAppointmentModal({
   barbers,
   selectedDate: initialSelectedDate
 }: CreateAppointmentModalProps) {
+  const { t, translateServiceName, locale } = useI18n();
   const [services, setServices] = useState<Service[]>([]);
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -55,7 +57,12 @@ export default function CreateAppointmentModal({
         const response = await fetch(`/api/services${shopId ? `?shopId=${shopId}` : ''}`);
         if (response.ok) {
           const data = await response.json();
-          setServices(data);
+          // Translate service names
+          const translatedServices = data.map((svc: any) => ({
+            ...svc,
+            name: translateServiceName(svc.name)
+          }));
+          setServices(translatedServices);
         }
       } catch (error) {
         console.error('Error loading services:', error);
@@ -69,7 +76,7 @@ export default function CreateAppointmentModal({
       setSelectedDate(initialSelectedDate || new Date().toISOString().split('T')[0]);
       setFormData(prev => ({ ...prev, startTime: '', endTime: '' }));
     }
-  }, [isOpen, shopId, initialSelectedDate]);
+  }, [isOpen, shopId, initialSelectedDate, translateServiceName]);
 
   useEffect(() => {
     if (barbers.length > 0 && !formData.barberId) {
@@ -176,12 +183,12 @@ export default function CreateAppointmentModal({
 
   const handleTimeSlotClick = (timeStr: string) => {
     if (selectedServiceIds.length === 0) {
-      alert('Please select at least one service first');
+      alert(t('dashboard.barber.pleaseSelectService'));
       return;
     }
 
     if (!canFitServices(timeStr)) {
-      alert('Selected services cannot fit in this time slot');
+      alert(t('dashboard.barber.servicesCannotFit'));
       return;
     }
 
@@ -256,7 +263,7 @@ export default function CreateAppointmentModal({
     e.preventDefault();
     
     if (!shopId || !formData.barberId || selectedServiceIds.length === 0 || !formData.startTime) {
-      alert('Please select at least one service, fill in all required fields, and select a start time');
+      alert(t('dashboard.barber.pleaseSelectServiceAndFields'));
       return;
     }
 
@@ -269,8 +276,9 @@ export default function CreateAppointmentModal({
 
     // Build notes with all selected services
     const serviceNames = selectedServices.map(s => s.name).join(', ');
+    const servicesLabel = locale === 'bg' ? 'Услуги' : 'Services';
     const servicesNote = selectedServices.length > 1 
-      ? `Services: ${serviceNames}${formData.notes ? `\n\n${formData.notes}` : ''}`
+      ? `${servicesLabel}: ${serviceNames}${formData.notes ? `\n\n${formData.notes}` : ''}`
       : formData.notes || null;
 
     onSave({
@@ -298,7 +306,7 @@ export default function CreateAppointmentModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
         <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between sticky top-0 bg-white">
-          <h2 className="text-xl font-bold">Create New Appointment</h2>
+          <h2 className="text-xl font-bold">{t('dashboard.barber.createNewAppointment')}</h2>
           <button
             onClick={handleClose}
             className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -310,7 +318,7 @@ export default function CreateAppointmentModal({
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Barber *
+              {t('dashboard.barber.barberLabel')} *
             </label>
             <select
               value={formData.barberId}
@@ -330,7 +338,7 @@ export default function CreateAppointmentModal({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Date *
+              {t('dashboard.barber.dateLabel')} *
             </label>
             <input
               type="date"
@@ -346,11 +354,11 @@ export default function CreateAppointmentModal({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Services * (Select multiple)
+              {t('dashboard.barber.servicesLabel')} * ({t('dashboard.barber.selectMultiple')})
             </label>
             <div className="border border-gray-200 rounded-lg p-3 max-h-48 overflow-y-auto space-y-2">
               {services.length === 0 ? (
-                <p className="text-sm text-gray-400">No services available</p>
+                <p className="text-sm text-gray-400">{t('dashboard.barber.noServicesAvailable')}</p>
               ) : (
                 services.map((service) => {
                   const isSelected = selectedServiceIds.includes(service.id);
@@ -389,17 +397,17 @@ export default function CreateAppointmentModal({
             {selectedServiceIds.length > 0 && (
               <div className="mt-2 p-2 bg-gray-50 rounded-lg">
                 <div className="text-xs text-gray-600">
-                  <span className="font-medium">Selected: </span>
+                  <span className="font-medium">{t('dashboard.barber.selected')}: </span>
                   {selectedServices.map(s => s.name).join(', ')}
                 </div>
                 <div className="text-xs text-gray-600 mt-1">
-                  <span className="font-medium">Total Duration: </span>
-                  {totalDuration} min
+                  <span className="font-medium">{t('dashboard.barber.totalDuration')}: </span>
+                  {totalDuration} {t('services.min')}
                   {totalPrice > 0 && (
                     <>
                       <span className="mx-2">•</span>
-                      <span className="font-medium">Total Price: </span>
-                      {totalPrice} лв
+                      <span className="font-medium">{t('dashboard.barber.totalPrice')}: </span>
+                      {totalPrice} {locale === 'bg' ? 'лв' : 'лв'}
                     </>
                   )}
                 </div>
@@ -411,7 +419,7 @@ export default function CreateAppointmentModal({
           {selectedServiceIds.length > 0 && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Select Start Time * (Click on an available slot)
+                {t('dashboard.barber.selectStartTime')} * {t('dashboard.barber.clickAvailableSlot')}
               </label>
               <div className="border border-gray-200 rounded-lg p-4">
                 <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 max-h-64 overflow-y-auto">
@@ -437,7 +445,7 @@ export default function CreateAppointmentModal({
                             : 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed opacity-50'
                           }
                         `}
-                        title={isTaken ? 'Time slot is taken' : !canFit ? 'Services cannot fit in this slot' : 'Click to select'}
+                        title={isTaken ? t('dashboard.barber.timeSlotTaken') : !canFit ? t('dashboard.barber.servicesCannotFit') : t('dashboard.barber.clickToSelect')}
                       >
                         {timeStr}
                       </button>
@@ -446,7 +454,7 @@ export default function CreateAppointmentModal({
                 </div>
                 {formData.startTime && (
                   <div className="mt-3 p-2 bg-gray-50 rounded-lg text-xs text-gray-600">
-                    <span className="font-medium">Selected: </span>
+                    <span className="font-medium">{t('dashboard.barber.selected')}: </span>
                     {(() => {
                       // Parse datetime-local strings as local time and format
                       const start = new Date(formData.startTime);
@@ -463,11 +471,11 @@ export default function CreateAppointmentModal({
                 <div className="mt-3 flex items-center gap-4 text-xs">
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 rounded border-2 border-green-300 bg-green-50"></div>
-                    <span className="text-gray-600">Available</span>
+                    <span className="text-gray-600">{t('dashboard.barber.available')}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 rounded border-2 border-red-300 bg-red-50"></div>
-                    <span className="text-gray-600">Taken</span>
+                    <span className="text-gray-600">{t('dashboard.barber.taken')}</span>
                   </div>
                 </div>
               </div>
@@ -476,7 +484,7 @@ export default function CreateAppointmentModal({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Customer Name *
+              {t('dashboard.barber.customerName')} *
             </label>
             <input
               type="text"
@@ -489,7 +497,7 @@ export default function CreateAppointmentModal({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Phone Number *
+              {t('dashboard.barber.phoneNumber')} *
             </label>
             <input
               type="tel"
@@ -502,7 +510,7 @@ export default function CreateAppointmentModal({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email (optional)
+              {t('dashboard.barber.emailOptional')}
             </label>
             <input
               type="email"
@@ -514,7 +522,7 @@ export default function CreateAppointmentModal({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Notes (optional)
+              {t('dashboard.barber.notesOptional')}
             </label>
             <textarea
               value={formData.notes}
@@ -530,13 +538,13 @@ export default function CreateAppointmentModal({
               onClick={handleClose}
               className="flex-1 py-3 border border-gray-200 rounded-lg font-bold hover:bg-gray-50 transition-colors"
             >
-              Cancel
+              {t('dashboard.barber.cancelButton')}
             </button>
             <button
               type="submit"
               className="flex-1 py-3 bg-black text-white rounded-lg font-bold hover:bg-black/90 transition-colors"
             >
-              Create Appointment
+              {t('dashboard.barber.createAppointment')}
             </button>
           </div>
         </form>

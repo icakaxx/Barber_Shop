@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Calendar, ChevronLeft, ChevronRight, Users } from 'lucide-react';
 import type { Barber } from '@/lib/types';
+import { useI18n } from '@/contexts/I18nContext';
 import CreateAppointmentModal from './CreateAppointmentModal';
 import AppointmentDetailsModal from './AppointmentDetailsModal';
 
@@ -28,6 +29,7 @@ interface ScheduleCalendarProps {
 }
 
 export default function ScheduleCalendar({ barberId, shopId }: ScheduleCalendarProps) {
+  const { t, locale } = useI18n();
   // Store selected date as YYYY-MM-DD in local time (avoid timezone shift issues)
   const getTodayYMD = () => {
     const today = new Date();
@@ -273,12 +275,25 @@ export default function ScheduleCalendar({ barberId, shopId }: ScheduleCalendarP
   };
 
   const formatDate = (date: Date) => {
-    return date.toLocaleDateString('bg-BG', { 
+    if (locale === 'bg') {
+      const bgMonths = ['януари', 'февруари', 'март', 'април', 'май', 'юни', 'юли', 'август', 'септември', 'октомври', 'ноември', 'декември'];
+      const bgDays = ['неделя', 'понеделник', 'вторник', 'сряда', 'четвъртък', 'петък', 'събота'];
+      return `${bgDays[date.getDay()]}, ${date.getDate()} ${bgMonths[date.getMonth()]} ${date.getFullYear()}`;
+    }
+    return date.toLocaleDateString('en-GB', { 
       weekday: 'long', 
       day: 'numeric', 
       month: 'long',
       year: 'numeric'
     });
+  };
+
+  const formatMonthYear = (date: Date) => {
+    if (locale === 'bg') {
+      const bgMonths = ['Януари', 'Февруари', 'Март', 'Април', 'Май', 'Юни', 'Юли', 'Август', 'Септември', 'Октомври', 'Ноември', 'Декември'];
+      return `${bgMonths[date.getMonth()]} ${date.getFullYear()}`;
+    }
+    return date.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
   };
 
   const navigateMonth = (direction: 'prev' | 'next') => {
@@ -297,7 +312,7 @@ export default function ScheduleCalendar({ barberId, shopId }: ScheduleCalendarP
     return (
       <div className="text-center py-12">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
-        <p className="text-gray-500">Loading schedule...</p>
+        <p className="text-gray-500">{t('dashboard.barber.loadingSchedule')}</p>
       </div>
     );
   }
@@ -307,13 +322,13 @@ export default function ScheduleCalendar({ barberId, shopId }: ScheduleCalendarP
       {/* Calendar Header */}
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-3">
-          <h2 className="text-2xl font-bold">Schedule Calendar</h2>
+          <h2 className="text-2xl font-bold">{t('dashboard.barber.scheduleCalendar')}</h2>
           <div className="flex items-center gap-2 text-sm text-gray-500">
             <Users className="w-4 h-4" />
             <span>
               {selectedBarberId === 'all'
-                ? 'Всички бръснари'
-                : barbers.find(b => b.id === selectedBarberId)?.displayName || 'Моят график'}
+                ? t('dashboard.barber.allBarbers')
+                : barbers.find(b => b.id === selectedBarberId)?.displayName || t('dashboard.barber.mySchedule')}
             </span>
           </div>
         </div>
@@ -324,7 +339,7 @@ export default function ScheduleCalendar({ barberId, shopId }: ScheduleCalendarP
               onChange={e => setSelectedBarberId(e.target.value)}
               className="bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:ring-1 focus:ring-black outline-none"
             >
-              <option value="all">Всички бръснари</option>
+              <option value="all">{t('dashboard.barber.allBarbers')}</option>
               {barbers.map(b => (
                 <option key={b.id} value={b.id}>
                   {b.displayName}
@@ -339,7 +354,7 @@ export default function ScheduleCalendar({ barberId, shopId }: ScheduleCalendarP
             <ChevronLeft className="w-5 h-5" />
           </button>
           <h3 className="text-lg font-bold min-w-[200px] text-center">
-            {currentMonth.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}
+            {formatMonthYear(currentMonth)}
           </h3>
           <button
             onClick={() => navigateMonth('next')}
@@ -353,9 +368,9 @@ export default function ScheduleCalendar({ barberId, shopId }: ScheduleCalendarP
       {/* Calendar Grid */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
         <div className="grid grid-cols-7 gap-1 mb-4">
-          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+          {['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'].map(day => (
             <div key={day} className="text-center text-sm font-bold text-gray-500 py-2">
-              {day}
+              {t(`dashboard.barber.dayNames.${day}`)}
             </div>
           ))}
         </div>
@@ -437,8 +452,8 @@ export default function ScheduleCalendar({ barberId, shopId }: ScheduleCalendarP
                   }
                 `}
                 title={appointment 
-                  ? `Зает: ${new Date(appointment.startTime).toLocaleTimeString('bg-BG', { hour: '2-digit', minute: '2-digit' })} - ${new Date(appointment.endTime).toLocaleTimeString('bg-BG', { hour: '2-digit', minute: '2-digit' })}` 
-                  : 'Свободен'}
+                  ? `${t('dashboard.barber.taken')}: ${new Date(appointment.startTime).toLocaleTimeString(locale === 'bg' ? 'bg-BG' : 'en-GB', { hour: '2-digit', minute: '2-digit' })} - ${new Date(appointment.endTime).toLocaleTimeString(locale === 'bg' ? 'bg-BG' : 'en-GB', { hour: '2-digit', minute: '2-digit' })}` 
+                  : t('dashboard.barber.available')}
               >
                 {timeStr}
               </button>
@@ -450,11 +465,11 @@ export default function ScheduleCalendar({ barberId, shopId }: ScheduleCalendarP
         <div className="mt-6 flex items-center gap-6 text-sm">
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded border-2 border-green-300 bg-green-50"></div>
-            <span className="text-gray-600">Available</span>
+            <span className="text-gray-600">{t('dashboard.barber.available')}</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded border-2 border-red-300 bg-red-50"></div>
-            <span className="text-gray-600">Taken</span>
+            <span className="text-gray-600">{t('dashboard.barber.taken')}</span>
           </div>
         </div>
       </div>
