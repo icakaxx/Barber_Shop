@@ -1,17 +1,21 @@
 'use client';
 
 import Link from 'next/link';
-import { Instagram, Facebook, Twitter, Scissors, ShieldCheck, Crown } from 'lucide-react';
+import { Instagram, Facebook, Twitter, Scissors, Crown } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
+import { useShopBranding } from '@/contexts/ShopBrandingContext';
 
 export default function Footer() {
   const { t } = useI18n();
+  const { shop } = useShopBranding();
+  const shopName = shop?.name || t('hero.title');
+
   return (
     <footer className="bg-black text-white py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
           <div>
-            <h3 className="text-3xl font-bold mb-4">{t('hero.title')}</h3>
+            <h3 className="text-3xl font-bold mb-4">{shopName}</h3>
             <p className="text-gray-400 max-w-xs">
               {t('footer.description')}
             </p>
@@ -55,27 +59,11 @@ export default function Footer() {
                 <Twitter className="w-5 h-5" />
               </a>
             </div>
-            <div className="mt-8">
-              <p className="text-sm text-gray-500">{t('footer.newsletter')}</p>
-              <form className="mt-4 flex gap-2">
-                <input
-                  type="email"
-                  placeholder={t('footer.emailPlaceholder')}
-                  className="bg-white/10 border border-white/20 rounded px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-white w-full"
-                />
-                <button
-                  type="submit"
-                  className="bg-white text-black px-4 py-2 rounded text-sm font-bold hover:bg-gray-200 transition-colors"
-                >
-                  {t('footer.join')}
-                </button>
-              </form>
-            </div>
           </div>
         </div>
 
         <div className="mt-16 pt-8 border-t border-white/10 text-center text-sm text-gray-500 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p>&copy; {new Date().getFullYear()} {t('hero.title')}. {t('footer.allRightsReserved')}</p>
+          <p>&copy; {new Date().getFullYear()} {shopName}. {t('footer.allRightsReserved')}</p>
           <div className="flex gap-4">
             <Link
               href="/dashboard/barber"

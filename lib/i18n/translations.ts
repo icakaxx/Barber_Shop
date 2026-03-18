@@ -20,6 +20,26 @@ export const translations = {
       filter: 'Филтър',
       all: 'Всички',
     },
+    // Auth
+    auth: {
+      login: 'Вход',
+      logout: 'Изход',
+      email: 'Имейл',
+      password: 'Парола',
+      loginTitle: 'Вход за собственик',
+      loginSubtitle: 'Въведете имейл и парола за достъп до таблото',
+      loginButton: 'Вход',
+      loginError: 'Грешен имейл или парола',
+      emailNotConfirmed: 'Имейлът не е потвърден. В Supabase Dashboard → Users проверете дали потребителят е потвърден (Email confirmed).',
+      loginSuccess: 'Успешен вход',
+      accessDenied: 'Нямате достъп до тази страница',
+      accessDeniedHelp: 'Добавете потребителя в таблица profiles с role = BARBER_OWNER, или излезте и влезте с друг акаунт.',
+      signOut: 'Изход',
+      backToHome: '← Обратно към началната страница',
+      loginPageTitle: 'Табло на собственика',
+      loginPageSubtitle: 'Влезте с вашия акаунт',
+      onlyOwners: 'Само собственици на магазини имат достъп до тази зона.',
+    },
     // Navigation
     nav: {
       home: 'Начало',
@@ -42,6 +62,9 @@ export const translations = {
       scheduleNow: 'Резервирай сега',
       viewServices: 'Виж услуги',
       rating: '4.9 рейтинг • 500+ доволни клиенти',
+      quickAppointment: 'Бърза резервация',
+      seeFullDescription: 'Виж пълно описание',
+      showLess: 'Свий',
     },
     // Services
     services: {
@@ -220,6 +243,7 @@ export const translations = {
         appointments: 'Резервации',
         barbers: 'Бръснари',
         services: 'Услуги',
+        settings: 'Настройки',
         shops: 'Магазини',
         title: 'Табло на собственика',
         subtitle: 'Управление на всички резервации по магазините',
@@ -232,6 +256,42 @@ export const translations = {
         appointmentsToday: 'Резервации днес',
         selectShop: 'Избери магазин',
         selectShopMessage: 'Моля, изберете конкретен магазин от падащото меню по-горе, за да управлявате неговите услуги.',
+        loadingShop: 'Зареждане на магазина...',
+        shopSettings: 'Настройки на магазина',
+        shopSettingsDescription: 'Промяна на името, логото и hero изображението на вашия сайт',
+        shopName: 'Име на магазина',
+        shopNameHelp: 'Показва се в header, hero секция и footer',
+        logoUrl: 'Лого',
+        logoUrlHelp: 'Лого в header (качете или поставете URL)',
+        heroImageUrl: 'Hero изображение',
+        heroImageUrlHelp: 'Фоново изображение за hero секцията (или URL като резервен вариант)',
+        heroDescription: 'Описание в hero секцията',
+        heroDescriptionHelp: 'Текст под заглавието (напр. Премиум прически и класически стил)',
+        phone: 'Телефон',
+        phoneHelp: 'Показва се в секцията Контакт',
+        address: 'Адрес',
+        addressHelp: 'Пълен адрес на магазина',
+        city: 'Град',
+        cityHelp: 'Град на магазина',
+        workingHours: 'Работно време',
+        workingHoursHelp: 'Настройте часовете за всеки ден. Празно = затворено.',
+        lunchBreak: 'Обедна почивка',
+        lunchBreakHelp: 'Период без възможност за резервации (напр. 13:00 – 14:00)',
+        lunchStart: 'Начало',
+        lunchEnd: 'Край',
+        dayMon: 'Пон',
+        dayTue: 'Вто',
+        dayWed: 'Сря',
+        dayThu: 'Чет',
+        dayFri: 'Пет',
+        daySat: 'Съб',
+        daySun: 'Нед',
+        closed: 'Затворено',
+        previewUnavailable: 'Преглед недостъпен',
+        previewFailedHint: 'URL е запазен, но прегледът не се зарежда. Уверете се, че bucket е публичен (миграция 007). Изображението може да се показва на сайта.',
+        settingsSaved: 'Настройките са запазени успешно',
+        settingsSaveFailed: 'Неуспешно запазване на настройките',
+        barberProfile: 'Профил',
       },
       admin: {
         title: 'Super Admin Panel',
@@ -312,6 +372,14 @@ export const translations = {
       sunday: 'Неделя: Затворено',
       contact: 'Контакт',
       openInMaps: 'Отвори в Google Maps',
+      dayMon: 'Пон',
+      dayTue: 'Вто',
+      dayWed: 'Сря',
+      dayThu: 'Чет',
+      dayFri: 'Пет',
+      daySat: 'Съб',
+      daySun: 'Нед',
+      closed: 'Затворено',
     },
     // Footer
     footer: {
@@ -348,6 +416,26 @@ export const translations = {
       filter: 'Filter',
       all: 'All',
     },
+    // Auth
+    auth: {
+      login: 'Log in',
+      logout: 'Log out',
+      email: 'Email',
+      password: 'Password',
+      loginTitle: 'Owner Login',
+      loginSubtitle: 'Enter your email and password to access the dashboard',
+      loginButton: 'Log in',
+      loginError: 'Invalid email or password',
+      emailNotConfirmed: 'Email not confirmed. In Supabase Dashboard → Users, ensure the user has "Email confirmed" checked.',
+      loginSuccess: 'Login successful',
+      accessDenied: 'You do not have access to this page',
+      accessDeniedHelp: 'Add the user to the profiles table with role = BARBER_OWNER, or sign out and use a different account.',
+      signOut: 'Sign out',
+      backToHome: '← Back to home',
+      loginPageTitle: 'Owner Dashboard',
+      loginPageSubtitle: 'Sign in with your account',
+      onlyOwners: 'Only shop owners can access this area.',
+    },
     // Navigation
     nav: {
       home: 'Home',
@@ -370,6 +458,9 @@ export const translations = {
       scheduleNow: 'Schedule Now',
       viewServices: 'View Services',
       rating: '4.9 rating • 500+ happy clients',
+      quickAppointment: 'Quick appointment',
+      seeFullDescription: 'See full description',
+      showLess: 'Show less',
     },
     // Services
     services: {
@@ -548,6 +639,7 @@ export const translations = {
         appointments: 'Appointments',
         barbers: 'Barbers',
         services: 'Services',
+        settings: 'Settings',
         shops: 'Shops',
         title: 'Owner Dashboard',
         subtitle: 'Manage all appointments across your shops',
@@ -560,6 +652,42 @@ export const translations = {
         appointmentsToday: 'Appointments Today',
         selectShop: 'Select a Shop',
         selectShopMessage: 'Please select a specific shop from the dropdown above to manage its services.',
+        loadingShop: 'Loading shop...',
+        shopSettings: 'Shop Settings',
+        shopSettingsDescription: 'Customize your shop name, logo, and hero image for the website',
+        shopName: 'Shop Name',
+        shopNameHelp: 'Displayed in header, hero section, and footer',
+        logoUrl: 'Logo',
+        logoUrlHelp: 'Logo in header (upload or paste URL)',
+        heroImageUrl: 'Hero Image',
+        heroImageUrlHelp: 'Background image for hero section (or paste URL as fallback)',
+        heroDescription: 'Hero section description',
+        heroDescriptionHelp: 'Text below the title (e.g. Premium cuts & classic style)',
+        phone: 'Phone',
+        phoneHelp: 'Displayed in the Contact section',
+        address: 'Address',
+        addressHelp: 'Full shop address',
+        city: 'City',
+        cityHelp: 'City where the shop is located',
+        workingHours: 'Working Hours',
+        workingHoursHelp: 'Set hours for each day. Empty = closed.',
+        lunchBreak: 'Lunch Break',
+        lunchBreakHelp: 'Period when no appointments can be booked (e.g. 13:00 – 14:00)',
+        lunchStart: 'Start',
+        lunchEnd: 'End',
+        dayMon: 'Mon',
+        dayTue: 'Tue',
+        dayWed: 'Wed',
+        dayThu: 'Thu',
+        dayFri: 'Fri',
+        daySat: 'Sat',
+        daySun: 'Sun',
+        closed: 'Closed',
+        previewUnavailable: 'Preview unavailable',
+        previewFailedHint: 'URL is saved but preview failed. Ensure the storage bucket is public (run migration 007). The image may still display on the site.',
+        settingsSaved: 'Settings saved successfully',
+        settingsSaveFailed: 'Failed to save settings',
+        barberProfile: 'Profile',
       },
       admin: {
         title: 'Super Admin Panel',
@@ -640,6 +768,14 @@ export const translations = {
       sunday: 'Sunday: Closed',
       contact: 'Contact',
       openInMaps: 'Open in Google Maps',
+      dayMon: 'Mon',
+      dayTue: 'Tue',
+      dayWed: 'Wed',
+      dayThu: 'Thu',
+      dayFri: 'Fri',
+      daySat: 'Sat',
+      daySun: 'Sun',
+      closed: 'Closed',
     },
     // Footer
     footer: {
@@ -660,8 +796,8 @@ export const translations = {
   },
 };
 
-// Currency conversion (1 EUR = 1.96 BGN, approximate rate)
-const EUR_TO_BGN_RATE = 1.96;
+// Official BGN/EUR rate (Bulgarian National Bank fixed rate: 1 EUR = 1.95583 BGN)
+const EUR_TO_BGN_RATE = 1.95583;
 
 export function convertCurrency(amount: number, from: Currency, to: Currency): number {
   if (from === to) return amount;
@@ -682,14 +818,14 @@ export function formatPrice(amount: number, currency: Currency, locale: Locale =
   return `€${formattedAmount}`;
 }
 
+/** Always displays in EUR first, then leva in brackets: 5,11 € (10 лв) */
 export function formatPriceWithConversion(
   amountBgn: number,
-  currency: Currency,
+  _currency: Currency,
   locale: Locale = 'bg'
 ): string {
-  if (currency === 'BGN') {
-    return formatPrice(amountBgn, 'BGN', locale);
-  }
   const amountEur = convertCurrency(amountBgn, 'BGN', 'EUR');
-  return formatPrice(amountEur, 'EUR', locale);
+  const formattedEur = locale === 'bg' ? amountEur.toFixed(2).replace('.', ',') : amountEur.toFixed(2);
+  const formattedBgn = locale === 'bg' ? amountBgn.toFixed(2).replace('.', ',') : amountBgn.toFixed(2);
+  return `${formattedEur} € (${formattedBgn} лв)`;
 }

@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Users, Calendar, Scissors, Phone, Edit2, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
+import { Users, Calendar, Scissors, Phone, Edit2, Trash2, ArrowUp, ArrowDown, User } from 'lucide-react';
 import { getStatusBadge } from '@/lib/utils';
+import BarberFormModal from '@/components/admin/BarberFormModal_new';
+import { useI18n } from '@/contexts/I18nContext';
 import type { AppointmentStatus } from '@/lib/types';
 import type { Barber } from '@/lib/types';
 
@@ -36,6 +38,7 @@ interface BarbersTabProps {
   onDeleteAppointment: (appointmentId: string) => void;
   deletingId: string | null;
   onReloadAppointments: () => void;
+  onBarberUpdate: (barberId: string, data: { displayName: string; bio?: string; photoUrl?: string; isActive?: boolean }) => Promise<void>;
 }
 
 export default function BarbersTab({
@@ -51,9 +54,13 @@ export default function BarbersTab({
   onEditAppointment,
   onDeleteAppointment,
   deletingId,
-  onReloadAppointments
+  onReloadAppointments,
+  onBarberUpdate
 }: BarbersTabProps) {
+  const { t } = useI18n();
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [editingBarber, setEditingBarber] = useState<Barber | null>(null);
+  const [showBarberFormModal, setShowBarberFormModal] = useState(false);
 
   // Sort barbers
   const sortedBarbers = [...barbers].sort((a, b) => {
@@ -109,6 +116,22 @@ export default function BarbersTab({
   };
 
   const selectedBarber = barbers.find(b => b.id === selectedBarberId);
+
+  const handleSaveBarber = async (barberData: {
+    displayName: string;
+    bio?: string;
+    photoUrl?: string;
+    isActive?: boolean;
+  }) => {
+    if (!editingBarber) return;
+    try {
+      await onBarberUpdate(editingBarber.id, barberData);
+      setShowBarberFormModal(false);
+      setEditingBarber(null);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : t('dashboard.owner.settingsSaveFailed'));
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -169,8 +192,12 @@ export default function BarbersTab({
                       >
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
-                              <Users className="w-5 h-5 text-gray-400" />
+                            <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
+                              {barber.photoUrl ? (
+                                <img src={barber.photoUrl} alt={barber.displayName} className="w-full h-full object-cover" />
+                              ) : (
+                                <Users className="w-5 h-5 text-gray-400" />
+                              )}
                             </div>
                             <div>
                               <p className="font-bold">{barber.displayName}</p>
@@ -192,15 +219,27 @@ export default function BarbersTab({
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onBarberSelect(barber.id);
-                            }}
-                            className="px-4 py-2 text-sm font-bold text-black hover:bg-gray-100 rounded-lg transition-colors"
-                          >
-                            View Schedule
-                          </button>
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingBarber(barber);
+                                setShowBarberFormModal(true);
+                              }}
+                              className="px-4 py-2 text-sm font-bold border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+                            >
+                              <Edit2 className="w-4 h-4" /> {t('common.edit')}
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onBarberSelect(barber.id);
+                              }}
+                              className="px-4 py-2 text-sm font-bold text-black hover:bg-gray-100 rounded-lg transition-colors"
+                            >
+                              View Schedule
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -213,7 +252,7 @@ export default function BarbersTab({
       ) : (
         <>
           {/* Barber Detail View with Appointments */}
-          <div className="flex justify-between items-center">
+          <div className="flex flex-wrap justify-between items-center gap-4">
             <div className="flex items-center gap-4">
               <button
                 onClick={() => onBarberSelect(null)}
@@ -221,10 +260,30 @@ export default function BarbersTab({
               >
                 <ArrowUp className="w-5 h-5 rotate-[-90deg]" />
               </button>
-              <div>
-                <h2 className="text-2xl font-bold">{selectedBarber?.displayName}</h2>
-                <p className="text-sm text-gray-500">{selectedBarber?.shop?.name}</p>
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
+                  {selectedBarber?.photoUrl ? (
+                    <img src={selectedBarber.photoUrl} alt={selectedBarber.displayName} className="w-full h-full object-cover" />
+                  ) : (
+                    <User className="w-7 h-7 text-gray-400" />
+                  )}
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold">{selectedBarber?.displayName}</h2>
+                  <p className="text-sm text-gray-500">{selectedBarber?.shop?.name}</p>
+                </div>
               </div>
+              <button
+                onClick={() => {
+                  if (selectedBarber) {
+                    setEditingBarber(selectedBarber);
+                    setShowBarberFormModal(true);
+                  }
+                }}
+                className="px-4 py-2 text-sm font-bold border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+              >
+                <Edit2 className="w-4 h-4" /> {t('common.edit')} {t('dashboard.owner.barberProfile')}
+              </button>
             </div>
             <input
               type="date"
@@ -313,6 +372,18 @@ export default function BarbersTab({
             </div>
           </div>
         </>
+      )}
+
+      {showBarberFormModal && editingBarber && (
+        <BarberFormModal
+          barber={editingBarber}
+          onSave={handleSaveBarber}
+          onClose={() => {
+            setShowBarberFormModal(false);
+            setEditingBarber(null);
+          }}
+          allowUpload={true}
+        />
       )}
     </div>
   );

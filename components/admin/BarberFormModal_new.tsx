@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
+import ImageUploadField from '@/components/shared/ImageUploadField';
 import type { Barber } from '@/lib/types';
 
 interface BarberFormModalProps {
@@ -13,9 +14,11 @@ interface BarberFormModalProps {
     isActive?: boolean;
   }) => void;
   onClose: () => void;
+  /** When true, shows upload field (owners only). When false, URL input only. */
+  allowUpload?: boolean;
 }
 
-export default function BarberFormModal({ barber, onSave, onClose }: BarberFormModalProps) {
+export default function BarberFormModal({ barber, onSave, onClose, allowUpload = false }: BarberFormModalProps) {
   const [formData, setFormData] = useState({
     displayName: '',
     bio: '',
@@ -86,19 +89,31 @@ export default function BarberFormModal({ barber, onSave, onClose }: BarberFormM
             />
           </div>
 
-          {/* Photo URL */}
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">
-              Photo URL
-            </label>
-            <input
-              type="url"
+          {/* Photo - Upload (owners) or URL (admin add) */}
+          {allowUpload && barber ? (
+            <ImageUploadField
+              type="barber-profile"
               value={formData.photoUrl}
-              onChange={(e) => handleChange('photoUrl', e.target.value)}
-              className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
+              onChange={(url) => handleChange('photoUrl', url)}
+              entityId={barber.id}
+              label="Profile Photo"
+              helpText="Upload or paste URL. Compressed to ~150 KB."
               placeholder="https://example.com/photo.jpg"
             />
-          </div>
+          ) : (
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">
+                Photo URL
+              </label>
+              <input
+                type="url"
+                value={formData.photoUrl}
+                onChange={(e) => handleChange('photoUrl', e.target.value)}
+                className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
+                placeholder="https://example.com/photo.jpg"
+              />
+            </div>
+          )}
 
           {/* Active Status */}
           <div>

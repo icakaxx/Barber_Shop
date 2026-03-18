@@ -99,8 +99,9 @@ export async function POST(request: NextRequest) {
     const shopId = shops[0].id
 
     // Create an auth user first (required for profiles table)
-    // Generate a unique email for the barber
-    const barberEmail = `${displayName.toLowerCase().replace(/\s+/g, '.')}.${Date.now()}@barbershop.local`
+    // Generate a unique email - use example.com (RFC 2606 reserved) as Supabase rejects .local
+    const safeName = displayName.toLowerCase().replace(/[^a-z0-9]/g, '.')
+    const barberEmail = `barber.${safeName}.${Date.now()}@example.com`
     const tempPassword = `TempPass${Math.random().toString(36).slice(2)}!`
     
     console.log('Creating auth user with email:', barberEmail)
@@ -170,15 +171,19 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Now create the profile linked to the auth user
-    console.log('Creating profile with ID:', userId)
+    // Create or update the profile linked to the auth user
+    // Use upsert in case Supabase's handle_new_user trigger already created a profile
+    console.log('Creating/updating profile with ID:', userId)
     const { data: profile, error: profileError } = await supabaseServer
       .from('profiles')
-      .insert({
-        id: userId, // Link to auth user
-        full_name: displayName,
-        role: 'BARBER_WORKER'
-      })
+      .upsert(
+        {
+          id: userId,
+          full_name: displayName,
+          role: 'BARBER_WORKER'
+        },
+        { onConflict: 'id' }
+      )
       .select()
       .single()
 
@@ -197,7 +202,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('Profile created successfully:', profile.id)
+    console.log('Profile created/updated successfully:', profile.id)
 
     // Now create the barber
     const { data: barber, error: barberError } = await supabaseServer

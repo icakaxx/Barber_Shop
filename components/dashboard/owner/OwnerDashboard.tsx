@@ -1,12 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Building2, Calendar, Users, Plus, Edit2, Trash2, X, Scissors } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Building2, Calendar, Users, Plus, Edit2, Trash2, Scissors, Settings, LogOut } from 'lucide-react';
+import { createClient } from '@/lib/supabase/browser';
 import { getStatusBadge } from '@/lib/utils';
 import EditAppointmentModal from '@/components/dashboard/barber/EditAppointmentModal';
 import CreateAppointmentModal from '@/components/dashboard/barber/CreateAppointmentModal';
 import ServicesManagementTab from './ServicesManagementTab';
 import BarbersTab from './BarbersTab';
+import ShopSettingsTab from './ShopSettingsTab';
 import LanguageCurrencySwitcher from '@/components/shared/LanguageCurrencySwitcher';
 import { useI18n } from '@/contexts/I18nContext';
 import type { Barber, AppointmentStatus } from '@/lib/types';
@@ -14,8 +17,15 @@ import type { Barber, AppointmentStatus } from '@/lib/types';
 interface Shop {
   id: string;
   name: string;
-  city: string;
+  city?: string;
   address?: string;
+  phone?: string;
+  logoUrl?: string;
+  heroImageUrl?: string;
+  heroDescription?: string;
+  workingHours?: Record<string, { open: string; close: string } | null>;
+  lunchStart?: string;
+  lunchEnd?: string;
 }
 
 interface Appointment {
@@ -34,8 +44,13 @@ interface Appointment {
   shopName?: string;
 }
 
-export default function OwnerDashboard() {
+interface OwnerDashboardProps {
+  userEmail?: string | null;
+}
+
+export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
   const { t } = useI18n();
+  const router = useRouter();
   const [shops, setShops] = useState<Shop[]>([]);
   const [selectedShopId, setSelectedShopId] = useState<string>('');
   const [barbers, setBarbers] = useState<Barber[]>([]);
@@ -46,7 +61,7 @@ export default function OwnerDashboard() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [currentTab, setCurrentTab] = useState<'appointments' | 'services' | 'barbers'>('appointments');
+  const [currentTab, setCurrentTab] = useState<'appointments' | 'services' | 'barbers' | 'settings'>('appointments');
   const [selectedBarberId, setSelectedBarberId] = useState<string | null>(null);
   const [barberAppointments, setBarberAppointments] = useState<Appointment[]>([]);
   const [sortBy, setSortBy] = useState<'name' | 'appointments'>('name');
@@ -352,33 +367,54 @@ export default function OwnerDashboard() {
                 <p className="text-gray-500">{t('dashboard.owner.subtitle')}</p>
               </div>
             </div>
-            <LanguageCurrencySwitcher />
+            <div className="flex items-center gap-4">
+              {userEmail && (
+                <span className="text-sm text-gray-500 hidden sm:inline">{userEmail}</span>
+              )}
+              <button
+                onClick={async () => {
+                  const supabase = createClient();
+                  await supabase.auth.signOut();
+                  router.push('/login');
+                  router.refresh();
+                }}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+                {t('auth.logout')}
+              </button>
+              <LanguageCurrencySwitcher />
+            </div>
           </div>
         </div>
 
         {/* Filters */}
         <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-6">
           <div className="flex flex-wrap gap-4 items-end">
-            <div className="flex-1 min-w-[200px]">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                {t('dashboard.owner.date')}
-              </label>
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
-              />
-            </div>
-            <div>
-              <button
-                onClick={() => setIsCreateModalOpen(true)}
-                className="bg-black text-white px-6 py-3 rounded-lg font-bold flex items-center gap-2 hover:bg-black/90 transition-all"
-                disabled={activeBarbers.length === 0}
-              >
-                <Plus className="w-4 h-4" /> {t('dashboard.owner.newAppointment')}
-              </button>
-            </div>
+            {currentTab !== 'settings' && (
+              <>
+                <div className="flex-1 min-w-[200px]">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {t('dashboard.owner.date')}
+                  </label>
+                  <input
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <button
+                    onClick={() => setIsCreateModalOpen(true)}
+                    className="bg-black text-white px-6 py-3 rounded-lg font-bold flex items-center gap-2 hover:bg-black/90 transition-all"
+                    disabled={activeBarbers.length === 0}
+                  >
+                    <Plus className="w-4 h-4" /> {t('dashboard.owner.newAppointment')}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
@@ -438,6 +474,17 @@ export default function OwnerDashboard() {
             >
               <Scissors className="w-4 h-4" />
               {t('dashboard.owner.services')}
+            </button>
+            <button
+              onClick={() => setCurrentTab('settings')}
+              className={`px-4 py-2 font-bold text-sm border-b-2 transition-colors flex items-center gap-2 ${
+                currentTab === 'settings'
+                  ? 'border-black text-black'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <Settings className="w-4 h-4" />
+              {t('dashboard.owner.settings')}
             </button>
           </nav>
         </div>
@@ -548,14 +595,37 @@ export default function OwnerDashboard() {
             onDeleteAppointment={handleDelete}
             deletingId={deletingId}
             onReloadAppointments={() => {
-              // Trigger reload by updating selectedDate
               setSelectedDate(new Date().toISOString().split('T')[0]);
+            }}
+            onBarberUpdate={async (barberId, data) => {
+              const response = await fetch(`/api/barbers/${barberId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+              });
+              if (response.ok) {
+                const updated = await response.json();
+                setBarbers(barbers.map(b => b.id === barberId ? { ...b, ...updated } : b));
+              } else {
+                const err = await response.json();
+                throw new Error(err.error || 'Failed to update barber');
+              }
             }}
           />
         )}
 
         {currentTab === 'services' && selectedShopId !== 'all' && selectedShopId && (
           <ServicesManagementTab shopId={selectedShopId} />
+        )}
+
+        {currentTab === 'settings' && selectedShopId && (
+          <ShopSettingsTab
+            shopId={selectedShopId}
+            shop={selectedShop}
+            onShopUpdate={(updated) => {
+              setShops(shops.map(s => s.id === updated.id ? { ...s, ...updated } : s));
+            }}
+          />
         )}
 
       </div>

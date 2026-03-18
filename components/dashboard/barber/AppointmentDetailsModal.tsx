@@ -6,10 +6,10 @@ import type { AppointmentStatus } from '@/lib/types';
 
 interface Appointment {
   id: string;
-  customerName: string;
-  customerPhone: string;
+  customerName?: string;
+  customerPhone?: string;
   customerEmail?: string;
-  serviceName: string;
+  serviceName?: string;
   serviceDuration?: number;
   servicePrice?: number;
   startTime: string;
@@ -68,7 +68,7 @@ export default function AppointmentDetailsModal({
   };
 
   const additionalServices = parseServicesFromNotes(appointment.notes);
-  const allServices = [appointment.serviceName, ...additionalServices];
+  const allServices = [appointment.serviceName, ...additionalServices].filter(Boolean) as string[];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
@@ -111,11 +111,11 @@ export default function AppointmentDetailsModal({
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <User className="w-4 h-4 text-gray-400" />
-                <span className="text-sm">{appointment.customerName}</span>
+                <span className="text-sm">{appointment.customerName ?? '—'}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-gray-400" />
-                <span className="text-sm">{appointment.customerPhone}</span>
+                <span className="text-sm">{appointment.customerPhone ?? '—'}</span>
               </div>
               {appointment.customerEmail && (
                 <div className="flex items-center gap-2">

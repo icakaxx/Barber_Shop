@@ -1,20 +1,30 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { Crown } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
+import { useShopBranding } from '@/contexts/ShopBrandingContext';
 import LanguageCurrencySwitcher from './LanguageCurrencySwitcher';
 
 export default function Header() {
-  const router = useRouter();
   const { t } = useI18n();
+  const { shop } = useShopBranding();
+  const shopName = shop?.name || t('hero.title');
+  const logoUrl = shop?.logoUrl;
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-gray-200 bg-white/80 backdrop-blur-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
-          <Link href="/" className="text-xl font-bold tracking-tight text-gray-900">
-            Barber King
+        <div className="flex h-20 items-center justify-between">
+          <Link href="/" className="flex items-center gap-3 text-xl font-bold tracking-tight text-gray-900">
+            {logoUrl ? (
+              <>
+                <img src={logoUrl} alt={shopName} className="h-14 w-auto max-w-[180px] object-contain" />
+                <span className="hidden sm:inline">{shopName}</span>
+              </>
+            ) : (
+              shopName
+            )}
           </Link>
 
           <nav className="hidden md:flex items-center gap-8">
@@ -37,6 +47,13 @@ export default function Header() {
             >
               {t('nav.bookNow')}
             </button>
+            <Link
+              href="/login?redirect=/dashboard/owner"
+              className="p-2 text-gray-600 hover:text-gray-900 transition-colors"
+              title={t('nav.ownerDashboard')}
+            >
+              <Crown className="w-5 h-5" />
+            </Link>
           </nav>
 
           <div className="md:hidden flex items-center gap-2">
@@ -50,6 +67,13 @@ export default function Header() {
             >
               {t('nav.bookNow')}
             </button>
+            <Link
+              href="/login?redirect=/dashboard/owner"
+              className="p-2 text-gray-600 hover:text-gray-900 transition-colors"
+              title={t('nav.ownerDashboard')}
+            >
+              <Crown className="w-5 h-5" />
+            </Link>
           </div>
         </div>
       </div>

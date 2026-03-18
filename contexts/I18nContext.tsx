@@ -17,19 +17,15 @@ const I18nContext = createContext<I18nContextType | undefined>(undefined);
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>('bg');
-  const [currency, setCurrencyState] = useState<Currency>('BGN');
+  const [currency, setCurrencyState] = useState<Currency>('EUR');
 
   // Load preferences from localStorage
   useEffect(() => {
     const savedLocale = localStorage.getItem('locale') as Locale;
-    const savedCurrency = localStorage.getItem('currency') as Currency;
-    
     if (savedLocale && (savedLocale === 'bg' || savedLocale === 'en')) {
       setLocaleState(savedLocale);
     }
-    if (savedCurrency && (savedCurrency === 'BGN' || savedCurrency === 'EUR')) {
-      setCurrencyState(savedCurrency);
-    }
+    // Currency is always EUR - no switcher
   }, []);
 
   const setLocale = (newLocale: Locale) => {

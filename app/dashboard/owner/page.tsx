@@ -1,17 +1,36 @@
 import { redirect } from 'next/navigation';
 import OwnerDashboard from '@/components/dashboard/owner/OwnerDashboard';
+import { createClient } from '@/lib/supabase/server';
 import { supabaseServer } from '@/lib/supabase/client';
 
+const ALLOWED_ROLES = ['BARBER_OWNER', 'SUPER_ADMIN'];
+
 export default async function OwnerDashboardPage() {
-  // Check authentication and role
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect('/login?redirect=/dashboard/owner');
+  }
+
+  // Check profile role
   if (!supabaseServer) {
     redirect('/');
   }
 
-  // Get current user (this would need to be implemented with proper auth)
-  // For now, we'll let the component handle the auth check
-  // In production, you'd get the user from cookies/headers
+  const { data: profile } = await supabaseServer
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
 
-  return <OwnerDashboard />;
+  const role = profile?.role as string | undefined;
+  if (!role || !ALLOWED_ROLES.includes(role)) {
+    redirect('/login?error=access_denied&redirect=/dashboard/owner');
+  }
+
+  return <OwnerDashboard userEmail={user.email} />;
 }
 

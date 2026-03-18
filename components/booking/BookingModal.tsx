@@ -6,6 +6,8 @@ import { mockServices } from '@/lib/mock-data';
 import type { BookingState, Service, Barber } from '@/lib/types';
 import { useI18n } from '@/contexts/I18nContext';
 import { extractPrice } from '@/lib/utils/price';
+import { useShopBranding } from '@/contexts/ShopBrandingContext';
+import { getHoursForDate, overlapsLunch } from '@/lib/utils/shopHours';
 
 // Simplified barber type for booking modal UI
 type BarberOption = {
@@ -17,6 +19,7 @@ type BarberOption = {
 
 export default function BookingModal() {
   const { t, formatPrice, currency, translateServiceName, locale } = useI18n();
+  const { shop } = useShopBranding();
   const [isOpen, setIsOpen] = useState(false);
   const [services, setServices] = useState<Service[]>(mockServices);
   const [serviceOriginalNames, setServiceOriginalNames] = useState<Map<string, string>>(new Map());
@@ -146,15 +149,28 @@ export default function BookingModal() {
     // Listen for custom events
     const handleOpen = (e: Event) => {
       const customEvent = e as CustomEvent;
-      if (customEvent.detail?.serviceId) {
-        const service = services.find((s) => s.id === customEvent.detail.serviceId);
+      const detail = customEvent.detail || {};
+      let nextState: Partial<BookingState> = {};
+
+      if (detail.serviceId) {
+        const service = services.find((s) => s.id === detail.serviceId);
         if (service) {
-          setBookingState((prev) => ({ 
-            ...prev, 
-            services: [service], 
-            step: 2 
-          }));
+          nextState = { services: [service], step: 2 };
         }
+      }
+      if (detail.barberId) {
+        const barberOption = barbers.find((b) => b.id === detail.barberId);
+        if (barberOption) {
+          nextState = {
+            ...nextState,
+            barber: { id: barberOption.id, name: barberOption.name, role: barberOption.role },
+            step: nextState.step ?? 1,
+          };
+        }
+      }
+
+      if (Object.keys(nextState).length > 0) {
+        setBookingState((prev) => ({ ...prev, ...nextState }));
       }
       setIsOpen(true);
     };
@@ -164,7 +180,7 @@ export default function BookingModal() {
       observer.disconnect();
       document.removeEventListener('bookingModalOpen', handleOpen);
     };
-  }, []);
+  }, [services, barbers]);
 
   useEffect(() => {
     if (isOpen) {
@@ -343,114 +359,99 @@ export default function BookingModal() {
   };
 
   const loadAvailableTimes = async (dateStr: string) => {
-    // Calculate total duration needed for selected services
     const totalDurationMinutes = bookingState.services.reduce((sum, service) => {
       const minutes = parseInt(service.duration.replace(/\D/g, '')) || 0;
       return sum + minutes;
     }, 0);
 
+    const date = new Date(dateStr + 'T12:00:00');
+    const dayHours = getHoursForDate(shop?.workingHours, date);
+    const lunchStart = shop?.lunchStart;
+    const lunchEnd = shop?.lunchEnd;
+
+    if (!dayHours) {
+      setAvailableTimes([]);
+      return;
+    }
+
+    const startOfDay = new Date(dateStr + `T${dayHours.open}:00`);
+    const endOfDay = new Date(dateStr + `T${dayHours.close}:00`);
+
+    const isDuringLunch = (timeStr: string) => {
+      if (!lunchStart || !lunchEnd) return false;
+      const [h, m] = timeStr.split(':').map(Number);
+      const [lStartH, lStartM] = lunchStart.split(':').map(Number);
+      const [lEndH, lEndM] = lunchEnd.split(':').map(Number);
+      const minutes = h * 60 + m;
+      const lunchStartMinutes = lStartH * 60 + lStartM;
+      const lunchEndMinutes = lEndH * 60 + lEndM;
+      return minutes >= lunchStartMinutes && minutes < lunchEndMinutes;
+    };
+
+    const wouldOverlapLunch = (startStr: string) =>
+      overlapsLunch(dateStr, startStr, totalDurationMinutes, lunchStart, lunchEnd);
+
     if (!bookingState.barber || bookingState.barber.id === 'any') {
-      // Generate default times if no barber selected or "any barber"
-      // Still validate if services fit
-      const defaultTimes = ['09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30'];
-      setAvailableTimes(defaultTimes);
+      const times: string[] = [];
+      for (let slot = new Date(startOfDay); slot < endOfDay; slot.setMinutes(slot.getMinutes() + 30)) {
+        const timeStr = `${slot.getHours().toString().padStart(2, '0')}:${slot.getMinutes().toString().padStart(2, '0')}`;
+        if (!isDuringLunch(timeStr) && !wouldOverlapLunch(timeStr)) times.push(timeStr);
+      }
+      setAvailableTimes(times);
       return;
     }
 
     try {
-      // Check existing appointments for this barber on this date
       const response = await fetch(`/api/appointments?barberId=${bookingState.barber.id}&date=${dateStr}`);
       if (response.ok) {
         const existingAppointments = await response.json();
-        
-        // Get active appointments with their time ranges
         const activeAppointments = existingAppointments
           .filter((apt: any) => apt.status === 'PENDING' || apt.status === 'CONFIRMED')
-          .map((apt: any) => ({
-            start: new Date(apt.startTime),
-            end: new Date(apt.endTime)
-          }))
+          .map((apt: any) => ({ start: new Date(apt.startTime), end: new Date(apt.endTime) }))
           .sort((a: any, b: any) => a.start.getTime() - b.start.getTime());
 
-        // Helper function to check if a time falls within any appointment
-        const isTimeBlocked = (time: Date): boolean => {
-          return activeAppointments.some((apt: any) => {
-            return time >= apt.start && time < apt.end;
-          });
-        };
+        const isTimeBlocked = (time: Date) =>
+          activeAppointments.some((apt: any) => time >= apt.start && time < apt.end);
 
-        // Helper function to find next appointment after a given time
-        const getNextAppointment = (time: Date) => {
-          return activeAppointments.find((apt: any) => apt.start > time);
-        };
-
-        // Helper function to check if services fit in available window
         const servicesFitInWindow = (startTime: Date): boolean => {
-          if (totalDurationMinutes === 0) return true; // No services selected yet
-          
+          if (totalDurationMinutes === 0) return true;
           const endTime = new Date(startTime);
           endTime.setMinutes(endTime.getMinutes() + totalDurationMinutes);
-          
-          // Check if end time goes beyond business hours (18:00)
-          if (endTime.getHours() >= 18 || (endTime.getHours() === 18 && endTime.getMinutes() > 0)) {
-            return false;
-          }
-
-          // Check if the appointment would overlap with any existing appointment
-          const wouldOverlap = activeAppointments.some((apt: any) => {
-            return (startTime < apt.end && endTime > apt.start);
-          });
-
-          if (wouldOverlap) {
-            return false;
-          }
-
+          if (endTime > endOfDay) return false;
+          const startStr = `${startTime.getHours().toString().padStart(2, '0')}:${startTime.getMinutes().toString().padStart(2, '0')}`;
+          if (wouldOverlapLunch(startStr)) return false;
+          if (activeAppointments.some((apt: any) => startTime < apt.end && endTime > apt.start)) return false;
           return true;
         };
 
-        // Generate candidate time slots (every 5 minutes for precision, then round to display times)
         const candidateTimes: Date[] = [];
-        const startOfDay = new Date(dateStr + 'T09:00:00');
-        const endOfDay = new Date(dateStr + 'T18:00:00');
-        
-        for (let time = new Date(startOfDay); time < endOfDay; time.setMinutes(time.getMinutes() + 5)) {
-          candidateTimes.push(new Date(time));
+        for (let slot = new Date(startOfDay); slot < endOfDay; slot.setMinutes(slot.getMinutes() + 5)) {
+          candidateTimes.push(new Date(slot));
         }
 
-        // Filter time slots: must not be blocked AND services must fit
         const validTimes: string[] = [];
         for (const candidateTime of candidateTimes) {
-          if (!isTimeBlocked(candidateTime) && servicesFitInWindow(candidateTime)) {
-            const timeStr = `${candidateTime.getHours().toString().padStart(2, '0')}:${candidateTime.getMinutes().toString().padStart(2, '0')}`;
-            // Only add if we don't already have this time (avoid duplicates)
-            if (!validTimes.includes(timeStr)) {
-              validTimes.push(timeStr);
-            }
+          const timeStr = `${candidateTime.getHours().toString().padStart(2, '0')}:${candidateTime.getMinutes().toString().padStart(2, '0')}`;
+          if (isDuringLunch(timeStr)) continue;
+          if (!isTimeBlocked(candidateTime) && servicesFitInWindow(candidateTime) && !validTimes.includes(timeStr)) {
+            validTimes.push(timeStr);
           }
         }
 
-        // If no services selected yet, show all available slots in 30-min intervals for better UX
         if (totalDurationMinutes === 0) {
-          const simplifiedTimes: string[] = [];
-          for (let hour = 9; hour < 18; hour++) {
-            for (let minute = 0; minute < 60; minute += 30) {
-              const timeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-              const testTime = new Date(dateStr + `T${timeStr}:00`);
-              if (!isTimeBlocked(testTime)) {
-                simplifiedTimes.push(timeStr);
-              }
-            }
+          const simplified: string[] = [];
+          for (let slot = new Date(startOfDay); slot < endOfDay; slot.setMinutes(slot.getMinutes() + 30)) {
+            const timeStr = `${slot.getHours().toString().padStart(2, '0')}:${slot.getMinutes().toString().padStart(2, '0')}`;
+            if (!isDuringLunch(timeStr) && !isTimeBlocked(slot)) simplified.push(timeStr);
           }
-          setAvailableTimes(simplifiedTimes);
+          setAvailableTimes(simplified);
         } else {
           setAvailableTimes(validTimes);
         }
       }
     } catch (error) {
       console.error('Error loading available times:', error);
-      // Fallback to default times
-      const defaultTimes = ['09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30'];
-      setAvailableTimes(defaultTimes);
+      setAvailableTimes([]);
     }
   };
 
@@ -473,11 +474,20 @@ export default function BookingModal() {
         const endTime = new Date(startTime);
         endTime.setMinutes(endTime.getMinutes() + totalMinutes);
 
-        // Validate business hours
-        if (endTime.getHours() >= 18 || (endTime.getHours() === 18 && endTime.getMinutes() > 0)) {
-          alert(t('booking.servicesExceedBusinessHours'));
-          setFindingBarber(false);
-          return;
+        const dateForCheck = new Date(selectedDate + 'T12:00:00');
+        const dayH = getHoursForDate(shop?.workingHours, dateForCheck);
+        if (dayH) {
+          const [closeH, closeM] = dayH.close.split(':').map(Number);
+          if (endTime.getHours() > closeH || (endTime.getHours() === closeH && endTime.getMinutes() > closeM)) {
+            alert(t('booking.servicesExceedBusinessHours'));
+            setFindingBarber(false);
+            return;
+          }
+          if (overlapsLunch(selectedDate, time, totalMinutes, shop?.lunchStart, shop?.lunchEnd)) {
+            alert(t('booking.servicesExceedBusinessHours'));
+            setFindingBarber(false);
+            return;
+          }
         }
 
         // Find all available barbers
@@ -638,11 +648,20 @@ export default function BookingModal() {
       const endTime = new Date(startTime);
       endTime.setMinutes(endTime.getMinutes() + totalMinutes);
 
-      // Validate that end time doesn't go beyond business hours (18:00)
-      if (endTime.getHours() >= 18 || (endTime.getHours() === 18 && endTime.getMinutes() > 0)) {
-        alert(t('booking.servicesExceedBusinessHours'));
-        setLoading(false);
-        return;
+      const dateForCheck = new Date(selectedDate + 'T12:00:00');
+      const dayH = getHoursForDate(shop?.workingHours, dateForCheck);
+      if (dayH) {
+        const [closeH, closeM] = dayH.close.split(':').map(Number);
+        if (endTime.getHours() > closeH || (endTime.getHours() === closeH && endTime.getMinutes() > closeM)) {
+          alert(t('booking.servicesExceedBusinessHours'));
+          setLoading(false);
+          return;
+        }
+        if (overlapsLunch(selectedDate, bookingState.time!, totalMinutes, shop?.lunchStart, shop?.lunchEnd)) {
+          alert(t('booking.servicesExceedBusinessHours'));
+          setLoading(false);
+          return;
+        }
       }
 
       // Ensure barbers are loaded
@@ -999,7 +1018,7 @@ export default function BookingModal() {
                             return showImage ? (
                               <img 
                                 src={assignedFullBarber!.photoUrl!} 
-                                alt={bookingState.barber!.name}
+                                alt={assignedFullBarber?.displayName ?? (bookingState.barber && 'name' in bookingState.barber ? bookingState.barber.name : (bookingState.barber as { displayName?: string })?.displayName) ?? ''}
                                 className="w-full h-full object-cover"
                                 onError={() => {
                                   setImageErrors(prev => new Set(prev).add(bookingState.barber!.id));
@@ -1012,8 +1031,8 @@ export default function BookingModal() {
                         </div>
                         <div className="flex-1">
                           <p className="text-xs font-bold text-blue-600 uppercase mb-1">{t('booking.assignedBarber')}</p>
-                          <p className="text-base font-bold text-blue-900">{bookingState.barber.name}</p>
-                          {bookingState.barber.role && (
+                          <p className="text-base font-bold text-blue-900">{fullBarbers.find(b => b.id === bookingState.barber?.id)?.displayName ?? (bookingState.barber && 'name' in bookingState.barber ? bookingState.barber.name : (bookingState.barber as { displayName?: string })?.displayName)}</p>
+                          {bookingState.barber && 'role' in bookingState.barber && bookingState.barber.role && (
                             <p className="text-xs text-blue-700 mt-0.5">{bookingState.barber.role}</p>
                           )}
                           <p className="text-xs text-blue-600 mt-2">
@@ -1066,8 +1085,8 @@ export default function BookingModal() {
                   {bookingState.barber && bookingState.barber.id !== 'any' && (
                     <div className="mb-3 p-3 bg-white rounded-lg border border-gray-200">
                       <p className="text-xs font-bold text-gray-500 uppercase mb-1">{t('booking.selectBarber')}</p>
-                      <p className="text-sm font-bold text-gray-900">{bookingState.barber.name}</p>
-                      {bookingState.barber.role && (
+                      <p className="text-sm font-bold text-gray-900">{fullBarbers.find(b => b.id === bookingState.barber?.id)?.displayName ?? (bookingState.barber && 'name' in bookingState.barber ? bookingState.barber.name : (bookingState.barber as { displayName?: string })?.displayName)}</p>
+                      {bookingState.barber && 'role' in bookingState.barber && bookingState.barber.role && (
                         <p className="text-xs text-gray-500 mt-0.5">{bookingState.barber.role}</p>
                       )}
                     </div>
