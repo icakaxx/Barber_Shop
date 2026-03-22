@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { supabaseServer } from '@/lib/supabase/client'
+import { validateSlotAgainstShop } from '@/lib/utils/shopHours'
 
 const resendApiKey = process.env.RESEND_API_KEY
 const emailFrom =
@@ -239,6 +240,60 @@ export async function POST(request: NextRequest) {
     if (!shopId || !serviceId || !barberId || !customerName || !customerPhone || !startTime || !endTime) {
       return NextResponse.json(
         { error: 'Missing required fields' },
+        { status: 400 }
+      )
+    }
+
+    const start = new Date(startTime)
+    const end = new Date(endTime)
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      return NextResponse.json({ error: 'Invalid start or end time' }, { status: 400 })
+    }
+
+    const { data: barberRow, error: barberLookupError } = await supabaseServer
+      .from('barbers')
+      .select('id, shop_id')
+      .eq('id', barberId)
+      .single()
+
+    if (barberLookupError || !barberRow) {
+      return NextResponse.json({ error: 'Barber not found' }, { status: 404 })
+    }
+
+    if (barberRow.shop_id !== shopId) {
+      return NextResponse.json(
+        { error: 'Barber does not belong to this shop' },
+        { status: 400 }
+      )
+    }
+
+    const { data: shopRow, error: shopLookupError } = await supabaseServer
+      .from('shops')
+      .select('id, working_hours, lunch_start, lunch_end')
+      .eq('id', shopId)
+      .single()
+
+    if (shopLookupError || !shopRow) {
+      return NextResponse.json({ error: 'Shop not found' }, { status: 404 })
+    }
+
+    const slotCheck = validateSlotAgainstShop(
+      shopRow.working_hours,
+      shopRow.lunch_start ?? undefined,
+      shopRow.lunch_end ?? undefined,
+      start,
+      end
+    )
+
+    if (!slotCheck.ok) {
+      const messages: Record<string, string> = {
+        CLOSED: 'The shop is closed on this day',
+        OUTSIDE_HOURS: 'Appointment is outside business hours',
+        LUNCH: 'Appointment overlaps the lunch break',
+        SPANS_MIDNIGHT: 'Invalid appointment time window',
+      }
+      return NextResponse.json(
+        { error: messages[slotCheck.code] ?? 'Invalid appointment time', code: slotCheck.code },
         { status: 400 }
       )
     }

@@ -1,0 +1,5 @@
+# Supabase CLI – https://supabase.com/docs/guides/cli/config
+# Edge Function `create-user` verifies the caller JWT and SUPER_ADMIN role in code.
+# Keep verify_jwt = false so our function receives the request and returns JSON errors.
+[functions.create-user]
+verify_jwt = false

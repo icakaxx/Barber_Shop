@@ -2,8 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Users, Calendar, Scissors } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ArrowLeft, Users, Calendar, Scissors, LogOut, UserPlus } from 'lucide-react';
+import { createClient } from '@/lib/supabase/browser';
 import BarberManagementTab from './BarberManagementTab';
+import CreateUserTab from './CreateUserTab';
 import AppointmentsTab from './AppointmentsTab';
 import ServicesManagementTab from '@/components/dashboard/owner/ServicesManagementTab';
 import LanguageCurrencySwitcher from '@/components/shared/LanguageCurrencySwitcher';
@@ -15,9 +18,14 @@ interface Shop {
   city?: string;
 }
 
-export default function SuperAdminDashboard() {
+interface SuperAdminDashboardProps {
+  userEmail?: string | null;
+}
+
+export default function SuperAdminDashboard({ userEmail }: SuperAdminDashboardProps) {
   const { t } = useI18n();
-  const [currentTab, setCurrentTab] = useState<'barbers' | 'appointments' | 'services'>('barbers');
+  const router = useRouter();
+  const [currentTab, setCurrentTab] = useState<'barbers' | 'appointments' | 'services' | 'users'>('barbers');
   const [selectedShopId, setSelectedShopId] = useState<string>('');
   const [shops, setShops] = useState<Shop[]>([]);
 
@@ -54,6 +62,24 @@ export default function SuperAdminDashboard() {
               <h1 className="text-xl font-bold tracking-tight">{t('dashboard.admin.title')}</h1>
             </div>
             <div className="flex items-center gap-3">
+              {userEmail && (
+                <span className="text-xs text-gray-500 hidden md:inline max-w-[160px] truncate">
+                  {userEmail}
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={async () => {
+                  const supabase = createClient();
+                  await supabase.auth.signOut();
+                  router.push('/login/admin');
+                  router.refresh();
+                }}
+                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+                {t('auth.logout')}
+              </button>
               <LanguageCurrencySwitcher />
               <div className="hidden sm:block text-right">
                 <p className="text-sm font-bold">{t('dashboard.admin.globalAdmin')}</p>
@@ -104,11 +130,23 @@ export default function SuperAdminDashboard() {
               <Scissors className="w-4 h-4" />
               {t('dashboard.admin.services')}
             </button>
+            <button
+              onClick={() => setCurrentTab('users')}
+              className={`px-4 py-2 font-bold text-sm border-b-2 transition-colors flex items-center gap-2 ${
+                currentTab === 'users'
+                  ? 'border-black text-black'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <UserPlus className="w-4 h-4" />
+              {t('dashboard.admin.users')}
+            </button>
           </nav>
         </div>
 
         {/* Tab Content */}
         {currentTab === 'barbers' && <BarberManagementTab />}
+        {currentTab === 'users' && <CreateUserTab />}
         {currentTab === 'appointments' && <AppointmentsTab />}
         {currentTab === 'services' && (
           <div className="space-y-4">

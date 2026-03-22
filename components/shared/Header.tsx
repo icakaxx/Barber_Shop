@@ -48,7 +48,7 @@ export default function Header() {
               {t('nav.bookNow')}
             </button>
             <Link
-              href="/login?redirect=/dashboard/owner"
+              href="/login?redirect=/owner"
               className="p-2 text-gray-600 hover:text-gray-900 transition-colors"
               title={t('nav.ownerDashboard')}
             >
@@ -68,7 +68,7 @@ export default function Header() {
               {t('nav.bookNow')}
             </button>
             <Link
-              href="/login?redirect=/dashboard/owner"
+              href="/login?redirect=/owner"
               className="p-2 text-gray-600 hover:text-gray-900 transition-colors"
               title={t('nav.ownerDashboard')}
             >

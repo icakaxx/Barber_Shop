@@ -41,8 +41,6 @@ export function ShopBrandingProvider({ children }: { children: React.ReactNode }
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const startTime = Date.now();
-
     // Fetch shops, barbers, services in parallel - page ready when all complete
     Promise.all([
       fetch('/api/shops', { cache: 'no-store' }).then((res) => (res.ok ? res.json() : [])),
@@ -78,10 +76,7 @@ export function ShopBrandingProvider({ children }: { children: React.ReactNode }
       })
       .catch((err) => console.error('Page load failed:', err))
       .finally(() => {
-        const elapsed = Date.now() - startTime;
-        // Show loading 3x longer than actual load time
-        const extraDelay = Math.max(0, elapsed * 2);
-        setTimeout(() => setIsLoading(false), extraDelay);
+        setIsLoading(false);
       });
   }, []);
 

@@ -1,12 +1,5 @@
-import BarberDashboard from '@/components/dashboard/barber/BarberDashboard';
+import { redirect } from 'next/navigation';
 
-export default function BarberDashboardPage({
-  searchParams,
-}: {
-  searchParams: { name?: string; id?: string };
-}) {
-  return <BarberDashboard barberId={searchParams.id} barberName={searchParams.name} />;
+export default function LegacyBarberDashboard() {
+  redirect('/barbers');
 }
-
-
-

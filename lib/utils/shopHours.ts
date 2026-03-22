@@ -19,15 +19,126 @@ const DEFAULT_HOURS: WorkingHoursMap = {
   sun: null
 };
 
-/** Get working hours for a day (0=Sun, 1=Mon, ... 6=Sat) */
+/**
+ * Working hours for a calendar date (YYYY-MM-DD).
+ * Uses UTC noon so weekday is correct regardless of server timezone.
+ * If the key exists in `workingHours` and is `null`, the day is closed (not defaulted).
+ */
+export function getHoursForCalendarDate(
+  workingHours: WorkingHoursMap | undefined,
+  dateStr: string
+): DayHours | null {
+  const parts = dateStr.split('-').map(Number);
+  const y = parts[0];
+  const mo = parts[1];
+  const d = parts[2];
+  if (!y || !mo || !d) return null;
+  const utcNoon = new Date(Date.UTC(y, mo - 1, d, 12, 0, 0));
+  const dayIndex = utcNoon.getUTCDay();
+  const key = dayIndex === 0 ? 'sun' : DAY_KEYS[dayIndex - 1];
+
+  if (workingHours != null && Object.prototype.hasOwnProperty.call(workingHours, key)) {
+    const h = workingHours[key];
+    if (h === undefined) return DEFAULT_HOURS[key] ?? null;
+    return h;
+  }
+
+  return DEFAULT_HOURS[key] ?? null;
+}
+
+/** Get working hours for a JS Date using that date's local calendar day */
 export function getHoursForDate(
   workingHours: WorkingHoursMap | undefined,
   date: Date
 ): DayHours | null {
-  const dayIndex = date.getDay(); // 0=Sun, 1=Mon, ...
-  const key = dayIndex === 0 ? 'sun' : DAY_KEYS[dayIndex - 1];
-  const hours = workingHours?.[key] ?? DEFAULT_HOURS[key];
-  return hours ?? null;
+  const y = date.getFullYear();
+  const mo = date.getMonth() + 1;
+  const d = date.getDate();
+  const dateStr = `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  return getHoursForCalendarDate(workingHours, dateStr);
+}
+
+/** Default timezone for shop hours validation (API + “any barber” checks). */
+export const SHOP_BUSINESS_TIMEZONE = 'Europe/Sofia';
+
+function pad2(n: number): string {
+  return String(n).padStart(2, '0');
+}
+
+export function formatDateYYYYMMDDInTimeZone(d: Date, timeZone = SHOP_BUSINESS_TIMEZONE): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(d);
+  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? '';
+  return `${get('year')}-${get('month')}-${get('day')}`;
+}
+
+export function formatTimeHHMMInTimeZone(d: Date, timeZone = SHOP_BUSINESS_TIMEZONE): string {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone,
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(d);
+  const h = parts.find((p) => p.type === 'hour')?.value ?? '0';
+  const m = parts.find((p) => p.type === 'minute')?.value ?? '0';
+  return `${pad2(parseInt(h, 10))}:${pad2(parseInt(m, 10))}`;
+}
+
+function timeStrToMinutes(hm: string): number {
+  const [h, m] = hm.split(':').map(Number);
+  return h * 60 + m;
+}
+
+export type ShopSlotValidationCode = 'CLOSED' | 'OUTSIDE_HOURS' | 'LUNCH' | 'SPANS_MIDNIGHT';
+
+/**
+ * Validate that [start, end) fits shop open hours and does not overlap lunch (in shop TZ).
+ */
+export function validateSlotAgainstShop(
+  workingHours: WorkingHoursMap | undefined,
+  lunchStart: string | undefined,
+  lunchEnd: string | undefined,
+  start: Date,
+  end: Date,
+  timeZone = SHOP_BUSINESS_TIMEZONE
+): { ok: true } | { ok: false; code: ShopSlotValidationCode } {
+  const dateStr = formatDateYYYYMMDDInTimeZone(start, timeZone);
+  const endDateStr = formatDateYYYYMMDDInTimeZone(end, timeZone);
+  if (dateStr !== endDateStr) {
+    return { ok: false, code: 'SPANS_MIDNIGHT' };
+  }
+
+  const dayH = getHoursForCalendarDate(workingHours, dateStr);
+  if (!dayH) {
+    return { ok: false, code: 'CLOSED' };
+  }
+
+  const startHm = formatTimeHHMMInTimeZone(start, timeZone);
+  const endHm = formatTimeHHMMInTimeZone(end, timeZone);
+
+  const openM = timeStrToMinutes(dayH.open);
+  const closeM = timeStrToMinutes(dayH.close);
+  const startM = timeStrToMinutes(startHm);
+  const endM = timeStrToMinutes(endHm);
+
+  if (startM < openM || endM > closeM) {
+    return { ok: false, code: 'OUTSIDE_HOURS' };
+  }
+
+  const durationMinutes = Math.round((end.getTime() - start.getTime()) / 60000);
+  if (durationMinutes < 0) {
+    return { ok: false, code: 'OUTSIDE_HOURS' };
+  }
+
+  if (overlapsLunch(dateStr, startHm, durationMinutes, lunchStart, lunchEnd)) {
+    return { ok: false, code: 'LUNCH' };
+  }
+
+  return { ok: true };
 }
 
 /** Check if a time falls within lunch break */

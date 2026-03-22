@@ -26,9 +26,15 @@ interface Appointment {
 interface ScheduleCalendarProps {
   barberId?: string;
   shopId?: string;
+  /** Start in „всички бръснари“ mode when salon has a shopId */
+  defaultTeamView?: boolean;
 }
 
-export default function ScheduleCalendar({ barberId, shopId }: ScheduleCalendarProps) {
+export default function ScheduleCalendar({
+  barberId,
+  shopId,
+  defaultTeamView = false,
+}: ScheduleCalendarProps) {
   const { t, locale } = useI18n();
   // Store selected date as YYYY-MM-DD in local time (avoid timezone shift issues)
   const getTodayYMD = () => {
@@ -44,8 +50,17 @@ export default function ScheduleCalendar({ barberId, shopId }: ScheduleCalendarP
   const [loading, setLoading] = useState(true);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [barbers, setBarbers] = useState<Barber[]>([]);
-  const [selectedBarberId, setSelectedBarberId] = useState<string>(barberId || 'all');
+  const [selectedBarberId, setSelectedBarberId] = useState<string>(() => {
+    if (defaultTeamView && shopId) return 'all';
+    return barberId || 'all';
+  });
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (defaultTeamView && shopId) {
+      setSelectedBarberId('all');
+    }
+  }, [defaultTeamView, shopId]);
   const [modalSelectedDate, setModalSelectedDate] = useState<string | undefined>(undefined);
   const [modalBarbers, setModalBarbers] = useState<Barber[]>([]);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);

@@ -7,7 +7,14 @@ import type { BookingState, Service, Barber } from '@/lib/types';
 import { useI18n } from '@/contexts/I18nContext';
 import { extractPrice } from '@/lib/utils/price';
 import { useShopBranding } from '@/contexts/ShopBrandingContext';
-import { getHoursForDate, overlapsLunch } from '@/lib/utils/shopHours';
+import {
+  getHoursForDate,
+  getHoursForCalendarDate,
+  overlapsLunch,
+  validateSlotAgainstShop,
+  formatDateYYYYMMDDInTimeZone,
+  SHOP_BUSINESS_TIMEZONE,
+} from '@/lib/utils/shopHours';
 
 // Simplified barber type for booking modal UI
 type BarberOption = {
@@ -348,12 +355,19 @@ export default function BookingModal() {
     return date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
   };
 
+  const isDateBookable = (dateStr: string) =>
+    !!getHoursForCalendarDate(shop?.workingHours, dateStr);
+
   const setDate = (dateStr: string) => {
+    if (!isDateBookable(dateStr)) {
+      alert(t('booking.dayClosed'));
+      return;
+    }
     setSelectedDate(dateStr);
     const date = new Date(dateStr + 'T00:00:00');
     const formattedDate = formatFullDate(date);
     setBookingState({ ...bookingState, date: formattedDate });
-    
+
     // Load available times for selected date and barber
     loadAvailableTimes(dateStr);
   };
@@ -476,18 +490,21 @@ export default function BookingModal() {
 
         const dateForCheck = new Date(selectedDate + 'T12:00:00');
         const dayH = getHoursForDate(shop?.workingHours, dateForCheck);
-        if (dayH) {
-          const [closeH, closeM] = dayH.close.split(':').map(Number);
-          if (endTime.getHours() > closeH || (endTime.getHours() === closeH && endTime.getMinutes() > closeM)) {
-            alert(t('booking.servicesExceedBusinessHours'));
-            setFindingBarber(false);
-            return;
-          }
-          if (overlapsLunch(selectedDate, time, totalMinutes, shop?.lunchStart, shop?.lunchEnd)) {
-            alert(t('booking.servicesExceedBusinessHours'));
-            setFindingBarber(false);
-            return;
-          }
+        if (!dayH) {
+          alert(t('booking.dayClosed'));
+          setFindingBarber(false);
+          return;
+        }
+        const [closeH, closeM] = dayH.close.split(':').map(Number);
+        if (endTime.getHours() > closeH || (endTime.getHours() === closeH && endTime.getMinutes() > closeM)) {
+          alert(t('booking.servicesExceedBusinessHours'));
+          setFindingBarber(false);
+          return;
+        }
+        if (overlapsLunch(selectedDate, time, totalMinutes, shop?.lunchStart, shop?.lunchEnd)) {
+          alert(t('booking.appointmentOverlapsLunch'));
+          setFindingBarber(false);
+          return;
         }
 
         // Find all available barbers
@@ -537,8 +554,33 @@ export default function BookingModal() {
         setFindingBarber(false);
       }
     } else {
-      // Specific barber already selected, just set time and move to step 4
-      setBookingState(prev => ({ ...prev, time, step: 4 }));
+      // Specific barber: validate closed day, hours, and lunch before step 4
+      if (!selectedDate) return;
+      const totalMinutes = bookingState.services.reduce((sum, service) => {
+        const minutes = parseInt(service.duration.replace(/\D/g, '')) || 0;
+        return sum + minutes;
+      }, 0);
+      const dateForCheck = new Date(selectedDate + 'T12:00:00');
+      const dayH = getHoursForDate(shop?.workingHours, dateForCheck);
+      if (!dayH) {
+        alert(t('booking.dayClosed'));
+        return;
+      }
+      const [hours, minutes] = time.split(':').map(Number);
+      const slotStart = new Date(selectedDate);
+      slotStart.setHours(hours, minutes, 0, 0);
+      const slotEnd = new Date(slotStart);
+      slotEnd.setMinutes(slotEnd.getMinutes() + totalMinutes);
+      const [closeH, closeM] = dayH.close.split(':').map(Number);
+      if (slotEnd.getHours() > closeH || (slotEnd.getHours() === closeH && slotEnd.getMinutes() > closeM)) {
+        alert(t('booking.servicesExceedBusinessHours'));
+        return;
+      }
+      if (overlapsLunch(selectedDate, time, totalMinutes, shop?.lunchStart, shop?.lunchEnd)) {
+        alert(t('booking.appointmentOverlapsLunch'));
+        return;
+      }
+      setBookingState((prev) => ({ ...prev, time, step: 4 }));
     }
   };
 
@@ -552,12 +594,33 @@ export default function BookingModal() {
         return [];
       }
 
-      const dateStr = startTime.toISOString().split('T')[0];
+      const dateStr = formatDateYYYYMMDDInTimeZone(startTime, SHOP_BUSINESS_TIMEZONE);
       const availableBarbers: Array<{ barberId: string; shopId: string; barber: Barber }> = [];
 
       // Check each barber's availability
       for (const barber of activeBarbers) {
         try {
+          const fromList = shops.find((s: { id: string }) => s.id === barber.shopId);
+          const shopRecord =
+            fromList ||
+            (shop && barber.shopId === shop.id
+              ? {
+                  workingHours: shop.workingHours,
+                  lunchStart: shop.lunchStart,
+                  lunchEnd: shop.lunchEnd,
+                }
+              : undefined);
+          const slotOk = validateSlotAgainstShop(
+            shopRecord?.workingHours,
+            shopRecord?.lunchStart,
+            shopRecord?.lunchEnd,
+            startTime,
+            endTime
+          );
+          if (!slotOk.ok) {
+            continue;
+          }
+
           // Check existing appointments for this barber on this date
           const response = await fetch(`/api/barbers/${barber.id}/appointments?date=${dateStr}`);
           
@@ -650,18 +713,21 @@ export default function BookingModal() {
 
       const dateForCheck = new Date(selectedDate + 'T12:00:00');
       const dayH = getHoursForDate(shop?.workingHours, dateForCheck);
-      if (dayH) {
-        const [closeH, closeM] = dayH.close.split(':').map(Number);
-        if (endTime.getHours() > closeH || (endTime.getHours() === closeH && endTime.getMinutes() > closeM)) {
-          alert(t('booking.servicesExceedBusinessHours'));
-          setLoading(false);
-          return;
-        }
-        if (overlapsLunch(selectedDate, bookingState.time!, totalMinutes, shop?.lunchStart, shop?.lunchEnd)) {
-          alert(t('booking.servicesExceedBusinessHours'));
-          setLoading(false);
-          return;
-        }
+      if (!dayH) {
+        alert(t('booking.dayClosed'));
+        setLoading(false);
+        return;
+      }
+      const [closeH, closeM] = dayH.close.split(':').map(Number);
+      if (endTime.getHours() > closeH || (endTime.getHours() === closeH && endTime.getMinutes() > closeM)) {
+        alert(t('booking.servicesExceedBusinessHours'));
+        setLoading(false);
+        return;
+      }
+      if (overlapsLunch(selectedDate, bookingState.time!, totalMinutes, shop?.lunchStart, shop?.lunchEnd)) {
+        alert(t('booking.appointmentOverlapsLunch'));
+        setLoading(false);
+        return;
       }
 
       // Ensure barbers are loaded
@@ -902,19 +968,34 @@ export default function BookingModal() {
                   const date = new Date(dateStr + 'T00:00:00');
                   const isToday = dateStr === new Date().toISOString().split('T')[0];
                   const isSelected = selectedDate === dateStr;
+                  const bookable = isDateBookable(dateStr);
                   return (
                     <button
                       key={dateStr}
-                      onClick={() => setDate(dateStr)}
+                      type="button"
+                      disabled={!bookable}
+                      onClick={() => bookable && setDate(dateStr)}
+                      title={!bookable ? t('booking.dayClosed') : undefined}
                       className={`py-3 border rounded-lg text-center text-sm font-medium transition-all ${
-                        isSelected
-                          ? 'border-black bg-black text-white'
-                          : 'border-gray-200 hover:border-black'
+                        !bookable
+                          ? 'border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed opacity-70'
+                          : isSelected
+                            ? 'border-black bg-black text-white'
+                            : 'border-gray-200 hover:border-black'
                       }`}
                     >
-                      <div className="text-xs text-gray-500 mb-1">{formatWeekday(date)}</div>
+                      <div
+                        className={`text-xs mb-1 ${!bookable ? 'text-gray-400' : isSelected ? 'text-gray-300' : 'text-gray-500'}`}
+                      >
+                        {formatWeekday(date)}
+                      </div>
                       <div className="font-bold">{date.getDate()}</div>
-                      {isToday && <div className="text-[10px] text-gray-400 mt-1">{t('booking.today')}</div>}
+                      {!bookable && (
+                        <div className="text-[9px] text-gray-400 mt-1 leading-tight">{t('dashboard.owner.closed')}</div>
+                      )}
+                      {isToday && bookable && (
+                        <div className="text-[10px] text-gray-400 mt-1">{t('booking.today')}</div>
+                      )}
                     </button>
                   );
                 })}

@@ -66,13 +66,13 @@ export default function Footer() {
           <p>&copy; {new Date().getFullYear()} {shopName}. {t('footer.allRightsReserved')}</p>
           <div className="flex gap-4">
             <Link
-              href="/dashboard/barber"
+              href="/barbers"
               className="text-gray-400 hover:text-white transition-colors flex items-center gap-1"
             >
               <Scissors className="w-4 h-4" /> {t('footer.barberView')}
             </Link>
             <Link
-              href="/admin"
+              href="/superadmin"
               className="text-gray-400 hover:text-white transition-colors flex items-center gap-1"
             >
               <Crown className="w-4 h-4" /> {t('footer.barberManagement')}

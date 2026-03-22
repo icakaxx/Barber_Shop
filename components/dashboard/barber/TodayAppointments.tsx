@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Calendar, Scissors, Phone, Edit2, Check, X } from 'lucide-react';
 import { getStatusBadge } from '@/lib/utils';
 import type { AppointmentStatus } from '@/lib/types';
@@ -17,13 +17,21 @@ interface Appointment {
   endTime: string;
   status: string;
   notes?: string;
+  barberName?: string;
 }
 
 interface TodayAppointmentsProps {
   barberId?: string;
+  /** When set without barberId: load all appointments for the shop (team view) */
+  shopId?: string;
+  showBarberLabels?: boolean;
 }
 
-export default function TodayAppointments({ barberId }: TodayAppointmentsProps) {
+export default function TodayAppointments({
+  barberId,
+  shopId,
+  showBarberLabels,
+}: TodayAppointmentsProps) {
   const { t, locale } = useI18n();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,21 +40,36 @@ export default function TodayAppointments({ barberId }: TodayAppointmentsProps) 
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [statusFilter, setStatusFilter] = useState<string>('all'); // 'all', 'PENDING', 'CONFIRMED', 'DONE', 'CANCELLED'
 
+  const buildListUrl = useCallback(() => {
+    if (shopId && !barberId) {
+      let url = `/api/appointments?shopId=${shopId}&date=${selectedDate}`;
+      if (statusFilter !== 'all') {
+        url += `&status=${statusFilter}`;
+      }
+      return url;
+    }
+    if (barberId) {
+      let url = `/api/barbers/${barberId}/appointments?date=${selectedDate}`;
+      if (statusFilter !== 'all') {
+        url += `&status=${statusFilter}`;
+      }
+      return url;
+    }
+    return null;
+  }, [barberId, shopId, selectedDate, statusFilter]);
+
   useEffect(() => {
     const loadAppointments = async () => {
-      if (!barberId) {
+      const url = buildListUrl();
+      if (!url) {
+        setAppointments([]);
         setLoading(false);
         return;
       }
 
       try {
-        let url = `/api/barbers/${barberId}/appointments?date=${selectedDate}`;
-        if (statusFilter !== 'all') {
-          url += `&status=${statusFilter}`;
-        }
-        
         const response = await fetch(url);
-        
+
         if (response.ok) {
           const data = await response.json();
           setAppointments(data);
@@ -60,8 +83,9 @@ export default function TodayAppointments({ barberId }: TodayAppointmentsProps) 
       }
     };
 
+    setLoading(true);
     loadAppointments();
-  }, [barberId, selectedDate, statusFilter]);
+  }, [buildListUrl]);
 
   const formatTime = (timeString: string) => {
     const date = new Date(timeString);
@@ -190,15 +214,13 @@ export default function TodayAppointments({ barberId }: TodayAppointmentsProps) 
       });
 
       if (response.ok) {
-        // Reload appointments
-        let url = `/api/barbers/${barberId}/appointments?date=${selectedDate}`;
-        if (statusFilter !== 'all') {
-          url += `&status=${statusFilter}`;
-        }
-        const reloadResponse = await fetch(url);
-        if (reloadResponse.ok) {
-          const data = await reloadResponse.json();
-          setAppointments(data);
+        const url = buildListUrl();
+        if (url) {
+          const reloadResponse = await fetch(url);
+          if (reloadResponse.ok) {
+            const data = await reloadResponse.json();
+            setAppointments(data);
+          }
         }
         setIsModalOpen(false);
         setEditingAppointment(null);
@@ -221,15 +243,13 @@ export default function TodayAppointments({ barberId }: TodayAppointmentsProps) 
       });
 
       if (response.ok) {
-        // Reload appointments
-        let url = `/api/barbers/${barberId}/appointments?date=${selectedDate}`;
-        if (statusFilter !== 'all') {
-          url += `&status=${statusFilter}`;
-        }
-        const reloadResponse = await fetch(url);
-        if (reloadResponse.ok) {
-          const data = await reloadResponse.json();
-          setAppointments(data);
+        const url = buildListUrl();
+        if (url) {
+          const reloadResponse = await fetch(url);
+          if (reloadResponse.ok) {
+            const data = await reloadResponse.json();
+            setAppointments(data);
+          }
         }
       }
     } catch (error) {
@@ -251,15 +271,13 @@ export default function TodayAppointments({ barberId }: TodayAppointmentsProps) 
       });
 
       if (response.ok) {
-        // Reload appointments
-        let url = `/api/barbers/${barberId}/appointments?date=${selectedDate}`;
-        if (statusFilter !== 'all') {
-          url += `&status=${statusFilter}`;
-        }
-        const reloadResponse = await fetch(url);
-        if (reloadResponse.ok) {
-          const data = await reloadResponse.json();
-          setAppointments(data);
+        const url = buildListUrl();
+        if (url) {
+          const reloadResponse = await fetch(url);
+          if (reloadResponse.ok) {
+            const data = await reloadResponse.json();
+            setAppointments(data);
+          }
         }
       } else {
         alert(t('dashboard.barber.failedToCancel'));
@@ -314,8 +332,8 @@ export default function TodayAppointments({ barberId }: TodayAppointmentsProps) 
         </div>
       </div>
 
-      {/* Free Time Slots Section */}
-      {freeSlots.length > 0 && (
+      {/* Free slots only make sense for a single barber’s column */}
+      {barberId && freeSlots.length > 0 && (
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
           <h3 className="font-bold text-sm text-blue-900 mb-3 uppercase">{t('dashboard.barber.availableTimeSlots')}</h3>
           <div className="flex flex-wrap gap-2">
@@ -361,9 +379,14 @@ export default function TodayAppointments({ barberId }: TodayAppointmentsProps) 
                   <p className="text-xs text-gray-500 mt-1">{getDuration(app.startTime, app.endTime)} {t('services.min')}</p>
                 </div>
                 <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <h3 className="font-bold text-lg">{app.customerName}</h3>
-                     {getStatusBadge(app.status as AppointmentStatus)}
+                    {getStatusBadge(app.status as AppointmentStatus)}
+                    {showBarberLabels && app.barberName && (
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
+                        {app.barberName}
+                      </span>
+                    )}
                   </div>
                   <div className="text-sm text-gray-600 flex items-start gap-1 mb-1">
                     <Scissors className="w-3 h-3 mt-0.5 flex-shrink-0" />

@@ -375,7 +375,7 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
                 onClick={async () => {
                   const supabase = createClient();
                   await supabase.auth.signOut();
-                  router.push('/login');
+                  router.push('/login?redirect=/owner');
                   router.refresh();
                 }}
                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"

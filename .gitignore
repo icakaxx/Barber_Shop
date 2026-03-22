@@ -28,6 +28,9 @@ yarn-error.log*
 .env*.local
 .env
 
+# Supabase CLI local secrets (Edge Functions)
+supabase/.env.functions
+
 # vercel
 .vercel
 

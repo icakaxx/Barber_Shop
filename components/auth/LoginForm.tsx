@@ -5,15 +5,26 @@ import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/browser';
 import { useI18n } from '@/contexts/I18nContext';
 
-export default function LoginForm() {
+export type LoginFormVariant = 'owner' | 'admin' | 'barber';
+
+interface LoginFormProps {
+  defaultRedirect?: string;
+  variant?: LoginFormVariant;
+}
+
+export default function LoginForm({
+  defaultRedirect = '/owner',
+  variant = 'owner',
+}: LoginFormProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const { t } = useI18n();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get('redirect') || '/dashboard/owner';
+  const redirectTo = searchParams.get('redirect') || defaultRedirect;
   const accessDenied = searchParams.get('error') === 'access_denied';
+  const loginBasePath = variant === 'admin' ? '/login/admin' : '/login';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,13 +63,19 @@ export default function LoginForm() {
       {accessDenied && (
         <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm space-y-2">
           <p>{t('auth.accessDenied')}</p>
-          <p className="text-xs">{t('auth.accessDeniedHelp')}</p>
+          <p className="text-xs">
+            {variant === 'admin'
+              ? t('auth.accessDeniedHelpAdmin')
+              : variant === 'barber'
+                ? t('auth.accessDeniedHelpBarber')
+                : t('auth.accessDeniedHelp')}
+          </p>
           <button
             type="button"
             onClick={async () => {
               const supabase = createClient();
               await supabase.auth.signOut();
-              window.location.href = '/login';
+              window.location.href = loginBasePath;
             }}
             className="text-xs font-bold underline"
           >

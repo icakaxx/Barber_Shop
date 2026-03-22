@@ -65,7 +65,7 @@ export default function DevNav() {
                 Landing Page
               </Link>
               <Link
-                href="/dashboard/owner"
+                href="/owner"
                 className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors text-sm font-medium"
                 onClick={() => setIsOpen(false)}
               >
@@ -73,7 +73,15 @@ export default function DevNav() {
                 Owner Dashboard
               </Link>
               <Link
-                href="/admin"
+                href="/login/barber?redirect=/barbers"
+                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors text-sm font-medium"
+                onClick={() => setIsOpen(false)}
+              >
+                <Scissors className="w-4 h-4" />
+                Barber login → /barbers
+              </Link>
+              <Link
+                href="/login/admin?redirect=/superadmin"
                 className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors text-sm font-medium"
                 onClick={() => setIsOpen(false)}
               >
@@ -82,26 +90,24 @@ export default function DevNav() {
               </Link>
             </div>
 
-            {/* Barber Pages */}
+            {/* Barber team dashboard */}
             <div>
-              <p className="text-xs font-bold text-gray-500 uppercase mb-2 px-2">Barber Dashboards</p>
+              <p className="text-xs font-bold text-gray-500 uppercase mb-2 px-2">Barbers (team)</p>
+              <Link
+                href="/barbers"
+                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors text-sm font-medium"
+                onClick={() => setIsOpen(false)}
+              >
+                <User className="w-4 h-4" />
+                /barbers (sign in required)
+              </Link>
               {loading ? (
                 <div className="px-3 py-2 text-sm text-gray-400">Loading barbers...</div>
               ) : barbers.length === 0 ? (
-                <div className="px-3 py-2 text-sm text-gray-400">No active barbers found</div>
+                <div className="px-3 py-2 text-sm text-gray-400">No active barbers</div>
               ) : (
-                <div className="space-y-1">
-                  {barbers.map((barber) => (
-                    <Link
-                      key={barber.id}
-                      href={`/dashboard/barber?id=${barber.id}`}
-                      className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors text-sm font-medium"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      <User className="w-4 h-4" />
-                      <span className="truncate">{barber.displayName}</span>
-                    </Link>
-                  ))}
+                <div className="px-3 py-1 text-xs text-gray-500">
+                  {barbers.length} active in API (use team view inside /barbers)
                 </div>
               )}
             </div>

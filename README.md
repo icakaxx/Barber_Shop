@@ -9,6 +9,11 @@ A modern, full-featured barber shop booking system built with Next.js, TypeScrip
 - **Barber Dashboard**: Manage appointments, availability, and view team schedules
 - **Barber Management**: Complete CRUD operations for barbers with personal info and schedule management
 
+## Documentation (BG)
+
+- **[Пътища и роли](docs/ROUTES_AND_ROLES.md)** — URL-и (`/owner`, `/barbers`, `/superadmin`), кой какво може, legacy пренасочвания, bootstrap
+- **[Edge Function: create-user](docs/EDGE_FUNCTION_CREATE_USER.md)** — създаване на потребители от супер админ
+
 ## Tech Stack
 
 - **Framework**: Next.js 14 (App Router)
@@ -123,9 +128,12 @@ All core barber management features are working! 🎉
 
 ## Available Routes
 
-- `/` - Landing page
-- `/dashboard/barber` - Barber dashboard
-- `/admin` - Barber Management (Admin panel)
+Пълно описание: **[docs/ROUTES_AND_ROLES.md](docs/ROUTES_AND_ROLES.md)**
+
+- `/` — Landing
+- `/owner` — Табло собственик (legacy: `/dashboard/owner` → пренасочва)
+- `/barbers` — Екипно табло бръснари, `/login/barber`
+- `/superadmin` — Супер админ (legacy: `/admin` → пренасочва)
 
 ## Development
 

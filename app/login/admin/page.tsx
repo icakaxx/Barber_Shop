@@ -4,11 +4,11 @@ import { Suspense } from 'react';
 import LoginPageContent from '@/components/auth/LoginPageContent';
 
 export const metadata = {
-  title: 'Вход за собственик | Barber King',
-  description: 'Влезте за достъп до таблото на собственика',
+  title: 'Вход за супер админ | Barber King',
+  description: 'Влезте за достъп до админ таблото',
 };
 
-export default async function LoginPage({
+export default async function AdminLoginPage({
   searchParams,
 }: {
   searchParams: Promise<{ error?: string }>;
@@ -17,11 +17,17 @@ export default async function LoginPage({
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (user && params.error !== 'access_denied') {
-    redirect('/owner');
+    redirect('/superadmin');
   }
   return (
-    <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center"><div className="animate-pulse h-48 w-64 bg-gray-200 rounded-lg" /></div>}>
-      <LoginPageContent />
+    <Suspense
+      fallback={
+        <div className="min-h-screen login-page-bg flex items-center justify-center">
+          <div className="animate-pulse h-48 w-64 bg-white/10 rounded-lg" />
+        </div>
+      }
+    >
+      <LoginPageContent variant="admin" />
     </Suspense>
   );
 }
