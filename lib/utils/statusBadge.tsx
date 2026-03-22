@@ -1,6 +1,7 @@
 import React from 'react';
-import type { AppointmentStatus } from './types';
+import type { AppointmentStatus } from '@/lib/types';
 
+/** Small pill used in dashboards / admin for appointment status. */
 export function getStatusBadge(status: AppointmentStatus): JSX.Element {
   const styles: Record<AppointmentStatus, string> = {
     CONFIRMED: 'bg-green-100 text-green-700',
@@ -15,6 +16,3 @@ export function getStatusBadge(status: AppointmentStatus): JSX.Element {
     </span>
   );
 }
-
-
-

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Building2, Calendar, Users, Plus, Edit2, Trash2, Scissors, Settings, LogOut } from 'lucide-react';
 import { createClient } from '@/lib/supabase/browser';
-import { getStatusBadge } from '@/lib/utils';
+import { getStatusBadge } from '@/lib/utils/statusBadge';
 import EditAppointmentModal from '@/components/dashboard/barber/EditAppointmentModal';
 import CreateAppointmentModal from '@/components/dashboard/barber/CreateAppointmentModal';
 import ServicesManagementTab from './ServicesManagementTab';

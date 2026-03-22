@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Users, Calendar, Scissors, Phone, Edit2, Plus } from 'lucide-react';
-import { getStatusBadge } from '@/lib/utils';
+import { getStatusBadge } from '@/lib/utils/statusBadge';
 import EditAppointmentModal from './EditAppointmentModal';
 import CreateAppointmentModal from './CreateAppointmentModal';
 import type { Barber, AppointmentStatus } from '@/lib/types';

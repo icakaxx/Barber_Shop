@@ -13,6 +13,7 @@ A modern, full-featured barber shop booking system built with Next.js, TypeScrip
 
 - **[Пътища и роли](docs/ROUTES_AND_ROLES.md)** — URL-и (`/owner`, `/barbers`, `/superadmin`), кой какво може, legacy пренасочвания, bootstrap
 - **[Edge Function: create-user](docs/EDGE_FUNCTION_CREATE_USER.md)** — създаване на потребители от супер админ
+- **[Dev snippets](docs/DEV_SNIPPETS.md)** — опционален код (напр. dev-only password reset), не е част от приложението
 
 ## Tech Stack
 

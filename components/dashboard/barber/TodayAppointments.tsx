@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Calendar, Scissors, Phone, Edit2, Check, X } from 'lucide-react';
-import { getStatusBadge } from '@/lib/utils';
+import { getStatusBadge } from '@/lib/utils/statusBadge';
 import type { AppointmentStatus } from '@/lib/types';
 import { useI18n } from '@/contexts/I18nContext';
 import EditAppointmentModal from './EditAppointmentModal';

@@ -1,7 +1,7 @@
 'use client';
 
 import { X, Calendar, User, Phone, Mail, Scissors, Clock, FileText } from 'lucide-react';
-import { getStatusBadge } from '@/lib/utils';
+import { getStatusBadge } from '@/lib/utils/statusBadge';
 import type { AppointmentStatus } from '@/lib/types';
 
 interface Appointment {

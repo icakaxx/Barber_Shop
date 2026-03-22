@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { Users, Calendar, Scissors, Phone, Edit2, Trash2, ArrowUp, ArrowDown, User } from 'lucide-react';
-import { getStatusBadge } from '@/lib/utils';
-import BarberFormModal from '@/components/admin/BarberFormModal_new';
+import { getStatusBadge } from '@/lib/utils/statusBadge';
+import BarberFormModal from '@/components/admin/BarberFormModal';
 import { useI18n } from '@/contexts/I18nContext';
 import type { AppointmentStatus } from '@/lib/types';
 import type { Barber } from '@/lib/types';

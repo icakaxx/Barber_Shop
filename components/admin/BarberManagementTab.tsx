@@ -5,7 +5,7 @@ import { UserPlus, Edit, Trash2, Eye, Star, Loader2 } from 'lucide-react';
 import { mockBarberSchedules, mockShops } from '@/lib/mock-data';
 import { getBarbers, createBarber, updateBarber, deleteBarber } from '@/lib/supabase/barbers';
 import type { Barber, BarberSchedule } from '@/lib/types';
-import BarberFormModal from './BarberFormModal_new';
+import BarberFormModal from './BarberFormModal';
 import BarberScheduleModal from './BarberScheduleModal';
 import { useI18n } from '@/contexts/I18nContext';
 

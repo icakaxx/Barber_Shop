@@ -1,10 +1,14 @@
-# Архив – полезен код за бъдеща употреба
+# Dev snippets & archived reference
 
-## API за нулиране на парола (dev only)
+One place for optional / removed dev utilities. Main docs: `EDGE_FUNCTION_CREATE_USER.md`, `ROUTES_AND_ROLES.md`.
 
-Ако отново е нужен endpoint за нулиране на парола чрез Supabase Admin API:
+---
 
-**Файл:** `app/api/auth/reset-password/route.ts`
+## Password reset API (dev only) — archived
+
+If you need an endpoint to reset a password via Supabase Admin API again, restore something like:
+
+**Route:** `app/api/auth/reset-password/route.ts`
 
 ```typescript
 import { NextRequest, NextResponse } from 'next/server';
@@ -40,10 +44,10 @@ export async function POST(request: NextRequest) {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
     return NextResponse.json({ success: true });
-  } catch (err) {
+  } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 ```
 
-**Използване:** `POST /api/auth/reset-password` с body `{ "email": "...", "newPassword": "..." }`
+**Usage:** `POST /api/auth/reset-password` with body `{ "email": "...", "newPassword": "..." }` (or `userId` instead of `email`).

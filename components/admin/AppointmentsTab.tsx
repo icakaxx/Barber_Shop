@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Calendar, Clock, User, Phone, Mail, Scissors, Filter, X } from 'lucide-react';
 import { getBarbers } from '@/lib/supabase/barbers';
 import type { Barber } from '@/lib/types';
-import { getStatusBadge } from '@/lib/utils';
+import { getStatusBadge } from '@/lib/utils/statusBadge';
 import { useI18n } from '@/contexts/I18nContext';
 
 interface Appointment {
