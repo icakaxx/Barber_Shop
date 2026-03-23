@@ -65,8 +65,9 @@ export function ShopBrandingProvider({ children }: { children: React.ReactNode }
             lunchEnd: shopData.lunchEnd
           });
         }
-        const activeBarbers = (barbersData || []).filter((b: any) => b.isActive);
-        setBarbers(activeBarbers.map((b: any) => ({
+        // GET /api/barbers returns only active barbers; no public isActive flag
+        const listedBarbers = (barbersData || []).filter((b: { shopId?: string }) => !!b.shopId);
+        setBarbers(listedBarbers.map((b: { id: string; displayName: string; bio?: string; photoUrl?: string; shopId: string }) => ({
           id: b.id,
           displayName: b.displayName,
           bio: b.bio,

@@ -1,7 +1,10 @@
-import { createClient } from '@/lib/supabase/server';
-import { supabaseServer } from '@/lib/supabase/client';
+import 'server-only';
 
-export type ProfileRole = 'USER' | 'BARBER_WORKER' | 'BARBER_OWNER' | 'SUPER_ADMIN';
+import { createClient } from '@/lib/supabase/server';
+import { getSupabaseAdmin } from '@/lib/supabase/admin';
+import type { ProfileRole } from '@/lib/auth/types';
+
+export type { ProfileRole };
 
 export interface SessionProfileContext {
   userId: string;
@@ -11,17 +14,16 @@ export interface SessionProfileContext {
 }
 
 /**
- * Current Supabase session + profile row (uses server cookies).
+ * Current Supabase session + profile (cookie client + RLS on profiles only).
  */
 export async function getSessionProfile(): Promise<SessionProfileContext | null> {
-  if (!supabaseServer) return null;
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const { data: profile, error } = await supabaseServer
+  const { data: profile, error } = await supabase
     .from('profiles')
     .select('role, full_name')
     .eq('id', user.id)
@@ -38,15 +40,18 @@ export async function getSessionProfile(): Promise<SessionProfileContext | null>
 }
 
 /**
- * Barber row for this auth user (BARBER_WORKER), if any.
+ * Barber row for this auth user. Uses service role only after session is established by caller.
  */
 export async function getBarberRowForProfile(profileId: string) {
-  if (!supabaseServer) return null;
-  const { data, error } = await supabaseServer
+  const admin = getSupabaseAdmin();
+  if (!admin) return null;
+
+  const { data, error } = await admin
     .from('barbers')
     .select('id, shop_id, display_name, profile_id, is_active')
     .eq('profile_id', profileId)
     .maybeSingle();
+
   if (error) return null;
   return data as {
     id: string;

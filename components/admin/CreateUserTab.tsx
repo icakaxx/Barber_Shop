@@ -31,7 +31,7 @@ export default function CreateUserTab() {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await fetch('/api/shops');
+        const res = await fetch('/api/shops', { credentials: 'include' });
         if (res.ok) {
           const data = await res.json();
           setShops(Array.isArray(data) ? data : []);

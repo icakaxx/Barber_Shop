@@ -70,7 +70,7 @@ export default function ScheduleCalendar({
   useEffect(() => {
     const loadBarbers = async () => {
       try {
-        const response = await fetch('/api/barbers');
+        const response = await fetch('/api/barbers', { credentials: 'include' });
         if (!response.ok) return;
         const data: Barber[] = await response.json();
         // Filter to current shop if provided
@@ -109,7 +109,7 @@ export default function ScheduleCalendar({
           return;
         }
 
-        const response = await fetch(url);
+        const response = await fetch(url, { credentials: 'include' });
         if (response.ok) {
           const data = await response.json();
           // Store full appointment data (not just basic fields)
@@ -145,6 +145,7 @@ export default function ScheduleCalendar({
     try {
       const response = await fetch('/api/appointments', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(appointmentData)
       });
@@ -165,7 +166,7 @@ export default function ScheduleCalendar({
             return;
           }
 
-          const reloadResponse = await fetch(url);
+          const reloadResponse = await fetch(url, { credentials: 'include' });
           if (reloadResponse.ok) {
             const data = await reloadResponse.json();
             setAppointments(
@@ -205,6 +206,14 @@ export default function ScheduleCalendar({
   const getDateFromYMD = (ymd: string) => {
     const [year, month, day] = ymd.split('-').map(Number);
     return new Date(year, month - 1, day);
+  };
+
+  /** Local calendar date as YYYY-MM-DD — never use toISOString() for calendar cells (UTC shifts the day). */
+  const toLocalYMD = (date: Date) => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
   };
 
   // Check if a time slot is taken
@@ -391,7 +400,7 @@ export default function ScheduleCalendar({
         </div>
         <div className="grid grid-cols-7 gap-1">
           {calendarDays.map((dayInfo, index) => {
-            const dateStr = dayInfo.date.toISOString().split('T')[0];
+            const dateStr = toLocalYMD(dayInfo.date);
             const daySelected = isSelected(dayInfo.date);
             const dayIsToday = isToday(dayInfo.date);
             

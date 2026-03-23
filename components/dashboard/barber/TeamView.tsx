@@ -39,7 +39,7 @@ export default function TeamView({ shopId, currentBarberId }: TeamViewProps) {
   useEffect(() => {
     const loadBarbers = async () => {
       try {
-        const response = await fetch('/api/barbers');
+        const response = await fetch('/api/barbers', { credentials: 'include' });
         if (response.ok) {
           const data = await response.json();
           setBarbers(data);
@@ -70,7 +70,7 @@ export default function TeamView({ shopId, currentBarberId }: TeamViewProps) {
           url = `/api/barbers/${selectedBarberId}/appointments?date=${selectedDate}`;
         }
 
-        const response = await fetch(url);
+        const response = await fetch(url, { credentials: 'include' });
         if (response.ok) {
           const data = await response.json();
           setAppointments(data);
@@ -129,6 +129,7 @@ export default function TeamView({ shopId, currentBarberId }: TeamViewProps) {
     try {
       const response = await fetch(`/api/appointments/${updatedAppointment.id}`, {
         method: 'PUT',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           customerName: updatedAppointment.customerName,
@@ -147,7 +148,7 @@ export default function TeamView({ shopId, currentBarberId }: TeamViewProps) {
         if (selectedBarberId !== 'all') {
           url = `/api/barbers/${selectedBarberId}/appointments?date=${selectedDate}`;
         }
-        const reloadResponse = await fetch(url);
+        const reloadResponse = await fetch(url, { credentials: 'include' });
         if (reloadResponse.ok) {
           const data = await reloadResponse.json();
           setAppointments(data);
@@ -168,6 +169,7 @@ export default function TeamView({ shopId, currentBarberId }: TeamViewProps) {
     try {
       const response = await fetch('/api/appointments', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(appointmentData)
       });
@@ -178,7 +180,7 @@ export default function TeamView({ shopId, currentBarberId }: TeamViewProps) {
         if (selectedBarberId !== 'all') {
           url = `/api/barbers/${selectedBarberId}/appointments?date=${selectedDate}`;
         }
-        const reloadResponse = await fetch(url);
+        const reloadResponse = await fetch(url, { credentials: 'include' });
         if (reloadResponse.ok) {
           const data = await reloadResponse.json();
           setAppointments(data);

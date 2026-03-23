@@ -54,7 +54,9 @@ export default function CreateAppointmentModal({
   useEffect(() => {
     const loadServices = async () => {
       try {
-        const response = await fetch(`/api/services${shopId ? `?shopId=${shopId}` : ''}`);
+        const response = await fetch(`/api/services${shopId ? `?shopId=${shopId}` : ''}`, {
+          credentials: 'include',
+        });
         if (response.ok) {
           const data = await response.json();
           // Translate service names
@@ -90,7 +92,10 @@ export default function CreateAppointmentModal({
       if (!formData.barberId || !selectedDate) return;
       
       try {
-        const response = await fetch(`/api/barbers/${formData.barberId}/appointments?date=${selectedDate}`);
+        const response = await fetch(
+          `/api/barbers/${formData.barberId}/appointments?date=${selectedDate}`,
+          { credentials: 'include' }
+        );
         if (response.ok) {
           const data = await response.json();
           setAppointments(data.filter((apt: Appointment) => 

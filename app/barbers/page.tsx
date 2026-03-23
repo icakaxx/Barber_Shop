@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation';
 import BarberDashboard from '@/components/dashboard/barber/BarberDashboard';
 import { createClient } from '@/lib/supabase/server';
-import { supabaseServer } from '@/lib/supabase/client';
 
 const ALLOWED_ROLES = ['BARBER_WORKER', 'BARBER_OWNER', 'SUPER_ADMIN'];
 
@@ -18,11 +17,7 @@ export default async function BarbersTeamPage() {
     redirect('/login/barber?redirect=/barbers');
   }
 
-  if (!supabaseServer) {
-    redirect('/?error=server_config');
-  }
-
-  const { data: profile, error: profileError } = await supabaseServer
+  const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('role')
     .eq('id', user.id)

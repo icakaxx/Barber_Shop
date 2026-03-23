@@ -113,6 +113,7 @@ export default function ShopSettingsTab({ shopId, shop, onShopUpdate }: ShopSett
     try {
       const response = await fetch(`/api/shops/${shopId}`, {
         method: 'PATCH',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: formData.name || undefined,

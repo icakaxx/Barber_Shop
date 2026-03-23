@@ -1,24 +1,44 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseServer } from '@/lib/supabase/client'
+import { getSupabaseAdmin } from '@/lib/supabase/admin'
+import { requireAuthContext, requireRoles } from '@/lib/auth/getAuthContext'
+import { STAFF_ROLES } from '@/lib/auth/types'
+import { assertAppointmentStaffAccess } from '@/lib/auth/scope'
+import { notConfiguredJson, serverErrorJson } from '@/lib/api/jsonErrors'
+import type { ProfileRole } from '@/lib/auth/types'
 
-// PUT /api/appointments/[id] - Update an appointment
+// PUT /api/appointments/[id] — staff only; actor fields from session only
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  if (!supabaseServer) {
-    return NextResponse.json(
-      { error: 'Supabase not configured' },
-      { status: 500 }
-    )
-  }
+  const auth = await requireAuthContext()
+  if (auth instanceof NextResponse) return auth
+
+  const rg = requireRoles(auth, STAFF_ROLES)
+  if (rg instanceof NextResponse) return rg
+
+  const admin = getSupabaseAdmin()
+  if (!admin) return notConfiguredJson()
 
   try {
+    const { data: row, error: loadErr } = await admin
+      .from('appointments')
+      .select('id, barber_id, shop_id')
+      .eq('id', params.id)
+      .single()
+
+    if (loadErr || !row) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
+
+    const ok = await assertAppointmentStaffAccess(admin, auth, row)
+    if (ok instanceof NextResponse) return ok
+
     const body = await request.json()
     const { status, startTime, endTime, notes, customerName, customerPhone, customerEmail } = body
 
-    const updateData: any = {}
-    
+    const updateData: Record<string, unknown> = {}
+
     if (status !== undefined) updateData.status = status
     if (startTime !== undefined) updateData.start_time = startTime
     if (endTime !== undefined) updateData.end_time = endTime
@@ -27,16 +47,16 @@ export async function PUT(
     if (customerPhone !== undefined) updateData.customer_phone = customerPhone
     if (customerEmail !== undefined) updateData.customer_email = customerEmail
 
-    // If cancelling, add cancellation info
     if (status === 'CANCELLED') {
       updateData.cancelled_at = new Date().toISOString()
-      // cancelled_by_user_id and cancelled_by_role should be set by the client
-      if (body.cancelledByUserId) updateData.cancelled_by_user_id = body.cancelledByUserId
-      if (body.cancelledByRole) updateData.cancelled_by_role = body.cancelledByRole
-      if (body.cancelReason) updateData.cancel_reason = body.cancelReason
+      updateData.cancelled_by_user_id = auth.userId
+      updateData.cancelled_by_role = auth.role as ProfileRole
+      if (typeof body.cancelReason === 'string' && body.cancelReason.length > 0) {
+        updateData.cancel_reason = body.cancelReason.slice(0, 2000)
+      }
     }
 
-    const { data, error } = await supabaseServer
+    const { data, error } = await admin
       .from('appointments')
       .update(updateData)
       .eq('id', params.id)
@@ -60,11 +80,8 @@ export async function PUT(
       .single()
 
     if (error) {
-      console.error('Error updating appointment:', error)
-      return NextResponse.json(
-        { error: `Failed to update appointment: ${error.message}` },
-        { status: 500 }
-      )
+      console.error('Error updating appointment:', error.code)
+      return serverErrorJson()
     }
 
     const appointment = {
@@ -94,57 +111,60 @@ export async function PUT(
     return NextResponse.json(appointment)
   } catch (error) {
     console.error('Error in PUT /api/appointments/[id]:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return serverErrorJson()
   }
 }
 
-// DELETE /api/appointments/[id] - Cancel an appointment (soft delete)
+// DELETE /api/appointments/[id] — cancel; staff only; actor from session
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  if (!supabaseServer) {
-    return NextResponse.json(
-      { error: 'Supabase not configured' },
-      { status: 500 }
-    )
-  }
+  const auth = await requireAuthContext()
+  if (auth instanceof NextResponse) return auth
+
+  const rg = requireRoles(auth, STAFF_ROLES)
+  if (rg instanceof NextResponse) return rg
+
+  const admin = getSupabaseAdmin()
+  if (!admin) return notConfiguredJson()
 
   try {
     const { searchParams } = new URL(request.url)
-    const cancelledByUserId = searchParams.get('cancelledByUserId')
-    const cancelledByRole = searchParams.get('cancelledByRole')
     const cancelReason = searchParams.get('cancelReason')
 
-    const { error } = await supabaseServer
+    const { data: row, error: loadErr } = await admin
+      .from('appointments')
+      .select('id, barber_id, shop_id')
+      .eq('id', params.id)
+      .single()
+
+    if (loadErr || !row) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
+
+    const ok = await assertAppointmentStaffAccess(admin, auth, row)
+    if (ok instanceof NextResponse) return ok
+
+    const { error } = await admin
       .from('appointments')
       .update({
         status: 'CANCELLED',
         cancelled_at: new Date().toISOString(),
-        cancelled_by_user_id: cancelledByUserId || null,
-        cancelled_by_role: cancelledByRole || null,
-        cancel_reason: cancelReason || null
+        cancelled_by_user_id: auth.userId,
+        cancelled_by_role: auth.role,
+        cancel_reason: cancelReason?.slice(0, 2000) || null
       })
       .eq('id', params.id)
 
     if (error) {
-      console.error('Error cancelling appointment:', error)
-      return NextResponse.json(
-        { error: `Failed to cancel appointment: ${error.message}` },
-        { status: 500 }
-      )
+      console.error('Error cancelling appointment:', error.code)
+      return serverErrorJson()
     }
 
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Error in DELETE /api/appointments/[id]:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return serverErrorJson()
   }
 }
-

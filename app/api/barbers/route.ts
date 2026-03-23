@@ -1,186 +1,222 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseServer } from '@/lib/supabase/client'
+import { getSupabaseAdmin } from '@/lib/supabase/admin'
+import { getOptionalAuthContext, requireAuthContext, requireRoles } from '@/lib/auth/getAuthContext'
+import { STAFF_ROLES } from '@/lib/auth/types'
+import { notConfiguredJson, serverErrorJson } from '@/lib/api/jsonErrors'
 
-// GET /api/barbers - Get all barbers
-export async function GET() {
-  if (!supabaseServer) {
-    return NextResponse.json(
-      { error: 'Supabase not configured' },
-      { status: 500 }
-    )
+/** Response varies by session; never statically cache as one shape. */
+export const dynamic = 'force-dynamic'
+
+/** Explicit columns only — no `*` for anonymous/public callers. */
+const PUBLIC_BARBER_SELECT = `
+  id,
+  display_name,
+  bio,
+  photo_url,
+  shop_id,
+  shops:shop_id (
+    name,
+    city,
+    address
+  )
+`
+
+const STAFF_BARBER_SELECT = `
+  id,
+  profile_id,
+  shop_id,
+  display_name,
+  bio,
+  photo_url,
+  is_active,
+  created_at,
+  updated_at,
+  profiles:profile_id (
+    full_name,
+    phone,
+    role
+  ),
+  shops:shop_id (
+    name,
+    city,
+    address
+  )
+`
+
+function mapShop(shops: { name?: string; city?: string; address?: string } | null | undefined) {
+  if (!shops) return undefined
+  return {
+    name: shops.name,
+    city: shops.city,
+    address: shops.address || undefined,
   }
+}
+
+/** Anonymous / no staff session: minimal fields; shopId kept for booking POST (shop + barber validation). */
+function mapPublicBarber(row: Record<string, unknown>) {
+  const shops = row.shops as { name?: string; city?: string; address?: string } | null
+  return {
+    id: row.id,
+    displayName: row.display_name,
+    bio: row.bio ? String(row.bio) : undefined,
+    photoUrl: row.photo_url ? String(row.photo_url) : undefined,
+    shopId: row.shop_id,
+    shop: mapShop(shops),
+  }
+}
+
+/** Staff session: full operational fields (still no raw `*` in query). */
+function mapStaffBarber(row: Record<string, unknown>) {
+  const shops = row.shops as { name?: string; city?: string; address?: string } | null
+  const profiles = row.profiles as
+    | { full_name?: string; phone?: string; role?: string }
+    | null
+    | undefined
+  return {
+    id: row.id,
+    profileId: row.profile_id,
+    shopId: row.shop_id,
+    displayName: row.display_name,
+    bio: row.bio ? String(row.bio) : undefined,
+    photoUrl: row.photo_url ? String(row.photo_url) : undefined,
+    isActive: row.is_active,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    shop: mapShop(shops),
+    profile: profiles
+      ? {
+          fullName: profiles.full_name || undefined,
+          phone: profiles.phone || undefined,
+          role: profiles.role,
+        }
+      : undefined,
+  }
+}
+
+// GET /api/barbers — public-safe list; staff session gets extended payload
+export async function GET() {
+  const admin = getSupabaseAdmin()
+  if (!admin) return notConfiguredJson()
 
   try {
-    const { data, error } = await supabaseServer
+    const auth = await getOptionalAuthContext()
+    const extended = auth !== null && STAFF_ROLES.includes(auth.role)
+
+    const { data, error } = await admin
       .from('barbers')
-      .select(`
-        *,
-        profiles:profile_id (
-          full_name,
-          phone,
-          role
-        ),
-        shops:shop_id (
-          name,
-          city,
-          address
-        )
-      `)
+      .select(extended ? STAFF_BARBER_SELECT : PUBLIC_BARBER_SELECT)
       .eq('is_active', true)
       .order('display_name')
 
     if (error) {
-      console.error('Error fetching barbers:', error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      console.error('Error fetching barbers:', error.code)
+      return serverErrorJson()
     }
 
-    const barbers = data.map(row => ({
-      id: row.id,
-      profileId: row.profile_id,
-      shopId: row.shop_id,
-      displayName: row.display_name,
-      bio: row.bio || undefined,
-      photoUrl: row.photo_url || undefined,
-      isActive: row.is_active,
-      createdAt: row.created_at,
-      updatedAt: row.updated_at,
-      profile: row.profiles ? {
-        fullName: row.profiles.full_name || undefined,
-        phone: row.profiles.phone || undefined,
-        role: row.profiles.role
-      } : undefined,
-      shop: row.shops ? {
-        name: row.shops.name,
-        city: row.shops.city,
-        address: row.shops.address || undefined
-      } : undefined
-    }))
+    const rows = (data ?? []) as unknown[]
+    const barbers = rows.map((row) =>
+      extended
+        ? mapStaffBarber(row as Record<string, unknown>)
+        : mapPublicBarber(row as Record<string, unknown>)
+    )
 
     return NextResponse.json(barbers)
   } catch (error) {
     console.error('Error in GET /api/barbers:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return serverErrorJson()
   }
 }
 
-// POST /api/barbers - Create a new barber
+// POST /api/barbers — SUPER_ADMIN only (creates auth user + profile + barber)
 export async function POST(request: NextRequest) {
-  if (!supabaseServer) {
-    return NextResponse.json(
-      { error: 'Supabase not configured' },
-      { status: 500 }
-    )
-  }
+  const auth = await requireAuthContext()
+  if (auth instanceof NextResponse) return auth
+
+  const rg = requireRoles(auth, ['SUPER_ADMIN'])
+  if (rg instanceof NextResponse) return rg
+
+  const admin = getSupabaseAdmin()
+  if (!admin) return notConfiguredJson()
 
   try {
     const body = await request.json()
-    const { displayName, bio, photoUrl, isActive } = body
+    const { displayName, bio, photoUrl, isActive, shopId: bodyShopId } = body
 
-    // Get an existing shop (don't create one - shops should be created explicitly)
-    // First try to find any active shop
-    const { data: shops, error: shopError } = await supabaseServer
-      .from('shops')
-      .select('id')
-      .eq('is_active', true)
-      .order('created_at', { ascending: true })
-      .limit(1)
-
-    if (shopError || !shops || shops.length === 0) {
-      // No shops exist - barber creation requires an existing shop
-      return NextResponse.json(
-        { error: 'No active shops found. Please create a shop first before adding barbers.' },
-        { status: 400 }
-      )
+    if (!displayName || typeof displayName !== 'string') {
+      return NextResponse.json({ error: 'displayName is required' }, { status: 400 })
     }
 
-    const shopId = shops[0].id
+    let shopId: string = bodyShopId
+    if (!shopId) {
+      const { data: shops, error: shopError } = await admin
+        .from('shops')
+        .select('id')
+        .eq('is_active', true)
+        .order('created_at', { ascending: true })
+        .limit(1)
 
-    // Create an auth user first (required for profiles table)
-    // Generate a unique email - use example.com (RFC 2606 reserved) as Supabase rejects .local
+      if (shopError || !shops?.length) {
+        return NextResponse.json(
+          { error: 'No active shops found. Pass shopId or create a shop first.' },
+          { status: 400 }
+        )
+      }
+      shopId = shops[0].id
+    }
+
     const safeName = displayName.toLowerCase().replace(/[^a-z0-9]/g, '.')
     const barberEmail = `barber.${safeName}.${Date.now()}@example.com`
     const tempPassword = `TempPass${Math.random().toString(36).slice(2)}!`
-    
-    console.log('Creating auth user with email:', barberEmail)
-    
-    // Try to create auth user using admin API
+
     let userId: string
     try {
-      const { data: authUser, error: authError } = await supabaseServer.auth.admin.createUser({
+      const { data: authUser, error: authError } = await admin.auth.admin.createUser({
         email: barberEmail,
         password: tempPassword,
         email_confirm: true,
         user_metadata: {
           full_name: displayName,
-          role: 'BARBER_WORKER'
-        }
+          role: 'BARBER_WORKER',
+        },
       })
 
       if (authError) {
-        console.error('Error creating auth user:', authError)
-        // If admin API fails, try alternative: create user via signup and then update
-        console.log('Trying alternative user creation method...')
-        const { data: signupData, error: signupError } = await supabaseServer.auth.signUp({
+        const { data: signupData, error: signupError } = await admin.auth.signUp({
           email: barberEmail,
           password: tempPassword,
           options: {
             data: {
               full_name: displayName,
-              role: 'BARBER_WORKER'
-            }
-          }
+              role: 'BARBER_WORKER',
+            },
+          },
         })
 
         if (signupError || !signupData?.user?.id) {
-          console.error('Alternative signup also failed:', signupError)
-          return NextResponse.json(
-            { error: `Failed to create auth user: ${authError?.message || signupError?.message || 'Unknown error'}` },
-            { status: 500 }
-          )
+          console.error('Auth user creation failed')
+          return serverErrorJson()
         }
         userId = signupData.user.id
       } else if (!authUser?.user?.id) {
-        console.error('Auth user created but no ID returned:', authUser)
-        return NextResponse.json(
-          { error: 'Failed to create auth user: No user ID returned' },
-          { status: 500 }
-        )
+        return serverErrorJson()
       } else {
         userId = authUser.user.id
       }
-    } catch (error: any) {
-      console.error('Exception creating auth user:', error)
-      return NextResponse.json(
-        { error: `Failed to create auth user: ${error?.message || 'Unknown error'}` },
-        { status: 500 }
-      )
+    } catch {
+      return serverErrorJson()
     }
 
-    console.log('Auth user created with ID:', userId)
-    console.log('User ID type:', typeof userId, 'Value:', userId)
-
-    // Validate userId is a valid UUID
-    if (!userId || typeof userId !== 'string' || userId.length < 30) {
-      console.error('Invalid user ID:', userId)
-      return NextResponse.json(
-        { error: 'Invalid user ID returned from auth creation' },
-        { status: 500 }
-      )
+    if (!userId || userId.length < 30) {
+      return NextResponse.json({ error: 'Invalid user ID from auth' }, { status: 500 })
     }
 
-    // Create or update the profile linked to the auth user
-    // Use upsert in case Supabase's handle_new_user trigger already created a profile
-    console.log('Creating/updating profile with ID:', userId)
-    const { data: profile, error: profileError } = await supabaseServer
+    const { data: profile, error: profileError } = await admin
       .from('profiles')
       .upsert(
         {
           id: userId,
           full_name: displayName,
-          role: 'BARBER_WORKER'
+          role: 'BARBER_WORKER',
         },
         { onConflict: 'id' }
       )
@@ -188,24 +224,16 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (profileError) {
-      console.error('Error creating profile:', profileError)
-      console.error('Attempted to insert profile with ID:', userId)
-      // Try to clean up the auth user if profile creation fails
       try {
-        await supabaseServer.auth.admin.deleteUser(userId)
-      } catch (cleanupError) {
-        console.error('Failed to cleanup auth user:', cleanupError)
+        await admin.auth.admin.deleteUser(userId)
+      } catch {
+        /* ignore */
       }
-      return NextResponse.json(
-        { error: `Failed to create profile: ${profileError.message}` },
-        { status: 500 }
-      )
+      console.error('Profile create failed:', profileError.code)
+      return serverErrorJson()
     }
 
-    console.log('Profile created/updated successfully:', profile.id)
-
-    // Now create the barber
-    const { data: barber, error: barberError } = await supabaseServer
+    const { data: barber, error: barberError } = await admin
       .from('barbers')
       .insert({
         profile_id: profile.id,
@@ -213,60 +241,19 @@ export async function POST(request: NextRequest) {
         display_name: displayName,
         bio: bio || null,
         photo_url: photoUrl || null,
-        is_active: isActive ?? true
+        is_active: isActive ?? true,
       })
-      .select(`
-        *,
-        profiles:profile_id (
-          full_name,
-          phone,
-          role
-        ),
-        shops:shop_id (
-          name,
-          city,
-          address
-        )
-      `)
+      .select(STAFF_BARBER_SELECT)
       .single()
 
     if (barberError) {
-      console.error('Error creating barber:', barberError)
-      return NextResponse.json(
-        { error: `Failed to create barber: ${barberError.message}` },
-        { status: 500 }
-      )
+      console.error('Error creating barber:', barberError.code)
+      return serverErrorJson()
     }
 
-    const result = {
-      id: barber.id,
-      profileId: barber.profile_id,
-      shopId: barber.shop_id,
-      displayName: barber.display_name,
-      bio: barber.bio || undefined,
-      photoUrl: barber.photo_url || undefined,
-      isActive: barber.is_active,
-      createdAt: barber.created_at,
-      updatedAt: barber.updated_at,
-      profile: barber.profiles ? {
-        fullName: barber.profiles.full_name || undefined,
-        phone: barber.profiles.phone || undefined,
-        role: barber.profiles.role
-      } : undefined,
-      shop: barber.shops ? {
-        name: barber.shops.name,
-        city: barber.shops.city,
-        address: barber.shops.address || undefined
-      } : undefined
-    }
-
-    return NextResponse.json(result, { status: 201 })
+    return NextResponse.json(mapStaffBarber(barber as Record<string, unknown>), { status: 201 })
   } catch (error) {
     console.error('Error in POST /api/barbers:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return serverErrorJson()
   }
 }
-

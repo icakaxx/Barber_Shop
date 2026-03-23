@@ -36,7 +36,7 @@ export default function ServicesManagementTab({ shopId }: ServicesManagementTabP
 
   const loadServices = async () => {
     try {
-      const response = await fetch(`/api/services?shopId=${shopId}`);
+      const response = await fetch(`/api/services?shopId=${shopId}`, { credentials: 'include' });
       if (response.ok) {
         const data = await response.json();
         setServices(data);
@@ -95,6 +95,7 @@ export default function ServicesManagementTab({ shopId }: ServicesManagementTabP
 
       const response = await fetch(url, {
         method,
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
@@ -123,7 +124,8 @@ export default function ServicesManagementTab({ shopId }: ServicesManagementTabP
     setDeletingId(serviceId);
     try {
       const response = await fetch(`/api/services/${serviceId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        credentials: 'include',
       });
 
       if (response.ok) {

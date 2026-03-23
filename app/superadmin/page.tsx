@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation';
 import SuperAdminDashboard from '@/components/admin/SuperAdminDashboard';
 import { createClient } from '@/lib/supabase/server';
-import { supabaseServer } from '@/lib/supabase/client';
 
 export default async function SuperAdminPage() {
   const supabase = await createClient();
@@ -13,11 +12,7 @@ export default async function SuperAdminPage() {
     redirect('/login/admin?redirect=/superadmin');
   }
 
-  if (!supabaseServer) {
-    redirect('/');
-  }
-
-  const { data: profile } = await supabaseServer
+  const { data: profile } = await supabase
     .from('profiles')
     .select('role')
     .eq('id', user.id)

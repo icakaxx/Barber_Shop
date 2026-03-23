@@ -1,18 +1,20 @@
 import { NextResponse } from 'next/server';
-import { supabaseServer } from '@/lib/supabase/client';
+import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import {
   getSessionProfile,
   getBarberRowForProfile,
 } from '@/lib/auth/staffContext';
+import { notConfiguredJson, serverErrorJson } from '@/lib/api/jsonErrors';
+
+type ShopJoin = { name: string; city: string; address: string | null } | null;
 
 /**
  * Barber team context for the logged-in user (same shop).
  * Lives under /api/session/* so it is never mistaken for /api/barbers/[id] (id = "me").
  */
 export async function GET() {
-  if (!supabaseServer) {
-    return NextResponse.json({ error: 'Supabase not configured' }, { status: 500 });
-  }
+  const admin = getSupabaseAdmin();
+  if (!admin) return notConfiguredJson();
 
   const session = await getSessionProfile();
   if (!session) {
@@ -33,7 +35,7 @@ export async function GET() {
   let shopId: string | null = myBarber?.shop_id ?? null;
 
   if (!shopId && session.role === 'BARBER_OWNER') {
-    const { data: shop } = await supabaseServer
+    const { data: shop } = await admin
       .from('shops')
       .select('id')
       .eq('owner_id', session.userId)
@@ -44,7 +46,7 @@ export async function GET() {
   }
 
   if (!shopId && session.role === 'SUPER_ADMIN') {
-    const { data: shop } = await supabaseServer
+    const { data: shop } = await admin
       .from('shops')
       .select('id')
       .eq('is_active', true)
@@ -72,7 +74,7 @@ export async function GET() {
     });
   }
 
-  const { data: teamRows, error } = await supabaseServer
+  const { data: teamRows, error } = await admin
     .from('barbers')
     .select(
       `
@@ -93,27 +95,31 @@ export async function GET() {
     .order('display_name');
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('session/barber team query:', error.code);
+    return serverErrorJson();
   }
 
-  const team = (teamRows || []).map((row: any) => ({
-    id: row.id,
-    profileId: row.profile_id,
-    shopId: row.shop_id,
-    displayName: row.display_name,
-    bio: row.bio || undefined,
-    photoUrl: row.photo_url || undefined,
-    isActive: row.is_active,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-    shop: row.shops
-      ? {
-          name: row.shops.name,
-          city: row.shops.city,
-          address: row.shops.address || undefined,
-        }
-      : undefined,
-  }));
+  const team = (teamRows || []).map((row: Record<string, unknown>) => {
+    const shops = row.shops as ShopJoin;
+    return {
+      id: row.id,
+      profileId: row.profile_id,
+      shopId: row.shop_id,
+      displayName: row.display_name,
+      bio: row.bio || undefined,
+      photoUrl: row.photo_url || undefined,
+      isActive: row.is_active,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      shop: shops
+        ? {
+            name: shops.name,
+            city: shops.city,
+            address: shops.address || undefined,
+          }
+        : undefined,
+    };
+  });
 
   return NextResponse.json({
     me: myBarber

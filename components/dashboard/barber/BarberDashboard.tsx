@@ -97,7 +97,7 @@ export default function BarberDashboard({
       }
 
       try {
-        const response = await fetch('/api/barbers');
+        const response = await fetch('/api/barbers', { credentials: 'include' });
         if (response.ok) {
           const barbers: Barber[] = await response.json();
 

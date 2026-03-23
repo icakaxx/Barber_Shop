@@ -16,6 +16,31 @@ import {
   SHOP_BUSINESS_TIMEZONE,
 } from '@/lib/utils/shopHours';
 
+/** Public barber list has no `profile`; staff list may — default to barber label when role unknown. */
+function barberRoleLabel(barber: Pick<Barber, 'profile'>, t: (key: string) => string): string {
+  const role = barber.profile?.role;
+  if (role === undefined || role === 'BARBER_WORKER') return t('booking.barberRole');
+  return t('booking.professionalRole');
+}
+
+/** Public busy intervals only (no PII) for anonymous booking UI. */
+async function fetchPublicBookedSlotRanges(
+  barberId: string,
+  dateStr: string
+): Promise<{ start: Date; end: Date }[]> {
+  const response = await fetch(
+    `/api/public/barbers/${barberId}/booked-slots?date=${encodeURIComponent(dateStr)}`
+  );
+  if (!response.ok) return [];
+  const data = (await response.json()) as {
+    slots?: { startTime: string; endTime: string }[];
+  };
+  const slots = data.slots ?? [];
+  return slots
+    .map((s) => ({ start: new Date(s.startTime), end: new Date(s.endTime) }))
+    .sort((a, b) => a.start.getTime() - b.start.getTime());
+}
+
 // Simplified barber type for booking modal UI
 type BarberOption = {
   id: string;
@@ -109,7 +134,7 @@ export default function BookingModal() {
             const formattedBarbers: BarberOption[] = data.map((barber: Barber) => ({
               id: barber.id,
               name: barber.displayName,
-              role: barber.profile?.role === 'BARBER_WORKER' ? t('booking.barberRole') : t('booking.professionalRole'),
+              role: barberRoleLabel(barber, t),
               photoUrl: barber.photoUrl
             }));
             setBarbers(formattedBarbers);
@@ -416,52 +441,45 @@ export default function BookingModal() {
     }
 
     try {
-      const response = await fetch(`/api/appointments?barberId=${bookingState.barber.id}&date=${dateStr}`);
-      if (response.ok) {
-        const existingAppointments = await response.json();
-        const activeAppointments = existingAppointments
-          .filter((apt: any) => apt.status === 'PENDING' || apt.status === 'CONFIRMED')
-          .map((apt: any) => ({ start: new Date(apt.startTime), end: new Date(apt.endTime) }))
-          .sort((a: any, b: any) => a.start.getTime() - b.start.getTime());
+      const busyRanges = await fetchPublicBookedSlotRanges(bookingState.barber.id, dateStr);
 
-        const isTimeBlocked = (time: Date) =>
-          activeAppointments.some((apt: any) => time >= apt.start && time < apt.end);
+      const isTimeBlocked = (time: Date) =>
+        busyRanges.some((apt) => time >= apt.start && time < apt.end);
 
-        const servicesFitInWindow = (startTime: Date): boolean => {
-          if (totalDurationMinutes === 0) return true;
-          const endTime = new Date(startTime);
-          endTime.setMinutes(endTime.getMinutes() + totalDurationMinutes);
-          if (endTime > endOfDay) return false;
-          const startStr = `${startTime.getHours().toString().padStart(2, '0')}:${startTime.getMinutes().toString().padStart(2, '0')}`;
-          if (wouldOverlapLunch(startStr)) return false;
-          if (activeAppointments.some((apt: any) => startTime < apt.end && endTime > apt.start)) return false;
-          return true;
-        };
+      const servicesFitInWindow = (startTime: Date): boolean => {
+        if (totalDurationMinutes === 0) return true;
+        const endTime = new Date(startTime);
+        endTime.setMinutes(endTime.getMinutes() + totalDurationMinutes);
+        if (endTime > endOfDay) return false;
+        const startStr = `${startTime.getHours().toString().padStart(2, '0')}:${startTime.getMinutes().toString().padStart(2, '0')}`;
+        if (wouldOverlapLunch(startStr)) return false;
+        if (busyRanges.some((apt) => startTime < apt.end && endTime > apt.start)) return false;
+        return true;
+      };
 
-        const candidateTimes: Date[] = [];
-        for (let slot = new Date(startOfDay); slot < endOfDay; slot.setMinutes(slot.getMinutes() + 5)) {
-          candidateTimes.push(new Date(slot));
+      const candidateTimes: Date[] = [];
+      for (let slot = new Date(startOfDay); slot < endOfDay; slot.setMinutes(slot.getMinutes() + 5)) {
+        candidateTimes.push(new Date(slot));
+      }
+
+      const validTimes: string[] = [];
+      for (const candidateTime of candidateTimes) {
+        const timeStr = `${candidateTime.getHours().toString().padStart(2, '0')}:${candidateTime.getMinutes().toString().padStart(2, '0')}`;
+        if (isDuringLunch(timeStr)) continue;
+        if (!isTimeBlocked(candidateTime) && servicesFitInWindow(candidateTime) && !validTimes.includes(timeStr)) {
+          validTimes.push(timeStr);
         }
+      }
 
-        const validTimes: string[] = [];
-        for (const candidateTime of candidateTimes) {
-          const timeStr = `${candidateTime.getHours().toString().padStart(2, '0')}:${candidateTime.getMinutes().toString().padStart(2, '0')}`;
-          if (isDuringLunch(timeStr)) continue;
-          if (!isTimeBlocked(candidateTime) && servicesFitInWindow(candidateTime) && !validTimes.includes(timeStr)) {
-            validTimes.push(timeStr);
-          }
+      if (totalDurationMinutes === 0) {
+        const simplified: string[] = [];
+        for (let slot = new Date(startOfDay); slot < endOfDay; slot.setMinutes(slot.getMinutes() + 30)) {
+          const timeStr = `${slot.getHours().toString().padStart(2, '0')}:${slot.getMinutes().toString().padStart(2, '0')}`;
+          if (!isDuringLunch(timeStr) && !isTimeBlocked(slot)) simplified.push(timeStr);
         }
-
-        if (totalDurationMinutes === 0) {
-          const simplified: string[] = [];
-          for (let slot = new Date(startOfDay); slot < endOfDay; slot.setMinutes(slot.getMinutes() + 30)) {
-            const timeStr = `${slot.getHours().toString().padStart(2, '0')}:${slot.getMinutes().toString().padStart(2, '0')}`;
-            if (!isDuringLunch(timeStr) && !isTimeBlocked(slot)) simplified.push(timeStr);
-          }
-          setAvailableTimes(simplified);
-        } else {
-          setAvailableTimes(validTimes);
-        }
+        setAvailableTimes(simplified);
+      } else {
+        setAvailableTimes(validTimes);
       }
     } catch (error) {
       console.error('Error loading available times:', error);
@@ -533,7 +551,7 @@ export default function BookingModal() {
             barber: {
               id: assignedBarber.id,
               name: assignedBarber.displayName,
-              role: assignedBarber.profile?.role === 'BARBER_WORKER' ? t('booking.barberRole') : t('booking.professionalRole')
+              role: barberRoleLabel(assignedBarber, t)
             }
           }));
           setAvailableBarbersList([]); // Clear the list since barber is assigned
@@ -588,7 +606,8 @@ export default function BookingModal() {
   const findAllAvailableBarbers = async (startTime: Date, endTime: Date): Promise<Array<{ barberId: string; shopId: string; barber: Barber }>> => {
     try {
       // Get all active barbers (across all shops)
-      const activeBarbers = fullBarbers.filter(b => b.isActive && b.shopId);
+      // Public API only returns active barbers; shopId is required for booking payload
+      const activeBarbers = fullBarbers.filter((b) => !!b.shopId);
       
       if (activeBarbers.length === 0) {
         return [];
@@ -621,33 +640,17 @@ export default function BookingModal() {
             continue;
           }
 
-          // Check existing appointments for this barber on this date
-          const response = await fetch(`/api/barbers/${barber.id}/appointments?date=${dateStr}`);
-          
-          if (response.ok) {
-            const existingAppointments = await response.json();
-            
-            // Filter active appointments (PENDING or CONFIRMED)
-            const activeAppointments = existingAppointments
-              .filter((apt: any) => apt.status === 'PENDING' || apt.status === 'CONFIRMED')
-              .map((apt: any) => ({
-                start: new Date(apt.startTime),
-                end: new Date(apt.endTime)
-              }));
+          const busyRanges = await fetchPublicBookedSlotRanges(barber.id, dateStr);
+          const hasConflict = busyRanges.some(
+            (apt) => startTime < apt.end && endTime > apt.start
+          );
 
-            // Check if the requested time slot overlaps with any existing appointment
-            const hasConflict = activeAppointments.some((apt: any) => {
-              return (startTime < apt.end && endTime > apt.start);
+          if (!hasConflict && barber.shopId) {
+            availableBarbers.push({
+              barberId: barber.id,
+              shopId: barber.shopId,
+              barber: barber,
             });
-
-            // If no conflict, this barber is available
-            if (!hasConflict && barber.shopId) {
-              availableBarbers.push({
-                barberId: barber.id,
-                shopId: barber.shopId,
-                barber: barber
-              });
-            }
           }
         } catch (error) {
           console.error(`Error checking availability for barber ${barber.id}:`, error);
@@ -1052,7 +1055,7 @@ export default function BookingModal() {
                                 const selectedBarber = {
                                   id: barber.id,
                                   name: barber.displayName,
-                                  role: barber.profile?.role === 'BARBER_WORKER' ? t('booking.barberRole') : t('booking.professionalRole')
+                                  role: barberRoleLabel(barber, t)
                                 };
                                 setBookingState(prev => ({ ...prev, barber: selectedBarber }));
                                 setAvailableBarbersList([]); // Clear the list after selection
@@ -1077,7 +1080,7 @@ export default function BookingModal() {
                                 <div className="flex-1 min-w-0">
                                   <p className="font-bold text-sm text-gray-900 truncate">{barber.displayName}</p>
                                   <p className="text-xs text-gray-500 mt-0.5">
-                                    {barber.profile?.role === 'BARBER_WORKER' ? t('booking.barberRole') : t('booking.professionalRole')}
+                                    {barberRoleLabel(barber, t)}
                                   </p>
                                 </div>
                               </div>

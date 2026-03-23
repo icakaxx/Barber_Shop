@@ -32,7 +32,7 @@ export default function SuperAdminDashboard({ userEmail }: SuperAdminDashboardPr
   useEffect(() => {
     const loadShops = async () => {
       try {
-        const response = await fetch('/api/shops');
+        const response = await fetch('/api/shops', { credentials: 'include' });
         if (response.ok) {
           const data = await response.json();
           setShops(data.filter((s: any) => !s.status || s.status !== 'Inactive'));

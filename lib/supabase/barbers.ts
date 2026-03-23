@@ -1,4 +1,4 @@
-import { supabase, supabaseServer } from './client'
+import { supabase } from './client'
 import type { Barber, TimeSlot, BarberSchedule } from '../types'
 
 // Get all barbers with profile and shop information
@@ -33,6 +33,7 @@ export async function createBarber(barberData: {
   try {
     const response = await fetch('/api/barbers', {
       method: 'POST',
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
       },
@@ -66,6 +67,7 @@ export async function updateBarber(
   try {
     const response = await fetch(`/api/barbers/${id}`, {
       method: 'PUT',
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
       },
@@ -91,6 +93,7 @@ export async function deleteBarber(id: string): Promise<boolean> {
   try {
     const response = await fetch(`/api/barbers/${id}`, {
       method: 'DELETE',
+      credentials: 'include',
     })
 
     if (!response.ok) {
@@ -106,13 +109,13 @@ export async function deleteBarber(id: string): Promise<boolean> {
   }
 }
 
-// Get barber schedule for a specific date
+// Get barber schedule for a specific date (browser + RLS only; no service role on server from this module)
 export async function getBarberSchedule(barberId: string, date: string): Promise<BarberSchedule | null> {
-  const client = typeof window !== 'undefined' ? supabase : supabaseServer
-  
-  if (!client) {
+  if (typeof window === 'undefined' || !supabase) {
     return getMockSchedule(barberId, date)
   }
+
+  const client = supabase
   
   try {
     const startOfDay = new Date(`${date}T00:00:00Z`);
@@ -134,7 +137,7 @@ export async function getBarberSchedule(barberId: string, date: string): Promise
     return {
       barberId,
       date,
-      slots: data.map(slot => ({
+      slots: (data ?? []).map(slot => ({
         id: slot.id,
         barberId: slot.barber_id,
         startTime: slot.start_time,

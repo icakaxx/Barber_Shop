@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation';
 import OwnerDashboard from '@/components/dashboard/owner/OwnerDashboard';
 import { createClient } from '@/lib/supabase/server';
-import { supabaseServer } from '@/lib/supabase/client';
 
 const ALLOWED_ROLES = ['BARBER_OWNER', 'SUPER_ADMIN'];
 
@@ -15,11 +14,7 @@ export default async function OwnerPage() {
     redirect('/login?redirect=/owner');
   }
 
-  if (!supabaseServer) {
-    redirect('/');
-  }
-
-  const { data: profile } = await supabaseServer
+  const { data: profile } = await supabase
     .from('profiles')
     .select('role')
     .eq('id', user.id)

@@ -62,7 +62,9 @@ export default function AppointmentsTab() {
         params.append('status', selectedStatus);
       }
 
-      const response = await fetch(`/api/appointments?${params.toString()}`);
+      const response = await fetch(`/api/appointments?${params.toString()}`, {
+        credentials: 'include',
+      });
       if (!response.ok) {
         throw new Error('Failed to fetch appointments');
       }

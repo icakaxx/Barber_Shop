@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
-import { supabaseServer } from '@/lib/supabase/client'
+import { getSupabaseAdmin } from '@/lib/supabase/admin'
 import { validateSlotAgainstShop } from '@/lib/utils/shopHours'
+import { requireAuthContext, requireRoles } from '@/lib/auth/getAuthContext'
+import { STAFF_ROLES } from '@/lib/auth/types'
+import {
+  fetchBarberRow,
+  getAppointmentReadScope,
+} from '@/lib/auth/scope'
+import { forbiddenJson, notConfiguredJson, serverErrorJson } from '@/lib/api/jsonErrors'
 
 const resendApiKey = process.env.RESEND_API_KEY
 const emailFrom =
@@ -44,7 +51,6 @@ const formatAppointmentWindow = (start: string, end: string) => {
 
 const sendAppointmentEmail = async (payload: AppointmentEmailPayload) => {
   if (!resendClient) {
-    console.warn('Resend is not configured; skipping confirmation email.')
     return { success: false, error: 'Resend not configured' }
   }
 
@@ -56,8 +62,6 @@ const sendAppointmentEmail = async (payload: AppointmentEmailPayload) => {
     services && services.length
       ? services.map(service => `<li>${service}</li>`).join('')
       : ''
-
-  console.log(`Attempting to send email to: ${customerEmail}`)
 
   const { data, error } = await resendClient.emails.send({
     from: emailFrom,
@@ -87,31 +91,49 @@ const sendAppointmentEmail = async (payload: AppointmentEmailPayload) => {
   })
 
   if (error) {
-    console.error('Failed to send appointment email:', error)
+    console.error('Failed to send appointment email')
     return { success: false, error }
   }
 
-  console.log('Email sent successfully:', data)
   return { success: true, data }
 }
 
-// GET /api/appointments - Get all appointments (admin view)
+// GET /api/appointments — staff only, shop-scoped
 export async function GET(request: NextRequest) {
-  if (!supabaseServer) {
-    return NextResponse.json(
-      { error: 'Supabase not configured' },
-      { status: 500 }
-    )
-  }
+  const auth = await requireAuthContext()
+  if (auth instanceof NextResponse) return auth
+
+  const roleGate = requireRoles(auth, STAFF_ROLES)
+  if (roleGate instanceof NextResponse) return roleGate
+
+  const admin = getSupabaseAdmin()
+  if (!admin) return notConfiguredJson()
+
+  const scope = await getAppointmentReadScope(admin, auth)
+  if (scope instanceof NextResponse) return scope
 
   try {
     const { searchParams } = new URL(request.url)
     const barberId = searchParams.get('barberId')
     const date = searchParams.get('date')
     const status = searchParams.get('status')
-    const shopId = searchParams.get('shopId') // For team view
+    const shopIdParam = searchParams.get('shopId')
 
-    let query = supabaseServer
+    if (shopIdParam) {
+      if (scope.shopIds !== null && !scope.shopIds.includes(shopIdParam)) {
+        return forbiddenJson()
+      }
+    }
+
+    if (barberId) {
+      const b = await fetchBarberRow(admin, barberId)
+      if (!b) return NextResponse.json([])
+      if (scope.shopIds !== null && !scope.shopIds.includes(b.shop_id)) {
+        return forbiddenJson()
+      }
+    }
+
+    let query = admin
       .from('appointments')
       .select(`
         *,
@@ -136,17 +158,20 @@ export async function GET(request: NextRequest) {
       `)
       .order('start_time', { ascending: true })
 
-    // Filter by barber if provided
+    if (scope.shopIds !== null) {
+      if (shopIdParam) {
+        query = query.eq('shop_id', shopIdParam)
+      } else if (scope.shopIds.length === 1) {
+        query = query.eq('shop_id', scope.shopIds[0])
+      } else {
+        query = query.in('shop_id', scope.shopIds)
+      }
+    }
+
     if (barberId) {
       query = query.eq('barber_id', barberId)
     }
 
-    // Filter by shop if provided (for team view)
-    if (shopId) {
-      query = query.eq('shop_id', shopId)
-    }
-
-    // Filter by date if provided
     if (date) {
       const startOfDay = new Date(`${date}T00:00:00Z`)
       const endOfDay = new Date(`${date}T23:59:59Z`)
@@ -155,7 +180,6 @@ export async function GET(request: NextRequest) {
         .lte('start_time', endOfDay.toISOString())
     }
 
-    // Filter by status if provided
     if (status) {
       const statuses = status.split(',')
       if (statuses.length === 1) {
@@ -168,14 +192,11 @@ export async function GET(request: NextRequest) {
     const { data, error } = await query
 
     if (error) {
-      console.error('Error fetching appointments:', error)
-      return NextResponse.json(
-        { error: `Failed to fetch appointments: ${error.message}` },
-        { status: 500 }
-      )
+      console.error('Error fetching appointments:', error.code)
+      return serverErrorJson()
     }
 
-    const appointments = data.map(apt => ({
+    const appointments = (data ?? []).map(apt => ({
       id: apt.id,
       barberId: apt.barber_id,
       barberName: apt.barbers?.display_name || apt.barbers?.profiles?.full_name || 'Unknown',
@@ -204,21 +225,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(appointments)
   } catch (error) {
     console.error('Error in GET /api/appointments:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return serverErrorJson()
   }
 }
 
-// POST /api/appointments - Create a new appointment
+// POST /api/appointments — public booking (anonymous). Uses admin only after validation chain.
 export async function POST(request: NextRequest) {
-  if (!supabaseServer) {
-    return NextResponse.json(
-      { error: 'Supabase not configured' },
-      { status: 500 }
-    )
-  }
+  const admin = getSupabaseAdmin()
+  if (!admin) return notConfiguredJson()
 
   try {
     const body = await request.json()
@@ -236,7 +250,6 @@ export async function POST(request: NextRequest) {
       allServiceNames
     } = body
 
-    // Validate required fields
     if (!shopId || !serviceId || !barberId || !customerName || !customerPhone || !startTime || !endTime) {
       return NextResponse.json(
         { error: 'Missing required fields' },
@@ -250,7 +263,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid start or end time' }, { status: 400 })
     }
 
-    const { data: barberRow, error: barberLookupError } = await supabaseServer
+    const { data: barberRow, error: barberLookupError } = await admin
       .from('barbers')
       .select('id, shop_id')
       .eq('id', barberId)
@@ -267,7 +280,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { data: shopRow, error: shopLookupError } = await supabaseServer
+    const { data: shopRow, error: shopLookupError } = await admin
       .from('shops')
       .select('id, working_hours, lunch_start, lunch_end')
       .eq('id', shopId)
@@ -298,8 +311,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check for double-booking
-    const { data: existing } = await supabaseServer
+    const { data: existing } = await admin
       .from('appointments')
       .select('id')
       .eq('barber_id', barberId)
@@ -314,7 +326,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { data, error } = await supabaseServer
+    const { data, error } = await admin
       .from('appointments')
       .insert({
         shop_id: shopId,
@@ -349,11 +361,8 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (error) {
-      console.error('Error creating appointment:', error)
-      return NextResponse.json(
-        { error: `Failed to create appointment: ${error.message}` },
-        { status: 500 }
-      )
+      console.error('Error creating appointment:', error.code)
+      return serverErrorJson()
     }
 
     const appointment = {
@@ -391,21 +400,15 @@ export async function POST(request: NextRequest) {
         startTime: appointment.startTime,
         endTime: appointment.endTime
       })
-      
-      // Log email result for debugging
+
       if (emailResult && !emailResult.success) {
-        console.error('Email sending failed:', emailResult.error)
+        console.error('Email sending failed')
       }
-    } else {
-      console.warn('No customer email provided, skipping email notification')
     }
 
     return NextResponse.json(appointment, { status: 201 })
   } catch (error) {
     console.error('Error in POST /api/appointments:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return serverErrorJson()
   }
 }

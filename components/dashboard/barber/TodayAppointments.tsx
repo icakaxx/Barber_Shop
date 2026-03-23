@@ -68,7 +68,7 @@ export default function TodayAppointments({
       }
 
       try {
-        const response = await fetch(url);
+        const response = await fetch(url, { credentials: 'include' });
 
         if (response.ok) {
           const data = await response.json();
@@ -201,6 +201,7 @@ export default function TodayAppointments({
     try {
       const response = await fetch(`/api/appointments/${updatedAppointment.id}`, {
         method: 'PUT',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           customerName: updatedAppointment.customerName,
@@ -216,7 +217,7 @@ export default function TodayAppointments({
       if (response.ok) {
         const url = buildListUrl();
         if (url) {
-          const reloadResponse = await fetch(url);
+          const reloadResponse = await fetch(url, { credentials: 'include' });
           if (reloadResponse.ok) {
             const data = await reloadResponse.json();
             setAppointments(data);
@@ -238,6 +239,7 @@ export default function TodayAppointments({
     try {
       const response = await fetch(`/api/appointments/${appointmentId}`, {
         method: 'PUT',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'DONE' })
       });
@@ -245,7 +247,7 @@ export default function TodayAppointments({
       if (response.ok) {
         const url = buildListUrl();
         if (url) {
-          const reloadResponse = await fetch(url);
+          const reloadResponse = await fetch(url, { credentials: 'include' });
           if (reloadResponse.ok) {
             const data = await reloadResponse.json();
             setAppointments(data);
@@ -263,6 +265,7 @@ export default function TodayAppointments({
     try {
       const response = await fetch(`/api/appointments/${appointmentId}`, {
         method: 'PUT',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           status: 'CANCELLED',
@@ -273,7 +276,7 @@ export default function TodayAppointments({
       if (response.ok) {
         const url = buildListUrl();
         if (url) {
-          const reloadResponse = await fetch(url);
+          const reloadResponse = await fetch(url, { credentials: 'include' });
           if (reloadResponse.ok) {
             const data = await reloadResponse.json();
             setAppointments(data);

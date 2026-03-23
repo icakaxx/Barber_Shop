@@ -13,21 +13,21 @@ export interface Service {
   best?: boolean;
 }
 
+/** Barber row shape: public GET /api/barbers omits staff-only fields; staff responses include them. */
 export interface Barber {
   id: string;
-  profileId: string; // References profiles table
-  shopId: string; // References shops table
+  profileId?: string;
+  shopId?: string;
   displayName: string;
   bio?: string;
   photoUrl?: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-  // Additional data from joined tables
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
   profile?: {
     fullName?: string;
     phone?: string;
-    role: Role;
+    role?: Role;
   };
   shop?: {
     name: string;

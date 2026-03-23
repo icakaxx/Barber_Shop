@@ -1,24 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseServer } from '@/lib/supabase/client'
+import { getSupabaseAdmin } from '@/lib/supabase/admin'
+import { requireAuthContext, requireRoles } from '@/lib/auth/getAuthContext'
+import { STAFF_ROLES } from '@/lib/auth/types'
+import { assertBarberTeamAccess } from '@/lib/auth/scope'
+import { notConfiguredJson, serverErrorJson } from '@/lib/api/jsonErrors'
 
-// GET /api/barbers/[id]/appointments - Get appointments for a specific barber
+// GET /api/barbers/[id]/appointments — authenticated staff with team/shop scope
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  if (!supabaseServer) {
-    return NextResponse.json(
-      { error: 'Supabase not configured' },
-      { status: 500 }
-    )
-  }
+  const auth = await requireAuthContext()
+  if (auth instanceof NextResponse) return auth
+
+  const rg = requireRoles(auth, STAFF_ROLES)
+  if (rg instanceof NextResponse) return rg
+
+  const admin = getSupabaseAdmin()
+  if (!admin) return notConfiguredJson()
+
+  const access = await assertBarberTeamAccess(admin, auth, params.id)
+  if (access instanceof NextResponse) return access
 
   try {
     const { searchParams } = new URL(request.url)
     const date = searchParams.get('date')
     const status = searchParams.get('status')
 
-    let query = supabaseServer
+    let query = admin
       .from('appointments')
       .select(`
         *,
@@ -37,7 +46,6 @@ export async function GET(
       .eq('barber_id', params.id)
       .order('start_time', { ascending: true })
 
-    // Filter by date if provided
     if (date) {
       const startOfDay = new Date(`${date}T00:00:00Z`)
       const endOfDay = new Date(`${date}T23:59:59Z`)
@@ -46,7 +54,6 @@ export async function GET(
         .lte('start_time', endOfDay.toISOString())
     }
 
-    // Filter by status if provided
     if (status) {
       query = query.eq('status', status)
     }
@@ -54,14 +61,11 @@ export async function GET(
     const { data, error } = await query
 
     if (error) {
-      console.error('Error fetching barber appointments:', error)
-      return NextResponse.json(
-        { error: `Failed to fetch appointments: ${error.message}` },
-        { status: 500 }
-      )
+      console.error('Error fetching barber appointments:', error.code)
+      return serverErrorJson()
     }
 
-    const appointments = data.map(apt => ({
+    const appointments = (data ?? []).map((apt) => ({
       id: apt.id,
       barberId: apt.barber_id,
       serviceId: apt.service_id,
@@ -83,16 +87,12 @@ export async function GET(
       cancelledAt: apt.cancelled_at,
       notes: apt.notes,
       createdAt: apt.created_at,
-      updatedAt: apt.updated_at
+      updatedAt: apt.updated_at,
     }))
 
     return NextResponse.json(appointments)
   } catch (error) {
     console.error('Error in GET /api/barbers/[id]/appointments:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return serverErrorJson()
   }
 }
-

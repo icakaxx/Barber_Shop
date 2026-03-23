@@ -72,22 +72,12 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
       try {
         // Get shops owned by the current user
         // In production, this would use the authenticated user's ID
-        const response = await fetch('/api/shops?owner=true');
+        const response = await fetch('/api/shops?owner=true', { credentials: 'include' });
         if (response.ok) {
           const data = await response.json();
           setShops(data);
           if (data.length > 0) {
             setSelectedShopId(data[0].id);
-          }
-        } else if (response.status === 404) {
-          // API endpoint might not exist yet, try alternative
-          const allShopsResponse = await fetch('/api/shops');
-          if (allShopsResponse.ok) {
-            const allShops = await allShopsResponse.json();
-            setShops(allShops);
-            if (allShops.length > 0) {
-              setSelectedShopId(allShops[0].id);
-            }
           }
         }
       } catch (error) {
@@ -104,7 +94,7 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
       
       // Load barbers for selected shop
       try {
-        const response = await fetch('/api/barbers');
+        const response = await fetch('/api/barbers', { credentials: 'include' });
         if (response.ok) {
           const data = await response.json();
           const shopBarbers = data.filter((b: Barber) => b.shopId === selectedShopId);
@@ -132,7 +122,9 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
 
         if (selectedShopId) {
           // Load appointments for selected shop
-          const response = await fetch(`/api/appointments?shopId=${selectedShopId}&date=${selectedDate}`);
+          const response = await fetch(`/api/appointments?shopId=${selectedShopId}&date=${selectedDate}`, {
+            credentials: 'include',
+          });
           if (response.ok) {
             const data = await response.json();
             allAppointments = data;
@@ -163,7 +155,10 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
       }
 
       try {
-        const response = await fetch(`/api/barbers/${selectedBarberId}/appointments?date=${barberViewDate}`);
+        const response = await fetch(
+          `/api/barbers/${selectedBarberId}/appointments?date=${barberViewDate}`,
+          { credentials: 'include' }
+        );
         if (response.ok) {
           const data = await response.json();
           // Map the response to match Appointment interface
@@ -221,6 +216,7 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
     try {
       const response = await fetch(`/api/appointments/${updatedAppointment.id}`, {
         method: 'PUT',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           customerName: updatedAppointment.customerName,
@@ -236,7 +232,10 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
       if (response.ok) {
         // Reload appointments
         if (selectedShopId) {
-          const reloadResponse = await fetch(`/api/appointments?shopId=${selectedShopId}&date=${selectedDate}`);
+          const reloadResponse = await fetch(
+            `/api/appointments?shopId=${selectedShopId}&date=${selectedDate}`,
+            { credentials: 'include' }
+          );
           if (reloadResponse.ok) {
             const data = await reloadResponse.json();
             setAppointments(data);
@@ -258,6 +257,7 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
     try {
       const response = await fetch('/api/appointments', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(appointmentData)
       });
@@ -265,7 +265,10 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
       if (response.ok) {
         // Reload appointments
         if (selectedShopId) {
-          const reloadResponse = await fetch(`/api/appointments?shopId=${selectedShopId}&date=${selectedDate}`);
+          const reloadResponse = await fetch(
+            `/api/appointments?shopId=${selectedShopId}&date=${selectedDate}`,
+            { credentials: 'include' }
+          );
           if (reloadResponse.ok) {
             const data = await reloadResponse.json();
             setAppointments(data);
@@ -289,13 +292,17 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
     try {
       const response = await fetch(`/api/appointments/${appointmentId}`, {
         method: 'DELETE',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' }
       });
 
       if (response.ok) {
         // Reload appointments
         if (selectedShopId) {
-          const reloadResponse = await fetch(`/api/appointments?shopId=${selectedShopId}&date=${selectedDate}`);
+          const reloadResponse = await fetch(
+            `/api/appointments?shopId=${selectedShopId}&date=${selectedDate}`,
+            { credentials: 'include' }
+          );
           if (reloadResponse.ok) {
             const data = await reloadResponse.json();
             setAppointments(data);
@@ -304,7 +311,10 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
         
         // Reload barber appointments if viewing barber tab
         if (selectedBarberId && currentTab === 'barbers') {
-          const barberResponse = await fetch(`/api/barbers/${selectedBarberId}/appointments?date=${barberViewDate}`);
+          const barberResponse = await fetch(
+            `/api/barbers/${selectedBarberId}/appointments?date=${barberViewDate}`,
+            { credentials: 'include' }
+          );
           if (barberResponse.ok) {
             const barberData = await barberResponse.json();
             const barber = barbers.find(b => b.id === selectedBarberId);
@@ -600,6 +610,7 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
             onBarberUpdate={async (barberId, data) => {
               const response = await fetch(`/api/barbers/${barberId}`, {
                 method: 'PUT',
+                credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
               });
