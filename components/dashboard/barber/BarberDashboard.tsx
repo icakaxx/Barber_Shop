@@ -116,7 +116,7 @@ export default function BarberDashboard({
 
           if (found) {
             setBarber(found);
-            setShopId(found.shopId);
+            setShopId(found.shopId ?? null);
           }
         }
       } catch (error) {

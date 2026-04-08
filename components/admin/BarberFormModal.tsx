@@ -32,7 +32,7 @@ export default function BarberFormModal({ barber, onSave, onClose, allowUpload =
         displayName: barber.displayName,
         bio: barber.bio || '',
         photoUrl: barber.photoUrl || '',
-        isActive: barber.isActive,
+        isActive: barber.isActive ?? true,
       });
     }
   }, [barber]);
