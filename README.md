@@ -26,7 +26,7 @@ A modern, full-featured barber shop booking system built with Next.js, TypeScrip
 
 ## Getting Started
 
-### Prerequisites
+### Prerequisitesss
 
 - Node.js 18+ 18
 - npm or yarn
