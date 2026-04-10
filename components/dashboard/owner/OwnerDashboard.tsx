@@ -363,34 +363,37 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
   const selectedShop = shops.find(s => s.id === selectedShopId);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-[100dvh] bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-3">
-              <div className="bg-black p-3 rounded-lg">
-                <Building2 className="w-6 h-6 text-white" />
+        <div className="mb-6 sm:mb-8">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-2">
+            <div className="flex items-start gap-3 min-w-0">
+              <div className="bg-black p-2.5 sm:p-3 rounded-lg shrink-0">
+                <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
-              <div>
-                <h1 className="text-3xl font-bold">{t('dashboard.owner.title')}</h1>
-                <p className="text-gray-500">{t('dashboard.owner.subtitle')}</p>
+              <div className="min-w-0">
+                <h1 className="text-2xl sm:text-3xl font-bold">{t('dashboard.owner.title')}</h1>
+                <p className="text-gray-500 text-sm sm:text-base">{t('dashboard.owner.subtitle')}</p>
               </div>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4 sm:justify-end">
               {userEmail && (
-                <span className="text-sm text-gray-500 hidden sm:inline">{userEmail}</span>
+                <span className="text-xs sm:text-sm text-gray-500 truncate max-w-full sm:max-w-[200px] order-last sm:order-none w-full sm:w-auto">
+                  {userEmail}
+                </span>
               )}
               <button
+                type="button"
                 onClick={async () => {
                   const supabase = createClient();
                   await supabase.auth.signOut();
                   router.push('/login?redirect=/owner');
                   router.refresh();
                 }}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                className="flex items-center gap-2 px-3 sm:px-4 py-2 min-h-[44px] text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors touch-manipulation"
               >
-                <LogOut className="w-4 h-4" />
+                <LogOut className="w-4 h-4 shrink-0" />
                 {t('auth.logout')}
               </button>
               <LanguageCurrencySwitcher />
@@ -399,8 +402,8 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
         </div>
 
         {/* Filters */}
-        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-6">
-          <div className="flex flex-wrap gap-4 items-end">
+        <div className="bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm mb-6">
+          <div className="flex flex-col sm:flex-row flex-wrap gap-4 items-stretch sm:items-end">
             {currentTab !== 'settings' && (
               <>
                 <div className="flex-1 min-w-[200px]">
@@ -414,13 +417,14 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
                     className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
                   />
                 </div>
-                <div>
+                <div className="w-full sm:w-auto">
                   <button
+                    type="button"
                     onClick={() => setIsCreateModalOpen(true)}
-                    className="bg-black text-white px-6 py-3 rounded-lg font-bold flex items-center gap-2 hover:bg-black/90 transition-all"
+                    className="w-full sm:w-auto bg-black text-white px-6 py-3 min-h-[44px] rounded-lg font-bold flex items-center justify-center gap-2 hover:bg-black/90 transition-all touch-manipulation"
                     disabled={activeBarbers.length === 0}
                   >
-                    <Plus className="w-4 h-4" /> {t('dashboard.owner.newAppointment')}
+                    <Plus className="w-4 h-4 shrink-0" /> {t('dashboard.owner.newAppointment')}
                   </button>
                 </div>
               </>
@@ -447,11 +451,12 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
         </div>
 
         {/* Tab Navigation */}
-        <div className="mb-6 border-b border-gray-200">
-          <nav className="flex gap-4">
+        <div className="mb-6 border-b border-gray-200 -mx-4 px-4 sm:mx-0 sm:px-0">
+          <nav className="flex gap-1 sm:gap-4 overflow-x-auto scrollbar-hide pb-px -mb-px">
             <button
+              type="button"
               onClick={() => setCurrentTab('appointments')}
-              className={`px-4 py-2 font-bold text-sm border-b-2 transition-colors flex items-center gap-2 ${
+              className={`px-3 sm:px-4 py-2.5 min-h-[44px] font-bold text-sm border-b-2 transition-colors flex items-center gap-2 shrink-0 whitespace-nowrap touch-manipulation ${
                 currentTab === 'appointments'
                   ? 'border-black text-black'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -461,11 +466,12 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
               {t('dashboard.owner.appointments')}
             </button>
             <button
+              type="button"
               onClick={() => {
                 setCurrentTab('barbers');
                 setSelectedBarberId(null);
               }}
-              className={`px-4 py-2 font-bold text-sm border-b-2 transition-colors flex items-center gap-2 ${
+              className={`px-3 sm:px-4 py-2.5 min-h-[44px] font-bold text-sm border-b-2 transition-colors flex items-center gap-2 shrink-0 whitespace-nowrap touch-manipulation ${
                 currentTab === 'barbers'
                   ? 'border-black text-black'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -475,8 +481,9 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
               {t('dashboard.owner.barbers')}
             </button>
             <button
+              type="button"
               onClick={() => setCurrentTab('services')}
-              className={`px-4 py-2 font-bold text-sm border-b-2 transition-colors flex items-center gap-2 ${
+              className={`px-3 sm:px-4 py-2.5 min-h-[44px] font-bold text-sm border-b-2 transition-colors flex items-center gap-2 shrink-0 whitespace-nowrap touch-manipulation ${
                 currentTab === 'services'
                   ? 'border-black text-black'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -486,8 +493,9 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
               {t('dashboard.owner.services')}
             </button>
             <button
+              type="button"
               onClick={() => setCurrentTab('settings')}
-              className={`px-4 py-2 font-bold text-sm border-b-2 transition-colors flex items-center gap-2 ${
+              className={`px-3 sm:px-4 py-2.5 min-h-[44px] font-bold text-sm border-b-2 transition-colors flex items-center gap-2 shrink-0 whitespace-nowrap touch-manipulation ${
                 currentTab === 'settings'
                   ? 'border-black text-black'
                   : 'border-transparent text-gray-500 hover:text-gray-700'

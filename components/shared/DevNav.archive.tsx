@@ -1,7 +1,12 @@
+/**
+ * Archived: floating “Panels” quick navigation (bottom-right FAB).
+ * Not imported anywhere — kept for reference if you want to restore it.
+ * To use again: import in app/layout.tsx and render <DevNav /> (rename export if needed).
+ */
 'use client';
 
 import Link from 'next/link';
-import { Home, Scissors, ShieldCheck, Crown, Building2, X, User } from 'lucide-react';
+import { Home, Scissors, Crown, Building2, X, User } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import type { Barber } from '@/lib/types';
 
@@ -53,7 +58,6 @@ export default function DevNav() {
             </button>
           </div>
           <nav className="space-y-2">
-            {/* Main Pages */}
             <div className="mb-4">
               <p className="text-xs font-bold text-gray-500 uppercase mb-2 px-2">Main Pages</p>
               <Link
@@ -90,7 +94,6 @@ export default function DevNav() {
               </Link>
             </div>
 
-            {/* Barber team dashboard */}
             <div>
               <p className="text-xs font-bold text-gray-500 uppercase mb-2 px-2">Barbers (team)</p>
               <Link
@@ -117,6 +120,3 @@ export default function DevNav() {
     </div>
   );
 }
-
-
-

@@ -199,29 +199,32 @@ export default function BarberDashboard({
   const showTeamFilters = sessionBacked && shopId && team.length > 1;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="sticky top-0 z-40 w-full border-b border-gray-200 bg-white shadow-sm">
+    <div className="min-h-[100dvh] bg-gray-50">
+      <header className="sticky top-0 z-40 w-full border-b border-gray-200 bg-white shadow-sm pt-safe">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link href="/" className="p-2 hover:bg-gray-100 rounded-full">
+          <div className="flex flex-wrap items-center justify-between gap-y-2 py-2 sm:py-0 sm:h-16">
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+              <Link
+                href="/"
+                className="p-2 hover:bg-gray-100 rounded-full shrink-0 touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center"
+              >
                 <ArrowLeft className="w-5 h-5" />
               </Link>
-              <h1 className="text-xl font-bold tracking-tight">{t('nav.barberDashboard')}</h1>
+              <h1 className="text-lg sm:text-xl font-bold tracking-tight truncate">{t('nav.barberDashboard')}</h1>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 ml-auto shrink-0 flex-wrap justify-end">
               {sessionBacked && (
                 <button
                   type="button"
                   onClick={handleSignOut}
-                  className="flex items-center gap-1 px-2 py-1.5 text-sm text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100"
+                  className="flex items-center gap-1 px-2 py-2 min-h-[44px] text-sm text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100 touch-manipulation"
                 >
-                  <LogOut className="w-4 h-4" />
-                  <span className="hidden sm:inline">{t('auth.logout')}</span>
+                  <LogOut className="w-4 h-4 shrink-0" />
+                  <span className="hidden min-[380px]:inline sm:inline">{t('auth.logout')}</span>
                 </button>
               )}
               <LanguageCurrencySwitcher />
-              <div className="hidden sm:block text-right max-w-[200px]">
+              <div className="hidden sm:block text-right max-w-[200px] min-w-0">
                 {sessionBacked ? (
                   <>
                     <p className="text-sm font-bold text-gray-900 truncate" title={shopName}>
@@ -258,7 +261,7 @@ export default function BarberDashboard({
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
         {showTeamFilters && currentTab === 'today' && (
           <div className="mb-6 flex flex-wrap items-center gap-3">
             <label className="text-sm font-medium text-gray-700">{t('dashboard.barber.todayWho')}</label>

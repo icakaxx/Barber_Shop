@@ -17,7 +17,7 @@ function WorkingHoursDisplay({ workingHours, t }: { workingHours: WorkingHoursMa
   };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xl text-gray-600">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-base sm:text-lg md:text-xl text-gray-600 text-center sm:text-left max-w-xl mx-auto sm:max-w-none sm:mx-0">
       <div>
         {WEEKDAY_KEYS.map((key) => (
           <p key={key}>{formatDay(key)}</p>
@@ -49,13 +49,13 @@ export default function LocationSection() {
   return (
     <section id="location" className="py-20 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
+        <div className="text-center mb-16 max-w-3xl mx-auto px-2">
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-gray-900">{t('location.title')}</h2>
           <div className="mt-2 w-20 h-1 bg-black mx-auto" />
         </div>
 
-        <div className="grid md:grid-cols-2 gap-12 items-center">
-          <div className="order-2 md:order-1 overflow-hidden rounded-2xl shadow-lg h-[450px]">
+        <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center max-w-6xl mx-auto">
+          <div className="order-2 md:order-1 overflow-hidden rounded-2xl shadow-lg h-[min(50vh,320px)] sm:h-[min(55vh,400px)] md:h-[450px] min-h-[220px]">
             <iframe
               src={mapsEmbedSrc}
               width="100%"
@@ -67,43 +67,43 @@ export default function LocationSection() {
             />
           </div>
 
-          <div className="flex flex-col space-y-8 order-1 md:order-2">
-            <div>
-              <h3 className="text-2xl font-bold mb-3 flex items-center gap-2">
-                <MapPin className="w-6 h-6" /> {t('location.visitUs')}
+          <div className="flex flex-col space-y-8 order-1 md:order-2 text-center md:text-left items-center md:items-stretch">
+            <div className="w-full max-w-xl mx-auto md:max-w-none md:mx-0">
+              <h3 className="text-xl sm:text-2xl font-bold mb-3 flex items-center justify-center md:justify-start gap-2">
+                <MapPin className="w-5 h-5 sm:w-6 sm:h-6 shrink-0" /> {t('location.visitUs')}
               </h3>
-              <p className="text-xl text-gray-600">{addressDisplay}</p>
+              <p className="text-base sm:text-lg md:text-xl text-gray-600 break-words">{addressDisplay}</p>
             </div>
 
-            <div>
-              <h3 className="text-2xl font-bold mb-3 flex items-center gap-2">
-                <Clock className="w-6 h-6" /> {t('location.workingHours')}
+            <div className="w-full">
+              <h3 className="text-xl sm:text-2xl font-bold mb-3 flex items-center justify-center md:justify-start gap-2">
+                <Clock className="w-5 h-5 sm:w-6 sm:h-6 shrink-0" /> {t('location.workingHours')}
               </h3>
               {hasStructuredHours ? (
                 <WorkingHoursDisplay workingHours={shop!.workingHours!} t={t} />
               ) : (
-                <p className="text-xl text-gray-600">{shop?.workingHoursText || t('location.hours')}</p>
+                <p className="text-base sm:text-lg md:text-xl text-gray-600 text-center md:text-left">{shop?.workingHoursText || t('location.hours')}</p>
               )}
             </div>
 
-            <div>
-              <h3 className="text-2xl font-bold mb-3 flex items-center gap-2">
-                <Phone className="w-6 h-6" /> {t('location.contact')}
+            <div className="w-full max-w-xl mx-auto md:max-w-none md:mx-0">
+              <h3 className="text-xl sm:text-2xl font-bold mb-3 flex items-center justify-center md:justify-start gap-2">
+                <Phone className="w-5 h-5 sm:w-6 sm:h-6 shrink-0" /> {t('location.contact')}
               </h3>
               <a
                 href={`tel:${phone.replace(/\s/g, '')}`}
-                className="text-xl text-gray-600 hover:text-black transition-colors font-medium"
+                className="text-base sm:text-lg md:text-xl text-gray-600 hover:text-black transition-colors font-medium touch-manipulation inline-block py-1"
               >
                 {phone}
               </a>
             </div>
 
-            <div className="pt-4">
+            <div className="pt-4 flex justify-center md:justify-start w-full">
               <a
                 href={`https://www.google.com/maps/search/?api=1&query=${mapsQuery}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center rounded-md bg-white border border-gray-200 px-8 py-3 text-lg font-semibold text-black shadow-sm hover:bg-gray-50 transition-all gap-2"
+                className="inline-flex items-center justify-center rounded-md bg-white border border-gray-200 px-6 sm:px-8 py-3 min-h-[48px] text-base sm:text-lg font-semibold text-black shadow-sm hover:bg-gray-50 transition-all gap-2 touch-manipulation w-full max-w-md sm:max-w-none sm:w-auto"
               >
                 <Navigation className="w-5 h-5" />
                 {t('location.openInMaps')}

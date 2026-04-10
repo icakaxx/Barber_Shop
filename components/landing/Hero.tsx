@@ -16,7 +16,7 @@ export default function Hero() {
   const heroDescription = shop?.heroDescription || t('hero.premiumCuts');
 
   return (
-    <section className="relative min-h-[90vh] flex items-center justify-center bg-black overflow-hidden">
+    <section className="relative min-h-[85dvh] sm:min-h-[90vh] flex items-center justify-center bg-black overflow-hidden">
       {heroImageUrl && (
         <div
           className="absolute inset-0 bg-cover bg-center"
@@ -27,18 +27,19 @@ export default function Hero() {
       )}
       <div className="absolute inset-0 hero-gradient" />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-10 sm:py-0">
         <div className="flex flex-col lg:flex-row items-center lg:items-start gap-8 lg:gap-12">
-          <div className={`order-1 ${barbers.length > 0 ? 'lg:order-1' : ''} flex-1 text-center lg:text-left max-w-3xl`}>
-          <h1 className="text-5xl md:text-7xl font-bold text-white tracking-tight">
+          <div className={`order-1 ${barbers.length > 0 ? 'lg:order-1' : ''} flex-1 text-center lg:text-left max-w-3xl w-full min-w-0`}>
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white tracking-tight break-words">
             {shopName}
           </h1>
-          <p className="mt-4 text-xl md:text-2xl text-white/90">
+          <p className="mt-4 text-lg sm:text-xl md:text-2xl text-white/90 px-1">
             {heroDescription}
           </p>
 
-          <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+          <div className="mt-8 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center lg:justify-start w-full max-w-md sm:max-w-none mx-auto lg:mx-0">
             <button
+              type="button"
               onClick={() => {
                 const modal = document.getElementById('bookingModal');
                 if (modal) {
@@ -46,13 +47,13 @@ export default function Hero() {
                   document.dispatchEvent(new CustomEvent('bookingModalOpen'));
                 }
               }}
-              className="inline-flex items-center justify-center rounded-md bg-white px-8 py-3 text-lg font-semibold text-black shadow-lg hover:bg-gray-100 transition-all"
+              className="inline-flex items-center justify-center rounded-md bg-white px-6 sm:px-8 py-3.5 min-h-[48px] text-base sm:text-lg font-semibold text-black shadow-lg hover:bg-gray-100 transition-all touch-manipulation w-full sm:w-auto"
             >
               {t('hero.scheduleNow')}
             </button>
             <a
               href="#services"
-              className="inline-flex items-center justify-center rounded-md bg-transparent border-2 border-white px-8 py-3 text-lg font-semibold text-white hover:bg-white/10 transition-all"
+              className="inline-flex items-center justify-center rounded-md bg-transparent border-2 border-white px-6 sm:px-8 py-3.5 min-h-[48px] text-base sm:text-lg font-semibold text-white hover:bg-white/10 transition-all touch-manipulation w-full sm:w-auto"
             >
               {t('hero.viewServices')}
             </a>

@@ -839,15 +839,20 @@ export default function BookingModal() {
       }}
     >
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeModal} />
-      <div className="absolute inset-0 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 w-full md:max-w-2xl bg-white md:rounded-2xl shadow-2xl flex flex-col overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white sticky top-0 z-10">
-          <div>
-            <h2 className="text-xl font-bold">{t('booking.title')}</h2>
+      <div className="absolute inset-0 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 w-full h-full max-h-[100dvh] md:h-auto md:max-h-[min(90vh,720px)] md:max-w-2xl bg-white md:rounded-2xl shadow-2xl flex flex-col overflow-hidden min-h-0">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-100 flex items-center justify-between bg-white shrink-0 z-10 pt-[max(0.75rem,env(safe-area-inset-top))]">
+          <div className="min-w-0 pr-2">
+            <h2 className="text-lg sm:text-xl font-bold truncate">{t('booking.title')}</h2>
             <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold">
               {bookingState.step === 5 ? t('booking.success') : `${t('booking.step')} ${bookingState.step} ${t('booking.of')} 4`}
             </p>
           </div>
-          <button onClick={closeModal} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+          <button
+            type="button"
+            onClick={closeModal}
+            className="p-2.5 hover:bg-gray-100 rounded-full transition-colors touch-manipulation shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center"
+            aria-label="Close"
+          >
             <X className="w-6 h-6" />
           </button>
         </div>
@@ -858,7 +863,7 @@ export default function BookingModal() {
           </div>
         )}
 
-        <div className="flex-1 overflow-y-auto p-6 scrollbar-hide">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-6 scrollbar-hide">
           {bookingState.step === 1 && (
             <div>
               <h3 className="text-xl font-bold mb-2">{t('booking.chooseServices')}</h3>
@@ -1140,7 +1145,7 @@ export default function BookingModal() {
                   <input
                     type="text"
                     id="custName"
-                    className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
+                    className="w-full p-3 min-h-[48px] text-base border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
                     placeholder={t('booking.name')}
                   />
                 </div>
@@ -1149,7 +1154,7 @@ export default function BookingModal() {
                   <input
                     type="tel"
                     id="custPhone"
-                    className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
+                    className="w-full p-3 min-h-[48px] text-base border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
                     placeholder={t('booking.phone')}
                   />
                 </div>
@@ -1158,7 +1163,7 @@ export default function BookingModal() {
                   <input
                     type="email"
                     id="custEmail"
-                    className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
+                    className="w-full p-3 min-h-[48px] text-base border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
                     placeholder={t('booking.email')}
                   />
                 </div>
@@ -1201,17 +1206,18 @@ export default function BookingModal() {
           )}
 
           {bookingState.step === 5 && (
-            <div className="text-center py-12">
+            <div className="text-center py-8 sm:py-12 px-2">
               <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
                 <Check className="w-10 h-10" />
               </div>
-              <h3 className="text-3xl font-bold mb-2">{t('booking.bookingConfirmed')}</h3>
-              <p className="text-gray-500 mb-8 px-8">
+              <h3 className="text-2xl sm:text-3xl font-bold mb-2">{t('booking.bookingConfirmed')}</h3>
+              <p className="text-gray-500 mb-8 px-2 sm:px-8 text-sm sm:text-base">
                 {t('booking.bookingConfirmationMessage')}
               </p>
               <button
+                type="button"
                 onClick={closeModal}
-                className="w-full py-4 bg-black text-white rounded-xl font-bold hover:bg-black/90 transition-all"
+                className="w-full max-w-sm mx-auto py-3.5 min-h-[48px] bg-black text-white rounded-xl font-bold hover:bg-black/90 transition-all touch-manipulation"
               >
                 {t('booking.gotIt')}
               </button>
@@ -1220,29 +1226,32 @@ export default function BookingModal() {
         </div>
 
         {bookingState.step !== 5 && (
-          <div className="px-6 py-4 border-t border-gray-100 flex justify-between items-center bg-gray-50">
+          <div className="px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-100 flex justify-between items-center gap-3 bg-gray-50 shrink-0 pb-safe">
             <button
+              type="button"
               onClick={prevStep}
-              className={`text-sm font-semibold text-gray-600 hover:text-black flex items-center gap-1 ${
-                bookingState.step === 1 ? 'invisible' : ''
+              className={`text-sm font-semibold text-gray-600 hover:text-black flex items-center gap-1 touch-manipulation min-h-[44px] min-w-[44px] sm:min-w-0 px-1 ${
+                bookingState.step === 1 ? 'invisible pointer-events-none' : ''
               }`}
             >
-              <ChevronLeft className="w-4 h-4" /> {t('booking.back')}
+              <ChevronLeft className="w-4 h-4 shrink-0" /> {t('booking.back')}
             </button>
-            <div>
+            <div className="flex justify-end min-w-0">
               {bookingState.step < 4 && (
                 <button
+                  type="button"
                   onClick={nextStep}
-                  className="bg-black text-white px-8 py-2 rounded-lg font-bold hover:bg-black/90 transition-colors"
+                  className="bg-black text-white px-5 sm:px-8 py-2.5 min-h-[44px] rounded-lg font-bold hover:bg-black/90 transition-colors touch-manipulation w-full sm:w-auto max-w-[200px] sm:max-w-none"
                 >
                   {t('booking.continue')}
                 </button>
               )}
               {bookingState.step === 4 && (
                 <button
+                  type="button"
                   onClick={confirmBooking}
                   disabled={loading}
-                  className="bg-black text-white px-8 py-2 rounded-lg font-bold hover:bg-black/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-black text-white px-4 sm:px-8 py-2.5 min-h-[44px] rounded-lg font-bold hover:bg-black/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation text-sm sm:text-base"
                 >
                   {loading ? t('booking.booking') : t('booking.confirmAppointment')}
                 </button>

@@ -101,7 +101,7 @@ export default function LoginForm({
           placeholder="owner@example.com"
           required
           autoComplete="email"
-          className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all"
+          className="w-full px-4 py-3 min-h-[48px] text-base border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all"
         />
       </div>
 
@@ -116,14 +116,14 @@ export default function LoginForm({
           onChange={(e) => setPassword(e.target.value)}
           required
           autoComplete="current-password"
-          className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all"
+          className="w-full px-4 py-3 min-h-[48px] text-base border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all"
         />
       </div>
 
       <button
         type="submit"
         disabled={loading}
-        className="w-full py-3 px-4 bg-black text-white font-bold rounded-lg hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full py-3.5 min-h-[48px] px-4 bg-black text-white text-base font-bold rounded-lg hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
       >
         {loading ? t('common.loading') : t('auth.loginButton')}
       </button>

@@ -18,8 +18,8 @@ export default function LoginPageContent({ variant = 'owner' }: LoginPageContent
   const Icon = isAdmin ? Crown : isBarber ? Scissors : Building2;
 
   return (
-    <div className="min-h-screen login-page-bg flex flex-col items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md relative z-10">
+    <div className="min-h-[100dvh] login-page-bg flex flex-col items-center justify-center px-4 py-8 sm:py-12 pt-[max(2rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))]">
+      <div className="w-full max-w-md relative z-10 min-w-0">
         <Link
           href="/"
           className="inline-flex items-center gap-2 text-gray-300 hover:text-white mb-8 transition-colors"
@@ -27,7 +27,7 @@ export default function LoginPageContent({ variant = 'owner' }: LoginPageContent
           {t('auth.backToHome')}
         </Link>
 
-        <div className="bg-white/95 backdrop-blur-sm rounded-2xl border border-white/20 shadow-2xl shadow-black/30 p-8">
+        <div className="bg-white/95 backdrop-blur-sm rounded-2xl border border-white/20 shadow-2xl shadow-black/30 p-5 sm:p-8">
           <div className="flex items-center gap-3 mb-6">
             <div className="bg-black p-3 rounded-lg">
               <Icon className="w-6 h-6 text-white" />

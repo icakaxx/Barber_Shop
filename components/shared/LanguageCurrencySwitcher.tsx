@@ -31,8 +31,9 @@ export default function LanguageCurrencySwitcher() {
     <div className="relative flex items-center gap-2" ref={dropdownRef}>
       <div className="relative">
         <button
+          type="button"
           onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors"
+          className="flex items-center gap-2 px-3 py-2.5 min-h-[44px] rounded-lg border border-gray-200 hover:border-gray-300 transition-colors touch-manipulation"
           aria-label="Change language"
         >
           <Globe className="w-4 h-4" />
@@ -41,15 +42,16 @@ export default function LanguageCurrencySwitcher() {
         </button>
 
         {isOpen && (
-          <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg border border-gray-200 shadow-lg z-50">
+          <div className="absolute right-0 mt-2 w-48 max-w-[min(100vw-2rem,12rem)] bg-white rounded-lg border border-gray-200 shadow-lg z-[60]">
             {languages.map((lang) => (
               <button
+                type="button"
                 key={lang.code}
                 onClick={() => {
                   setLocale(lang.code);
                   setIsOpen(false);
                 }}
-                className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors flex items-center gap-2 ${
+                className={`w-full text-left px-4 py-3 min-h-[44px] text-sm hover:bg-gray-50 transition-colors flex items-center gap-2 touch-manipulation ${
                   locale === lang.code ? 'bg-gray-50 font-medium' : ''
                 }`}
               >

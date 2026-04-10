@@ -51,19 +51,19 @@ export default function SuperAdminDashboard({ userEmail }: SuperAdminDashboardPr
   }, [currentTab]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="sticky top-0 z-40 w-full border-b border-gray-200 bg-white shadow-sm">
+    <div className="min-h-[100dvh] bg-gray-50">
+      <header className="sticky top-0 z-40 w-full border-b border-gray-200 bg-white shadow-sm pt-safe">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link href="/" className="p-2 hover:bg-gray-100 rounded-full">
+          <div className="flex flex-wrap items-center justify-between gap-y-2 py-2 sm:py-0 sm:h-16 sm:flex-nowrap">
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1 sm:flex-none">
+              <Link href="/" className="p-2 hover:bg-gray-100 rounded-full shrink-0 touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center">
                 <ArrowLeft className="w-5 h-5" />
               </Link>
-              <h1 className="text-xl font-bold tracking-tight">{t('dashboard.admin.title')}</h1>
+              <h1 className="text-lg sm:text-xl font-bold tracking-tight truncate">{t('dashboard.admin.title')}</h1>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 ml-auto shrink-0 flex-wrap justify-end">
               {userEmail && (
-                <span className="text-xs text-gray-500 hidden md:inline max-w-[160px] truncate">
+                <span className="text-xs text-gray-500 hidden md:inline max-w-[160px] truncate order-last md:order-none">
                   {userEmail}
                 </span>
               )}
@@ -75,17 +75,17 @@ export default function SuperAdminDashboard({ userEmail }: SuperAdminDashboardPr
                   router.push('/login/admin');
                   router.refresh();
                 }}
-                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                className="flex items-center gap-2 px-3 py-2 min-h-[44px] text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors touch-manipulation"
               >
-                <LogOut className="w-4 h-4" />
-                {t('auth.logout')}
+                <LogOut className="w-4 h-4 shrink-0" />
+                <span className="hidden min-[380px]:inline">{t('auth.logout')}</span>
               </button>
               <LanguageCurrencySwitcher />
               <div className="hidden sm:block text-right">
                 <p className="text-sm font-bold">{t('dashboard.admin.globalAdmin')}</p>
                 <p className="text-xs text-gray-500">{t('dashboard.admin.systemRoot')}</p>
               </div>
-              <div className="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center font-bold">
+              <div className="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center font-bold text-sm shrink-0">
                 SA
               </div>
             </div>
@@ -93,13 +93,14 @@ export default function SuperAdminDashboard({ userEmail }: SuperAdminDashboardPr
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
         {/* Tab Navigation */}
-        <div className="mb-6 border-b border-gray-200">
-          <nav className="flex gap-4">
+        <div className="mb-6 border-b border-gray-200 -mx-4 px-4 sm:mx-0 sm:px-0">
+          <nav className="flex gap-1 sm:gap-4 overflow-x-auto scrollbar-hide pb-px -mb-px">
             <button
+              type="button"
               onClick={() => setCurrentTab('barbers')}
-              className={`px-4 py-2 font-bold text-sm border-b-2 transition-colors flex items-center gap-2 ${
+              className={`px-3 sm:px-4 py-2.5 min-h-[44px] font-bold text-sm border-b-2 transition-colors flex items-center gap-2 shrink-0 whitespace-nowrap touch-manipulation ${
                 currentTab === 'barbers'
                   ? 'border-black text-black'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -109,8 +110,9 @@ export default function SuperAdminDashboard({ userEmail }: SuperAdminDashboardPr
               {t('dashboard.admin.barbers')}
             </button>
             <button
+              type="button"
               onClick={() => setCurrentTab('appointments')}
-              className={`px-4 py-2 font-bold text-sm border-b-2 transition-colors flex items-center gap-2 ${
+              className={`px-3 sm:px-4 py-2.5 min-h-[44px] font-bold text-sm border-b-2 transition-colors flex items-center gap-2 shrink-0 whitespace-nowrap touch-manipulation ${
                 currentTab === 'appointments'
                   ? 'border-black text-black'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -120,8 +122,9 @@ export default function SuperAdminDashboard({ userEmail }: SuperAdminDashboardPr
               {t('dashboard.admin.appointments')}
             </button>
             <button
+              type="button"
               onClick={() => setCurrentTab('services')}
-              className={`px-4 py-2 font-bold text-sm border-b-2 transition-colors flex items-center gap-2 ${
+              className={`px-3 sm:px-4 py-2.5 min-h-[44px] font-bold text-sm border-b-2 transition-colors flex items-center gap-2 shrink-0 whitespace-nowrap touch-manipulation ${
                 currentTab === 'services'
                   ? 'border-black text-black'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -131,8 +134,9 @@ export default function SuperAdminDashboard({ userEmail }: SuperAdminDashboardPr
               {t('dashboard.admin.services')}
             </button>
             <button
+              type="button"
               onClick={() => setCurrentTab('users')}
-              className={`px-4 py-2 font-bold text-sm border-b-2 transition-colors flex items-center gap-2 ${
+              className={`px-3 sm:px-4 py-2.5 min-h-[44px] font-bold text-sm border-b-2 transition-colors flex items-center gap-2 shrink-0 whitespace-nowrap touch-manipulation ${
                 currentTab === 'users'
                   ? 'border-black text-black'
                   : 'border-transparent text-gray-500 hover:text-gray-700'

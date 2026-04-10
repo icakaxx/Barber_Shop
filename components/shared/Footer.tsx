@@ -12,18 +12,18 @@ export default function Footer() {
 
   return (
     <footer className="bg-black text-white py-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-          <div>
+          <div className="flex flex-col items-center">
             <h3 className="text-3xl font-bold mb-4">{shopName}</h3>
-            <p className="text-gray-400 max-w-xs">
+            <p className="text-gray-400 max-w-xs mx-auto">
               {t('footer.description')}
             </p>
           </div>
 
-          <div>
+          <div className="flex flex-col items-center">
             <h4 className="text-lg font-semibold mb-6 uppercase tracking-wider text-gray-400">{t('footer.quickLinks')}</h4>
-            <ul className="space-y-4">
+            <ul className="space-y-4 flex flex-col items-center">
               <li><Link href="/" className="hover:text-gray-300 transition-colors">{t('footer.home')}</Link></li>
               <li><a href="#services" className="hover:text-gray-300 transition-colors">{t('footer.services')}</a></li>
               <li><a href="#location" className="hover:text-gray-300 transition-colors">{t('footer.location')}</a></li>
@@ -31,9 +31,9 @@ export default function Footer() {
             </ul>
           </div>
 
-          <div>
+          <div className="flex flex-col items-center">
             <h4 className="text-lg font-semibold mb-6 uppercase tracking-wider text-gray-400">{t('footer.followUs')}</h4>
-            <div className="flex items-center gap-6">
+            <div className="flex items-center justify-center gap-6">
               <a
                 href="https://instagram.com"
                 target="_blank"
@@ -62,9 +62,9 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-16 pt-8 border-t border-white/10 text-center text-sm text-gray-500 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p>&copy; {new Date().getFullYear()} {shopName}. {t('footer.allRightsReserved')}</p>
-          <div className="flex gap-4">
+        <div className="mt-16 pt-8 border-t border-white/10 text-sm text-gray-500 flex flex-col items-center justify-center gap-4 px-1 text-center">
+          <p className="max-w-prose mx-auto">&copy; {new Date().getFullYear()} {shopName}. {t('footer.allRightsReserved')}</p>
+          <div className="flex flex-wrap justify-center gap-x-4 gap-y-2">
             <Link
               href="/barbers"
               className="text-gray-400 hover:text-white transition-colors flex items-center gap-1"
