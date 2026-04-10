@@ -132,7 +132,7 @@ All core barber management features are working! 🎉
 
 Пълно описание: **[docs/ROUTES_AND_ROLES.md](docs/ROUTES_AND_ROLES.md)**
 
-- `/` — Landing
+- `/` — Landing page
 - `/owner` — Табло собственик (legacy: `/dashboard/owner` → пренасочва)
 - `/barbers` — Екипно табло бръснари, `/login/barber`
 - `/superadmin` — Супер админ (legacy: `/admin` → пренасочва)
