@@ -171,7 +171,7 @@ export default function ShopSettingsTab({ shopId, shop, onShopUpdate }: ShopSett
             value={formData.name}
             onChange={(e) => handleChange('name', e.target.value)}
             className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
-            placeholder="Barber King"
+            placeholder="Клуб мъжки свят"
             required
           />
           <p className="text-xs text-gray-500 mt-1">{t('dashboard.owner.shopNameHelp')}</p>

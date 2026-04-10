@@ -2,10 +2,31 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import RecoveryHashRedirect from "@/components/auth/RecoveryHashRedirect";
 import { I18nProvider } from "@/contexts/I18nContext";
+import {
+  metadataBase,
+  OG_IMAGE_PATH,
+  SEO_DESCRIPTION_BG,
+  SEO_TITLE_BG,
+} from "@/lib/seo-defaults";
 
 export const metadata: Metadata = {
-  title: "Barber King | Premium Haircuts & Beard Trims in Sofia",
-  description: "Book your next haircut at Barber King – professional barbers, modern salon, easy online booking. Sofia's top-rated barber shop.",
+  metadataBase,
+  title: SEO_TITLE_BG,
+  description: SEO_DESCRIPTION_BG,
+  openGraph: {
+    title: SEO_TITLE_BG,
+    description: SEO_DESCRIPTION_BG,
+    locale: "bg_BG",
+    alternateLocale: ["en_US"],
+    type: "website",
+    images: [{ url: OG_IMAGE_PATH }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SEO_TITLE_BG,
+    description: SEO_DESCRIPTION_BG,
+    images: [OG_IMAGE_PATH],
+  },
 };
 
 export const viewport: Viewport = {
@@ -31,4 +52,3 @@ export default function RootLayout({
     </html>
   );
 }
-

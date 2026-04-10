@@ -79,11 +79,11 @@ export const translations = {
     },
     // Hero
     hero: {
-      title: 'Barber King',
-      subtitle: 'Професионални прически и поддръжка на брада',
+      title: 'Клуб мъжки свят',
+      subtitle: 'Премиум подстригване и брада в Ловеч',
       cta: 'Резервирай час',
-      location: 'София, България',
-      premiumCuts: 'Премиум прически и класически стил',
+      location: 'Ловеч, България',
+      premiumCuts: 'Мъжко подстригване, брада и лесна онлайн резервация в Ловеч.',
       scheduleNow: 'Резервирай сега',
       viewServices: 'Виж услуги',
       rating: '4.9 рейтинг • 500+ доволни клиенти',
@@ -413,7 +413,7 @@ export const translations = {
     location: {
       title: 'Намерете ни',
       visitUs: 'Посетете ни',
-      address: 'София, ул. Пример 12, 1000 Център',
+      address: 'Ловеч, ул. Пример 12, 5500 Център',
       workingHours: 'Работно време',
       hours: 'Пон–Съб: 09:00 – 19:00',
       sunday: 'Неделя: Затворено',
@@ -430,7 +430,7 @@ export const translations = {
     },
     // Footer
     footer: {
-      description: 'Премиум прически и класически стил за модерния мъж. Усетете разликата на професионален бръснарски салон.',
+      description: 'Клуб мъжки свят е бръснарски салон в Ловеч за мъжко подстригване, брада и стилна визия.',
       quickLinks: 'Бързи връзки',
       home: 'Начало',
       services: 'Услуги',
@@ -522,11 +522,11 @@ export const translations = {
     },
     // Hero
     hero: {
-      title: 'Barber King',
-      subtitle: 'Professional Haircuts & Beard Trims',
+      title: 'Men’s World Club',
+      subtitle: 'Premium haircuts and beard trims in Lovech',
       cta: 'Book Appointment',
-      location: 'Sofia, Bulgaria',
-      premiumCuts: 'Premium cuts & classic style',
+      location: 'Lovech, Bulgaria',
+      premiumCuts: 'Men’s haircuts, beard trims, and easy online booking in Lovech.',
       scheduleNow: 'Schedule Now',
       viewServices: 'View Services',
       rating: '4.9 rating • 500+ happy clients',
@@ -856,7 +856,7 @@ export const translations = {
     location: {
       title: 'Find Us',
       visitUs: 'Visit Us',
-      address: 'Sofia, ul. Example 12, 1000 Center',
+      address: 'Lovech, ul. Example 12, 5500 Center',
       workingHours: 'Working Hours',
       hours: 'Mon–Sat: 09:00 – 19:00',
       sunday: 'Sunday: Closed',
@@ -873,7 +873,7 @@ export const translations = {
     },
     // Footer
     footer: {
-      description: 'Premium cuts and classic style for the modern man. Experience the difference of a professional barber shop.',
+      description: 'Men’s World Club is a barber shop in Lovech for men’s haircuts, beard trims, and sharp style.',
       quickLinks: 'Quick Links',
       home: 'Home',
       services: 'Services',

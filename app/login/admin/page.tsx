@@ -4,7 +4,7 @@ import { Suspense } from 'react';
 import LoginPageContent from '@/components/auth/LoginPageContent';
 
 export const metadata = {
-  title: 'Вход за супер админ | Barber King',
+  title: 'Вход за супер админ | Клуб мъжки свят',
   description: 'Влезте за достъп до админ таблото',
 };
 

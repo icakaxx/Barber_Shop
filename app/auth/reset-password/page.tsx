@@ -2,7 +2,7 @@ import Link from 'next/link';
 import ResetPasswordClient from '@/components/auth/ResetPasswordClient';
 
 export const metadata = {
-  title: 'Нова парола | Barber King',
+  title: 'Нова парола | Клуб мъжки свят',
   description: 'Задайте нова парола за акаунта си',
 };
 

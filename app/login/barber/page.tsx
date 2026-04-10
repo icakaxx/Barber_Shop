@@ -4,7 +4,7 @@ import { Suspense } from 'react';
 import LoginPageContent from '@/components/auth/LoginPageContent';
 
 export const metadata = {
-  title: 'Вход за бръснари | Barber King',
+  title: 'Вход за бръснари | Клуб мъжки свят',
   description: 'Влезте за достъп до екипното табло',
 };
 
