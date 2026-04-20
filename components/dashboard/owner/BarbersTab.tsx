@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Users, Calendar, Scissors, Phone, Edit2, Trash2, ArrowUp, ArrowDown, User } from 'lucide-react';
+import { Users, Calendar, Scissors, Phone, Edit2, Trash2, ArrowUp, ArrowDown, User, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getStatusBadge } from '@/lib/utils/statusBadge';
 import BarberFormModal from '@/components/admin/BarberFormModal';
 import { useI18n } from '@/contexts/I18nContext';
@@ -57,7 +57,7 @@ export default function BarbersTab({
   onReloadAppointments,
   onBarberUpdate
 }: BarbersTabProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [editingBarber, setEditingBarber] = useState<Barber | null>(null);
   const [showBarberFormModal, setShowBarberFormModal] = useState(false);
@@ -89,6 +89,22 @@ export default function BarbersTab({
 
   const formatTimeRange = (startTime: string, endTime: string) => {
     return `${formatTime(startTime)} - ${formatTime(endTime)}`;
+  };
+
+  const formatDisplayDate = (dateString: string) => {
+    const date = new Date(`${dateString}T12:00:00`);
+    return date.toLocaleDateString(locale === 'bg' ? 'bg-BG' : 'en-GB', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
+
+  const shiftDateByDays = (dateString: string, days: number) => {
+    const date = new Date(`${dateString}T12:00:00`);
+    date.setDate(date.getDate() + days);
+    return date.toISOString().split('T')[0];
   };
 
   const parseServicesFromNotes = (notes: string | undefined): string[] => {
@@ -140,11 +156,11 @@ export default function BarbersTab({
           {/* Barbers List View */}
           <div className="flex justify-between items-center">
             <div>
-              <h2 className="text-2xl font-bold">Barbers</h2>
-              <p className="text-sm text-gray-500 mt-1">View and manage your barbers</p>
+              <h2 className="text-2xl font-bold">{t('dashboard.owner.barbersTitle')}</h2>
+              <p className="text-sm text-gray-500 mt-1">{t('dashboard.owner.barbersSubtitle')}</p>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-500">Sort by:</span>
+              <span className="text-sm text-gray-500">{t('dashboard.owner.sortBy')}</span>
               <button
                 onClick={() => handleSort('name')}
                 className={`px-3 py-1.5 text-sm font-medium rounded-lg border transition-all flex items-center gap-2 ${
@@ -153,7 +169,7 @@ export default function BarbersTab({
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
               >
-                Name
+                {t('dashboard.owner.sortName')}
                 {sortBy === 'name' && (sortOrder === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />)}
               </button>
               <button
@@ -164,7 +180,7 @@ export default function BarbersTab({
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
               >
-                Appointments
+                {t('dashboard.owner.sortAppointments')}
                 {sortBy === 'appointments' && (sortOrder === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />)}
               </button>
             </div>
@@ -175,10 +191,10 @@ export default function BarbersTab({
               <table className="w-full">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Barber</th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Shop</th>
-                    <th className="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase">Appointments</th>
-                    <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase">Actions</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">{t('admin.barber')}</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">{t('admin.shop')}</th>
+                    <th className="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase">{t('dashboard.owner.sortAppointments')}</th>
+                    <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase">{t('admin.actions')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -208,7 +224,7 @@ export default function BarbersTab({
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <p className="text-sm text-gray-700">{barber.shop?.name || 'Unknown Shop'}</p>
+                          <p className="text-sm text-gray-700">{barber.shop?.name || t('dashboard.owner.unknownShop')}</p>
                           {barber.shop?.city && (
                             <p className="text-xs text-gray-500">{barber.shop.city}</p>
                           )}
@@ -237,7 +253,7 @@ export default function BarbersTab({
                               }}
                               className="px-4 py-2 text-sm font-bold text-black hover:bg-gray-100 rounded-lg transition-colors"
                             >
-                              View Schedule
+                              {t('dashboard.owner.viewSchedule')}
                             </button>
                           </div>
                         </td>
@@ -285,24 +301,37 @@ export default function BarbersTab({
                 <Edit2 className="w-4 h-4" /> {t('common.edit')} {t('dashboard.owner.barberProfile')}
               </button>
             </div>
-            <input
-              type="date"
-              value={barberViewDate}
-              onChange={(e) => onDateChange(e.target.value)}
-              className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-black focus:outline-none"
-            />
+            <div className="flex items-center gap-2 w-full sm:w-auto sm:max-w-[380px]">
+              <button
+                type="button"
+                onClick={() => onDateChange(shiftDateByDays(barberViewDate, -1))}
+                aria-label={t('dashboard.owner.previousDay')}
+                className="h-[40px] w-[40px] shrink-0 rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <input
+                type="date"
+                value={barberViewDate}
+                onChange={(e) => onDateChange(e.target.value)}
+                className="min-w-0 flex-1 sm:w-auto px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-black focus:outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => onDateChange(shiftDateByDays(barberViewDate, 1))}
+                aria-label={t('dashboard.owner.nextDay')}
+                className="h-[40px] w-[40px] shrink-0 rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
             <div className="p-6 border-b border-gray-200">
-              <h3 className="text-xl font-bold">Appointments</h3>
+              <h3 className="text-xl font-bold">{t('dashboard.owner.appointments')}</h3>
               <p className="text-sm text-gray-500 mt-1">
-                {new Date(barberViewDate).toLocaleDateString('en-GB', {
-                  weekday: 'long',
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric'
-                })}
+                {formatDisplayDate(barberViewDate)}
               </p>
             </div>
 
@@ -312,9 +341,9 @@ export default function BarbersTab({
                   <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <Calendar className="w-8 h-8 text-gray-400" />
                   </div>
-                  <h3 className="font-bold text-lg mb-2">No Appointments</h3>
+                  <h3 className="font-bold text-lg mb-2">{t('appointments.noAppointments')}</h3>
                   <p className="text-gray-500">
-                    No appointments found for {selectedBarber?.displayName} on this date.
+                    {t('dashboard.owner.noAppointmentsForBarberOnDate')} {selectedBarber?.displayName}.
                   </p>
                 </div>
               ) : (
@@ -326,7 +355,7 @@ export default function BarbersTab({
                     >
                       <div className="flex items-start gap-4 flex-1">
                         <div className="bg-white p-3 rounded-lg text-center min-w-[120px]">
-                          <p className="text-xs font-bold text-gray-500 uppercase">Time</p>
+                          <p className="text-xs font-bold text-gray-500 uppercase">{t('appointments.time')}</p>
                           <p className="font-bold text-sm">{formatTimeRange(app.startTime, app.endTime)}</p>
                         </div>
                         <div className="flex-1">
@@ -355,14 +384,14 @@ export default function BarbersTab({
                           onClick={() => onEditAppointment(app)}
                           className="px-4 py-2 border border-gray-200 text-sm font-bold rounded-lg hover:bg-gray-50 transition-all flex items-center gap-2"
                         >
-                          <Edit2 className="w-4 h-4" /> Edit
+                          <Edit2 className="w-4 h-4" /> {t('common.edit')}
                         </button>
                         <button
                           onClick={() => onDeleteAppointment(app.id)}
                           disabled={deletingId === app.id}
                           className="px-4 py-2 border border-red-200 text-red-600 text-sm font-bold rounded-lg hover:bg-red-50 transition-all flex items-center gap-2 disabled:opacity-50"
                         >
-                          <Trash2 className="w-4 h-4" /> {deletingId === app.id ? 'Deleting...' : 'Delete'}
+                          <Trash2 className="w-4 h-4" /> {deletingId === app.id ? t('common.loading') : t('common.delete')}
                         </button>
                       </div>
                     </div>

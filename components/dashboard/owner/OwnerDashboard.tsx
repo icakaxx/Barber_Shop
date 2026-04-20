@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Building2, Calendar, Users, Plus, Edit2, Trash2, Scissors, Settings, LogOut } from 'lucide-react';
+import { Building2, Calendar, Users, Plus, Edit2, Trash2, Scissors, Settings, LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
 import { createClient } from '@/lib/supabase/browser';
 import { getStatusBadge } from '@/lib/utils/statusBadge';
 import EditAppointmentModal from '@/components/dashboard/barber/EditAppointmentModal';
@@ -49,7 +49,7 @@ interface OwnerDashboardProps {
 }
 
 export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const router = useRouter();
   const [shops, setShops] = useState<Shop[]>([]);
   const [selectedShopId, setSelectedShopId] = useState<string>('');
@@ -205,6 +205,22 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
     const services = [app.serviceName];
     const additionalServices = parseServicesFromNotes(app.notes);
     return [...services, ...additionalServices];
+  };
+
+  const formatDisplayDate = (dateString: string) => {
+    const date = new Date(`${dateString}T12:00:00`);
+    return date.toLocaleDateString(locale === 'bg' ? 'bg-BG' : 'en-GB', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
+
+  const shiftDateByDays = (dateString: string, days: number) => {
+    const date = new Date(`${dateString}T12:00:00`);
+    date.setDate(date.getDate() + days);
+    return date.toISOString().split('T')[0];
   };
 
   const handleEdit = (appointment: Appointment) => {
@@ -410,12 +426,30 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     {t('dashboard.owner.date')}
                   </label>
-                  <input
-                    type="date"
-                    value={selectedDate}
-                    onChange={(e) => setSelectedDate(e.target.value)}
-                    className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
-                  />
+                  <div className="flex items-center gap-2 w-full sm:max-w-[380px]">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedDate((prev) => shiftDateByDays(prev, -1))}
+                      aria-label={t('dashboard.owner.previousDay')}
+                      className="h-[44px] w-[44px] shrink-0 rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <input
+                      type="date"
+                      value={selectedDate}
+                      onChange={(e) => setSelectedDate(e.target.value)}
+                      className="min-w-0 flex-1 p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setSelectedDate((prev) => shiftDateByDays(prev, 1))}
+                      aria-label={t('dashboard.owner.nextDay')}
+                      className="h-[44px] w-[44px] shrink-0 rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
                 <div className="w-full sm:w-auto">
                   <button
@@ -517,12 +551,7 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
                   {t('dashboard.owner.appointments')} {selectedShop && `- ${selectedShop.name}`}
                 </h2>
                 <p className="text-sm text-gray-500 mt-1">
-                  {new Date(selectedDate).toLocaleDateString('en-GB', { 
-                    weekday: 'long', 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
-                  })}
+                  {formatDisplayDate(selectedDate)}
                 </p>
               </div>
 

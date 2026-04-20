@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, X, Scissors } from 'lucide-react';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface Service {
   id: string;
@@ -17,6 +18,7 @@ interface ServicesManagementTabProps {
 }
 
 export default function ServicesManagementTab({ shopId }: ServicesManagementTabProps) {
+  const { t } = useI18n();
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -108,16 +110,19 @@ export default function ServicesManagementTab({ shopId }: ServicesManagementTabP
         handleCloseModal();
       } else {
         const error = await response.json();
-        alert(`Failed to ${editingService ? 'update' : 'create'} service: ${error.error}`);
+        const actionLabel = editingService
+          ? t('dashboard.owner.servicesUpdateAction')
+          : t('dashboard.owner.servicesCreateAction');
+        alert(`${t('dashboard.owner.servicesSaveFailed')} (${actionLabel}): ${error.error}`);
       }
     } catch (error) {
       console.error('Error saving service:', error);
-      alert('Failed to save service');
+      alert(t('dashboard.owner.servicesSaveFailed'));
     }
   };
 
   const handleDelete = async (serviceId: string) => {
-    if (!confirm('Are you sure you want to deactivate this service? It will no longer be available for booking.')) {
+    if (!confirm(t('dashboard.owner.servicesDeleteConfirm'))) {
       return;
     }
 
@@ -132,11 +137,11 @@ export default function ServicesManagementTab({ shopId }: ServicesManagementTabP
         await loadServices();
       } else {
         const error = await response.json();
-        alert(`Failed to delete service: ${error.error}`);
+        alert(`${t('dashboard.owner.servicesDeleteFailed')}: ${error.error}`);
       }
     } catch (error) {
       console.error('Error deleting service:', error);
-      alert('Failed to delete service');
+      alert(t('dashboard.owner.servicesDeleteFailed'));
     } finally {
       setDeletingId(null);
     }
@@ -146,7 +151,7 @@ export default function ServicesManagementTab({ shopId }: ServicesManagementTabP
     return (
       <div className="text-center py-12">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
-        <p className="text-gray-500">Loading services...</p>
+        <p className="text-gray-500">{t('dashboard.owner.servicesLoading')}</p>
       </div>
     );
   }
@@ -155,14 +160,14 @@ export default function ServicesManagementTab({ shopId }: ServicesManagementTabP
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold">Services Management</h2>
-          <p className="text-sm text-gray-500 mt-1">Manage services offered at your shop</p>
+          <h2 className="text-2xl font-bold">{t('dashboard.owner.servicesManagementTitle')}</h2>
+          <p className="text-sm text-gray-500 mt-1">{t('dashboard.owner.servicesManagementSubtitle')}</p>
         </div>
         <button
           onClick={() => handleOpenModal()}
           className="bg-black text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-black/90 transition-all"
         >
-          <Plus className="w-4 h-4" /> Add Service
+          <Plus className="w-4 h-4" /> {t('dashboard.owner.servicesAdd')}
         </button>
       </div>
 
@@ -171,9 +176,9 @@ export default function ServicesManagementTab({ shopId }: ServicesManagementTabP
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
             <Scissors className="w-8 h-8 text-gray-400" />
           </div>
-          <h3 className="font-bold text-lg">No Services</h3>
+          <h3 className="font-bold text-lg">{t('dashboard.owner.servicesEmptyTitle')}</h3>
           <p className="text-gray-500 max-w-sm mt-2">
-            Add your first service to start accepting bookings.
+            {t('dashboard.owner.servicesEmptyDescription')}
           </p>
         </div>
       ) : (
@@ -182,12 +187,12 @@ export default function ServicesManagementTab({ shopId }: ServicesManagementTabP
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Service</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Duration</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Price</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Order</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">{t('admin.service')}</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">{t('services.duration')}</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">{t('services.price')}</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">{t('dashboard.owner.servicesOrder')}</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">{t('admin.status')}</th>
+                  <th className="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">{t('admin.actions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -197,7 +202,7 @@ export default function ServicesManagementTab({ shopId }: ServicesManagementTabP
                       <div className="font-medium text-gray-900">{service.name}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                      {service.durationMin} min
+                      {service.durationMin} {t('services.min')}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                       {service.priceBgn} лв
@@ -211,7 +216,7 @@ export default function ServicesManagementTab({ shopId }: ServicesManagementTabP
                           ? 'bg-green-100 text-green-700' 
                           : 'bg-gray-100 text-gray-700'
                       }`}>
-                        {service.isActive ? 'Active' : 'Inactive'}
+                        {service.isActive ? t('status.active') : t('status.inactive')}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -219,7 +224,7 @@ export default function ServicesManagementTab({ shopId }: ServicesManagementTabP
                         <button
                           onClick={() => handleOpenModal(service)}
                           className="text-gray-600 hover:text-black transition-colors"
-                          title="Edit"
+                          title={t('common.edit')}
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
@@ -227,7 +232,7 @@ export default function ServicesManagementTab({ shopId }: ServicesManagementTabP
                           onClick={() => handleDelete(service.id)}
                           disabled={deletingId === service.id}
                           className="text-red-600 hover:text-red-700 transition-colors disabled:opacity-50"
-                          title="Delete"
+                          title={t('common.delete')}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -247,7 +252,7 @@ export default function ServicesManagementTab({ shopId }: ServicesManagementTabP
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4">
             <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
               <h2 className="text-xl font-bold">
-                {editingService ? 'Edit Service' : 'Add New Service'}
+                {editingService ? t('dashboard.owner.servicesEditTitle') : t('dashboard.owner.servicesCreateTitle')}
               </h2>
               <button
                 onClick={handleCloseModal}
@@ -260,7 +265,7 @@ export default function ServicesManagementTab({ shopId }: ServicesManagementTabP
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Service Name *
+                  {t('dashboard.owner.servicesNameLabel')} *
                 </label>
                 <input
                   type="text"
@@ -268,14 +273,14 @@ export default function ServicesManagementTab({ shopId }: ServicesManagementTabP
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
                   required
-                  placeholder="e.g., Haircut, Beard Trim"
+                  placeholder={t('dashboard.owner.servicesNamePlaceholder')}
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Duration (minutes) *
+                    {t('dashboard.owner.servicesDurationLabel')} *
                   </label>
                   <input
                     type="number"
@@ -292,7 +297,7 @@ export default function ServicesManagementTab({ shopId }: ServicesManagementTabP
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Price (лв) *
+                    {t('dashboard.owner.servicesPriceLabel')} *
                   </label>
                   <input
                     type="number"
@@ -311,7 +316,7 @@ export default function ServicesManagementTab({ shopId }: ServicesManagementTabP
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Sort Order
+                  {t('dashboard.owner.servicesSortOrderLabel')}
                 </label>
                 <input
                   type="number"
@@ -322,7 +327,7 @@ export default function ServicesManagementTab({ shopId }: ServicesManagementTabP
                     setFormData({ ...formData, sortOrder: value === '' ? 0 : parseInt(value) || 0 });
                   }}
                   className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
-                  placeholder="Lower numbers appear first"
+                  placeholder={t('dashboard.owner.servicesSortOrderPlaceholder')}
                 />
               </div>
 
@@ -335,7 +340,7 @@ export default function ServicesManagementTab({ shopId }: ServicesManagementTabP
                   className="w-4 h-4 text-black border-gray-300 rounded focus:ring-black"
                 />
                 <label htmlFor="isActive" className="text-sm font-medium text-gray-700">
-                  Active (available for booking)
+                  {t('dashboard.owner.servicesActiveLabel')}
                 </label>
               </div>
 
@@ -345,13 +350,13 @@ export default function ServicesManagementTab({ shopId }: ServicesManagementTabP
                   onClick={handleCloseModal}
                   className="flex-1 py-3 border border-gray-200 rounded-lg font-bold hover:bg-gray-50 transition-colors"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
                 <button
                   type="submit"
                   className="flex-1 py-3 bg-black text-white rounded-lg font-bold hover:bg-black/90 transition-colors"
                 >
-                  {editingService ? 'Update Service' : 'Create Service'}
+                  {editingService ? t('dashboard.owner.servicesUpdate') : t('dashboard.owner.servicesCreate')}
                 </button>
               </div>
             </form>
