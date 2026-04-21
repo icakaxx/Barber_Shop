@@ -1,4 +1,13 @@
 /**
+ * `services.price_bgn` is NUMERIC(10,2) (leva with stotinki). Coerce before DB writes.
+ */
+export function normalizePriceBgnForDb(priceBgn: unknown): number {
+  const n = Number(priceBgn);
+  if (!Number.isFinite(n)) return NaN;
+  return Math.round(n * 100) / 100;
+}
+
+/**
  * Extract numeric price value from formatted price string
  * Handles formats like "25 лв", "25.50 лв", "€25.50", etc.
  */

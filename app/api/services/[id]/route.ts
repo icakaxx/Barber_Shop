@@ -4,6 +4,7 @@ import { requireAuthContext, requireRoles } from '@/lib/auth/getAuthContext'
 import { OWNER_OR_ADMIN } from '@/lib/auth/types'
 import { assertShopOwnerOrSuperAdmin, fetchServiceShopId } from '@/lib/auth/scope'
 import { notConfiguredJson, serverErrorJson } from '@/lib/api/jsonErrors'
+import { normalizePriceBgnForDb } from '@/lib/utils/price'
 
 function mapService(data: Record<string, unknown>) {
   return {
@@ -55,10 +56,15 @@ export async function PUT(
       updateData.duration_min = durationMin
     }
     if (priceBgn !== undefined) {
-      if (priceBgn < 0) {
+      const raw = Number(priceBgn)
+      if (!Number.isFinite(raw)) {
+        return NextResponse.json({ error: 'Invalid price' }, { status: 400 })
+      }
+      const priceNorm = normalizePriceBgnForDb(raw)
+      if (Number.isNaN(priceNorm) || priceNorm < 0) {
         return NextResponse.json({ error: 'Price cannot be negative' }, { status: 400 })
       }
-      updateData.price_bgn = priceBgn
+      updateData.price_bgn = priceNorm
     }
     if (sortOrder !== undefined) updateData.sort_order = sortOrder
     if (isActive !== undefined) updateData.is_active = isActive

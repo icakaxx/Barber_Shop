@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, X, Scissors } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
+import { convertCurrency } from '@/lib/i18n/translations';
 
 interface Service {
   id: string;
@@ -18,7 +19,7 @@ interface ServicesManagementTabProps {
 }
 
 export default function ServicesManagementTab({ shopId }: ServicesManagementTabProps) {
-  const { t } = useI18n();
+  const { t, formatPrice } = useI18n();
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -31,6 +32,8 @@ export default function ServicesManagementTab({ shopId }: ServicesManagementTabP
     isActive: true
   });
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  /** EUR field text; BGN in formData is only overwritten when this changes (keeps exact BGN on edit until user edits price). */
+  const [priceEurDraft, setPriceEurDraft] = useState('');
 
   useEffect(() => {
     loadServices();
@@ -60,6 +63,7 @@ export default function ServicesManagementTab({ shopId }: ServicesManagementTabP
         sortOrder: service.sortOrder,
         isActive: service.isActive
       });
+      setPriceEurDraft(convertCurrency(service.priceBgn, 'BGN', 'EUR').toFixed(2));
     } else {
       setEditingService(null);
       setFormData({
@@ -69,6 +73,7 @@ export default function ServicesManagementTab({ shopId }: ServicesManagementTabP
         sortOrder: services.length,
         isActive: true
       });
+      setPriceEurDraft('');
     }
     setIsModalOpen(true);
   };
@@ -83,6 +88,7 @@ export default function ServicesManagementTab({ shopId }: ServicesManagementTabP
       sortOrder: 0,
       isActive: true
     });
+    setPriceEurDraft('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -204,8 +210,8 @@ export default function ServicesManagementTab({ shopId }: ServicesManagementTabP
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                       {service.durationMin} {t('services.min')}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                      {service.priceBgn} лв
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <span className="font-semibold tabular-nums">{formatPrice(service.priceBgn)}</span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                       {service.sortOrder}
@@ -303,14 +309,25 @@ export default function ServicesManagementTab({ shopId }: ServicesManagementTabP
                     type="number"
                     min="0"
                     step="0.01"
-                    value={formData.priceBgn || ''}
+                    inputMode="decimal"
+                    value={priceEurDraft}
                     onChange={(e) => {
-                      const value = e.target.value;
-                      setFormData({ ...formData, priceBgn: value === '' ? 0 : parseFloat(value) || 0 });
+                      const raw = e.target.value.replace(',', '.');
+                      setPriceEurDraft(raw);
+                      const n = parseFloat(raw);
+                      if (!Number.isNaN(n) && raw !== '') {
+                        setFormData((prev) => ({
+                          ...prev,
+                          priceBgn: convertCurrency(n, 'EUR', 'BGN')
+                        }));
+                      }
                     }}
-                    className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
+                    className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none tabular-nums"
                     required
                   />
+                  <p className="text-xs text-gray-500 mt-1.5 tabular-nums">
+                    {t('dashboard.owner.servicesPriceStoredHint')}: {formatPrice(formData.priceBgn)}
+                  </p>
                 </div>
               </div>
 

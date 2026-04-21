@@ -4,6 +4,7 @@ import { requireAuthContext, requireRoles } from '@/lib/auth/getAuthContext'
 import { OWNER_OR_ADMIN } from '@/lib/auth/types'
 import { assertShopOwnerOrSuperAdmin } from '@/lib/auth/scope'
 import { notConfiguredJson, serverErrorJson } from '@/lib/api/jsonErrors'
+import { normalizePriceBgnForDb } from '@/lib/utils/price'
 
 function mapService(svc: Record<string, unknown>) {
   return {
@@ -75,7 +76,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Duration must be between 1 and 480 minutes' }, { status: 400 })
     }
 
-    if (priceBgn < 0) {
+    const raw = Number(priceBgn)
+    if (!Number.isFinite(raw)) {
+      return NextResponse.json({ error: 'Invalid price' }, { status: 400 })
+    }
+    const priceNorm = normalizePriceBgnForDb(raw)
+    if (Number.isNaN(priceNorm) || priceNorm < 0) {
       return NextResponse.json({ error: 'Price cannot be negative' }, { status: 400 })
     }
 
@@ -88,7 +94,7 @@ export async function POST(request: NextRequest) {
         shop_id: shopId,
         name: String(name).trim(),
         duration_min: durationMin,
-        price_bgn: priceBgn,
+        price_bgn: priceNorm,
         sort_order: sortOrder ?? 0,
         is_active: isActive !== undefined ? isActive : true,
       })
