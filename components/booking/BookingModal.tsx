@@ -14,7 +14,10 @@ import {
   validateSlotAgainstShop,
   formatDateYYYYMMDDInTimeZone,
   SHOP_BUSINESS_TIMEZONE,
+  isDateBlocked,
+  shopLocalDateTimeToUtc,
 } from '@/lib/utils/shopHours';
+import { BOOKING_SLOT_MINUTES } from '@/lib/utils/bookingSlots';
 
 /** Public barber list has no `profile`; staff list may — default to barber label when role unknown. */
 function barberRoleLabel(barber: Pick<Barber, 'profile'>, t: (key: string) => string): string {
@@ -380,11 +383,18 @@ export default function BookingModal() {
     return date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
   };
 
+  const isDateBlockedDay = (dateStr: string) =>
+    isDateBlocked(dateStr, shop?.blockedDates);
+
   const isDateBookable = (dateStr: string) =>
-    !!getHoursForCalendarDate(shop?.workingHours, dateStr);
+    !!getHoursForCalendarDate(shop?.workingHours, dateStr) && !isDateBlockedDay(dateStr);
 
   const setDate = (dateStr: string) => {
-    if (!isDateBookable(dateStr)) {
+    if (isDateBlockedDay(dateStr)) {
+      alert(t('booking.vacationDay'));
+      return;
+    }
+    if (!getHoursForCalendarDate(shop?.workingHours, dateStr)) {
       alert(t('booking.dayClosed'));
       return;
     }
@@ -432,7 +442,7 @@ export default function BookingModal() {
 
     if (!bookingState.barber || bookingState.barber.id === 'any') {
       const times: string[] = [];
-      for (let slot = new Date(startOfDay); slot < endOfDay; slot.setMinutes(slot.getMinutes() + 30)) {
+      for (let slot = new Date(startOfDay); slot < endOfDay; slot.setMinutes(slot.getMinutes() + BOOKING_SLOT_MINUTES)) {
         const timeStr = `${slot.getHours().toString().padStart(2, '0')}:${slot.getMinutes().toString().padStart(2, '0')}`;
         if (!isDuringLunch(timeStr) && !wouldOverlapLunch(timeStr)) times.push(timeStr);
       }
@@ -458,7 +468,7 @@ export default function BookingModal() {
       };
 
       const candidateTimes: Date[] = [];
-      for (let slot = new Date(startOfDay); slot < endOfDay; slot.setMinutes(slot.getMinutes() + 5)) {
+      for (let slot = new Date(startOfDay); slot < endOfDay; slot.setMinutes(slot.getMinutes() + BOOKING_SLOT_MINUTES)) {
         candidateTimes.push(new Date(slot));
       }
 
@@ -473,7 +483,7 @@ export default function BookingModal() {
 
       if (totalDurationMinutes === 0) {
         const simplified: string[] = [];
-        for (let slot = new Date(startOfDay); slot < endOfDay; slot.setMinutes(slot.getMinutes() + 30)) {
+        for (let slot = new Date(startOfDay); slot < endOfDay; slot.setMinutes(slot.getMinutes() + BOOKING_SLOT_MINUTES)) {
           const timeStr = `${slot.getHours().toString().padStart(2, '0')}:${slot.getMinutes().toString().padStart(2, '0')}`;
           if (!isDuringLunch(timeStr) && !isTimeBlocked(slot)) simplified.push(timeStr);
         }
@@ -499,12 +509,9 @@ export default function BookingModal() {
           return sum + minutes;
         }, 0);
 
-        // Create start and end times
-        const [hours, minutes] = time.split(':').map(Number);
-        const startTime = new Date(selectedDate);
-        startTime.setHours(hours, minutes, 0, 0);
-        const endTime = new Date(startTime);
-        endTime.setMinutes(endTime.getMinutes() + totalMinutes);
+        // Create start and end times (shop timezone → UTC)
+        const startTime = shopLocalDateTimeToUtc(selectedDate, time);
+        const endTime = new Date(startTime.getTime() + totalMinutes * 60000);
 
         const dateForCheck = new Date(selectedDate + 'T12:00:00');
         const dayH = getHoursForDate(shop?.workingHours, dateForCheck);
@@ -584,11 +591,8 @@ export default function BookingModal() {
         alert(t('booking.dayClosed'));
         return;
       }
-      const [hours, minutes] = time.split(':').map(Number);
-      const slotStart = new Date(selectedDate);
-      slotStart.setHours(hours, minutes, 0, 0);
-      const slotEnd = new Date(slotStart);
-      slotEnd.setMinutes(slotEnd.getMinutes() + totalMinutes);
+      const slotStart = shopLocalDateTimeToUtc(selectedDate, time);
+      const slotEnd = new Date(slotStart.getTime() + totalMinutes * 60000);
       const [closeH, closeM] = dayH.close.split(':').map(Number);
       if (slotEnd.getHours() > closeH || (slotEnd.getHours() === closeH && slotEnd.getMinutes() > closeM)) {
         alert(t('booking.servicesExceedBusinessHours'));
@@ -708,11 +712,8 @@ export default function BookingModal() {
       }, 0);
 
       // Create start and end times
-      const [hours, minutes] = bookingState.time.split(':').map(Number);
-      const startTime = new Date(selectedDate);
-      startTime.setHours(hours, minutes, 0, 0);
-      const endTime = new Date(startTime);
-      endTime.setMinutes(endTime.getMinutes() + totalMinutes);
+      const startTime = shopLocalDateTimeToUtc(selectedDate, bookingState.time!);
+      const endTime = new Date(startTime.getTime() + totalMinutes * 60000);
 
       const dateForCheck = new Date(selectedDate + 'T12:00:00');
       const dayH = getHoursForDate(shop?.workingHours, dateForCheck);
@@ -976,6 +977,7 @@ export default function BookingModal() {
                   const date = new Date(dateStr + 'T00:00:00');
                   const isToday = dateStr === new Date().toISOString().split('T')[0];
                   const isSelected = selectedDate === dateStr;
+                  const blocked = isDateBlockedDay(dateStr);
                   const bookable = isDateBookable(dateStr);
                   return (
                     <button
@@ -983,7 +985,13 @@ export default function BookingModal() {
                       type="button"
                       disabled={!bookable}
                       onClick={() => bookable && setDate(dateStr)}
-                      title={!bookable ? t('booking.dayClosed') : undefined}
+                      title={
+                        blocked
+                          ? t('booking.vacationDay')
+                          : !bookable
+                            ? t('booking.dayClosed')
+                            : undefined
+                      }
                       className={`py-3 border rounded-lg text-center text-sm font-medium transition-all ${
                         !bookable
                           ? 'border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed opacity-70'
@@ -999,7 +1007,9 @@ export default function BookingModal() {
                       </div>
                       <div className="font-bold">{date.getDate()}</div>
                       {!bookable && (
-                        <div className="text-[9px] text-gray-400 mt-1 leading-tight">{t('dashboard.owner.closed')}</div>
+                        <div className="text-[9px] text-gray-400 mt-1 leading-tight">
+                          {blocked ? t('booking.vacationLabel') : t('dashboard.owner.closed')}
+                        </div>
                       )}
                       {isToday && bookable && (
                         <div className="text-[10px] text-gray-400 mt-1">{t('booking.today')}</div>

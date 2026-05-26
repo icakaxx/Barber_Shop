@@ -1,3 +1,5 @@
+import { BOOKING_SLOT_MINUTES } from '@/lib/utils/bookingSlots';
+
 /** Day keys for working hours (ISO weekday: 1=Mon, 7=Sun) */
 export const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
 export type DayKey = (typeof DAY_KEYS)[number];
@@ -61,6 +63,19 @@ export function getHoursForDate(
 /** Default timezone for shop hours validation (API + “any barber” checks). */
 export const SHOP_BUSINESS_TIMEZONE = 'Europe/Sofia';
 
+export interface BlockedDateRange {
+  id?: string;
+  startDate: string; // YYYY-MM-DD
+  endDate: string;
+  label?: string | null;
+}
+
+/** True if calendar date falls within any blocked range (inclusive). */
+export function isDateBlocked(dateStr: string, ranges: BlockedDateRange[] | undefined): boolean {
+  if (!ranges?.length) return false;
+  return ranges.some((r) => dateStr >= r.startDate && dateStr <= r.endDate);
+}
+
 function pad2(n: number): string {
   return String(n).padStart(2, '0');
 }
@@ -88,12 +103,82 @@ export function formatTimeHHMMInTimeZone(d: Date, timeZone = SHOP_BUSINESS_TIMEZ
   return `${pad2(parseInt(h, 10))}:${pad2(parseInt(m, 10))}`;
 }
 
+/** Parse DB/API timestamp strings as UTC instants (Postgres timestamptz). */
+export function parseAppointmentInstant(value: string): Date {
+  const trimmed = value.trim();
+  if (!trimmed) return new Date(NaN);
+  if (/[zZ]|[+-]\d{2}:?\d{2}$/.test(trimmed)) {
+    return new Date(trimmed);
+  }
+  const normalized = trimmed.includes('T') ? trimmed : trimmed.replace(' ', 'T');
+  return new Date(`${normalized}Z`);
+}
+
+/**
+ * Convert shop-local calendar date + HH:mm wall clock to a UTC Date instant.
+ * Always uses Europe/Sofia (or given TZ), not the browser/server local zone.
+ */
+export function shopLocalDateTimeToUtc(
+  dateStr: string,
+  timeStr: string,
+  timeZone = SHOP_BUSINESS_TIMEZONE
+): Date {
+  const [y, mo, d] = dateStr.split('-').map(Number);
+  const [h, mi] = timeStr.split(':').map(Number);
+  const targetTime = `${pad2(h)}:${pad2(mi)}`;
+
+  let utcMs = Date.UTC(y, mo - 1, d, h, mi, 0);
+  for (let i = 0; i < 6; i++) {
+    const dt = new Date(utcMs);
+    const gotDate = formatDateYYYYMMDDInTimeZone(dt, timeZone);
+    const gotTime = formatTimeHHMMInTimeZone(dt, timeZone);
+    if (gotDate === dateStr && gotTime === targetTime) {
+      return dt;
+    }
+    const [gh, gm] = gotTime.split(':').map(Number);
+    let deltaMin = h * 60 + mi - (gh * 60 + gm);
+    if (gotDate < dateStr) deltaMin += 24 * 60;
+    else if (gotDate > dateStr) deltaMin -= 24 * 60;
+    utcMs += deltaMin * 60_000;
+  }
+  return new Date(utcMs);
+}
+
+/** Human-readable appointment window for emails (always shop timezone). */
+export function formatAppointmentWindowForEmail(
+  start: string,
+  end: string,
+  timeZone = SHOP_BUSINESS_TIMEZONE
+): string {
+  const startDate = parseAppointmentInstant(start);
+  const endDate = parseAppointmentInstant(end);
+
+  const datePart = startDate.toLocaleDateString('bg-BG', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone,
+  });
+
+  const startTimePart = formatTimeHHMMInTimeZone(startDate, timeZone);
+  const endTimePart = formatTimeHHMMInTimeZone(endDate, timeZone);
+
+  return `${datePart}, ${startTimePart} - ${endTimePart}`;
+}
+
 function timeStrToMinutes(hm: string): number {
   const [h, m] = hm.split(':').map(Number);
   return h * 60 + m;
 }
 
-export type ShopSlotValidationCode = 'CLOSED' | 'OUTSIDE_HOURS' | 'LUNCH' | 'SPANS_MIDNIGHT';
+export type ShopSlotValidationCode =
+  | 'CLOSED'
+  | 'OUTSIDE_HOURS'
+  | 'LUNCH'
+  | 'SPANS_MIDNIGHT'
+  | 'BLOCKED'
+  | 'INVALID_SLOT_INTERVAL';
 
 /**
  * Validate that [start, end) fits shop open hours and does not overlap lunch (in shop TZ).
@@ -104,12 +189,17 @@ export function validateSlotAgainstShop(
   lunchEnd: string | undefined,
   start: Date,
   end: Date,
-  timeZone = SHOP_BUSINESS_TIMEZONE
+  timeZone = SHOP_BUSINESS_TIMEZONE,
+  blockedRanges?: BlockedDateRange[]
 ): { ok: true } | { ok: false; code: ShopSlotValidationCode } {
   const dateStr = formatDateYYYYMMDDInTimeZone(start, timeZone);
   const endDateStr = formatDateYYYYMMDDInTimeZone(end, timeZone);
   if (dateStr !== endDateStr) {
     return { ok: false, code: 'SPANS_MIDNIGHT' };
+  }
+
+  if (isDateBlocked(dateStr, blockedRanges)) {
+    return { ok: false, code: 'BLOCKED' };
   }
 
   const dayH = getHoursForCalendarDate(workingHours, dateStr);
@@ -119,6 +209,12 @@ export function validateSlotAgainstShop(
 
   const startHm = formatTimeHHMMInTimeZone(start, timeZone);
   const endHm = formatTimeHHMMInTimeZone(end, timeZone);
+
+  const [, startMinStr] = startHm.split(':');
+  const startMin = parseInt(startMinStr ?? '0', 10);
+  if (startMin % BOOKING_SLOT_MINUTES !== 0) {
+    return { ok: false, code: 'INVALID_SLOT_INTERVAL' };
+  }
 
   const openM = timeStrToMinutes(dayH.open);
   const closeM = timeStrToMinutes(dayH.close);

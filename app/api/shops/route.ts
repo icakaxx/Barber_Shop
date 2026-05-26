@@ -15,6 +15,7 @@ function mapShop(shop: Record<string, unknown>, includeOwnerId: boolean) {
     phone: shop.phone || undefined,
     instagramUrl: shop.instagram_url || undefined,
     facebookUrl: shop.facebook_url || undefined,
+    tiktokUrl: shop.tiktok_url || undefined,
     workingHoursText: shop.working_hours_text || undefined,
     workingHours: shop.working_hours || undefined,
     lunchStart: shop.lunch_start || undefined,

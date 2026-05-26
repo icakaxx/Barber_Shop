@@ -14,6 +14,7 @@ function mapShop(shop: Record<string, unknown>, includeOwnerId: boolean) {
     phone: shop.phone || undefined,
     instagramUrl: shop.instagram_url || undefined,
     facebookUrl: shop.facebook_url || undefined,
+    tiktokUrl: shop.tiktok_url || undefined,
     workingHoursText: shop.working_hours_text || undefined,
     workingHours: shop.working_hours || undefined,
     lunchStart: shop.lunch_start || undefined,
@@ -84,6 +85,7 @@ export async function PATCH(
       workingHoursText,
       lunchStart,
       lunchEnd,
+      tiktokUrl,
     } = body
 
     const updates: Record<string, unknown> = {}
@@ -98,6 +100,7 @@ export async function PATCH(
     if (workingHoursText !== undefined) updates.working_hours_text = workingHoursText || null
     if (lunchStart !== undefined) updates.lunch_start = lunchStart || null
     if (lunchEnd !== undefined) updates.lunch_end = lunchEnd || null
+    if (tiktokUrl !== undefined) updates.tiktok_url = tiktokUrl || null
 
     if (Object.keys(updates).length === 0) {
       return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 })

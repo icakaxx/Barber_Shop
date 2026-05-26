@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { X, Check, Calendar } from 'lucide-react';
 import type { Barber } from '@/lib/types';
 import { useI18n } from '@/contexts/I18nContext';
+import { BOOKING_SLOT_MINUTES } from '@/lib/utils/bookingSlots';
+import { shopLocalDateTimeToUtc, parseAppointmentInstant, formatTimeHHMMInTimeZone } from '@/lib/utils/shopHours';
 
 interface Service {
   id: string;
@@ -128,11 +130,11 @@ export default function CreateAppointmentModal({
 
   if (!isOpen) return null;
 
-  // Generate time slots (9:00 AM to 6:00 PM in 5-minute intervals)
+  // Generate time slots (9:00 AM to 6:00 PM in 30-minute intervals)
   const generateTimeSlots = () => {
     const slots: string[] = [];
     for (let hour = 9; hour < 18; hour++) {
-      for (let minute = 0; minute < 60; minute += 5) {
+      for (let minute = 0; minute < 60; minute += BOOKING_SLOT_MINUTES) {
         const timeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
         slots.push(timeStr);
       }
@@ -144,15 +146,12 @@ export default function CreateAppointmentModal({
 
   // Check if a time slot is taken
   const isTimeSlotTaken = (timeStr: string): boolean => {
-    const [hours, minutes] = timeStr.split(':').map(Number);
-    const slotStart = new Date(selectedDate);
-    slotStart.setHours(hours, minutes, 0, 0);
-    const slotEnd = new Date(slotStart.getTime() + 5 * 60000); // 5 minutes
+    const slotStart = shopLocalDateTimeToUtc(selectedDate, timeStr);
+    const slotEnd = new Date(slotStart.getTime() + BOOKING_SLOT_MINUTES * 60000);
 
     return appointments.some(apt => {
-      const aptStart = new Date(apt.startTime);
-      const aptEnd = new Date(apt.endTime);
-      // Check if the slot overlaps with any appointment
+      const aptStart = parseAppointmentInstant(apt.startTime);
+      const aptEnd = parseAppointmentInstant(apt.endTime);
       return (slotStart < aptEnd && slotEnd > aptStart);
     });
   };
@@ -166,20 +165,18 @@ export default function CreateAppointmentModal({
       return total + (service?.durationMin || 0);
     }, 0);
 
-    const [hours, minutes] = timeStr.split(':').map(Number);
-    const slotStart = new Date(selectedDate);
-    slotStart.setHours(hours, minutes, 0, 0);
+    const slotStart = shopLocalDateTimeToUtc(selectedDate, timeStr);
     const slotEnd = new Date(slotStart.getTime() + totalDuration * 60000);
 
-    // Check if end time goes beyond business hours (18:00)
-    if (slotEnd.getHours() >= 18 || (slotEnd.getHours() === 18 && slotEnd.getMinutes() > 0)) {
+    const endShop = formatTimeHHMMInTimeZone(slotEnd);
+    const [endH, endM] = endShop.split(':').map(Number);
+    if (endH > 18 || (endH === 18 && endM > 0)) {
       return false;
     }
 
-    // Check if the appointment would overlap with any existing appointment
     const wouldOverlap = appointments.some(apt => {
-      const aptStart = new Date(apt.startTime);
-      const aptEnd = new Date(apt.endTime);
+      const aptStart = parseAppointmentInstant(apt.startTime);
+      const aptEnd = parseAppointmentInstant(apt.endTime);
       return (slotStart < aptEnd && slotEnd > aptStart);
     });
 
@@ -202,20 +199,12 @@ export default function CreateAppointmentModal({
       return total + (service?.durationMin || 0);
     }, 0);
 
-    // Create date in local timezone to avoid timezone conversion issues
-    const [hours, minutes] = timeStr.split(':').map(Number);
-    const start = new Date(selectedDate);
-    start.setHours(hours, minutes, 0, 0);
+    const start = shopLocalDateTimeToUtc(selectedDate, timeStr);
     const end = new Date(start.getTime() + totalDuration * 60000);
 
-    // Format as local datetime-local string (YYYY-MM-DDTHH:mm)
     const formatLocalDateTime = (date: Date): string => {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      const hour = String(date.getHours()).padStart(2, '0');
-      const minute = String(date.getMinutes()).padStart(2, '0');
-      return `${year}-${month}-${day}T${hour}:${minute}`;
+      const timePart = formatTimeHHMMInTimeZone(date);
+      return `${selectedDate}T${timePart}`;
     };
 
     setFormData({
@@ -286,6 +275,11 @@ export default function CreateAppointmentModal({
       ? `${servicesLabel}: ${serviceNames}${formData.notes ? `\n\n${formData.notes}` : ''}`
       : formData.notes || null;
 
+    const [startDatePart, startTimePart] = formData.startTime.split('T');
+    const [endDatePart, endTimePart] = formData.endTime.split('T');
+    const startUtc = shopLocalDateTimeToUtc(startDatePart, startTimePart);
+    const endUtc = shopLocalDateTimeToUtc(endDatePart, endTimePart);
+
     onSave({
       shopId,
       barberId: formData.barberId,
@@ -293,18 +287,16 @@ export default function CreateAppointmentModal({
       customerName: formData.customerName,
       customerPhone: formData.customerPhone,
       customerEmail: formData.customerEmail || null,
-      startTime: new Date(formData.startTime).toISOString(),
-      endTime: new Date(formData.endTime).toISOString(),
+      startTime: startUtc.toISOString(),
+      endTime: endUtc.toISOString(),
       notes: servicesNote
     });
   };
 
   const isSelectedTime = (timeStr: string): boolean => {
     if (!formData.startTime) return false;
-    // Parse the datetime-local string as local time
-    const selectedTime = new Date(formData.startTime);
-    const [hours, minutes] = timeStr.split(':').map(Number);
-    return selectedTime.getHours() === hours && selectedTime.getMinutes() === minutes;
+    const [, timePart] = formData.startTime.split('T');
+    return timePart === timeStr;
   };
 
   return (

@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Save, Loader2 } from 'lucide-react';
+import { Save, Loader2, Trash2, Plus } from 'lucide-react';
+import type { BlockedDateRange } from '@/lib/utils/shopHours';
 import { useI18n } from '@/contexts/I18nContext';
 import ImageUploadField from '@/components/shared/ImageUploadField';
 import { DAY_KEYS, type WorkingHoursMap } from '@/lib/utils/shopHours';
@@ -19,6 +20,7 @@ interface Shop {
   workingHoursText?: string;
   lunchStart?: string;
   lunchEnd?: string;
+  tiktokUrl?: string;
 }
 
 interface ShopSettingsTabProps {
@@ -59,8 +61,14 @@ export default function ShopSettingsTab({ shopId, shop, onShopUpdate }: ShopSett
     city: '',
     lunchStart: '',
     lunchEnd: '',
+    tiktokUrl: '',
     workingHours: { ...DEFAULT_HOURS } as WorkingHoursMap
   });
+  const [blockedDates, setBlockedDates] = useState<BlockedDateRange[]>([]);
+  const [vacationStart, setVacationStart] = useState('');
+  const [vacationEnd, setVacationEnd] = useState('');
+  const [vacationLabel, setVacationLabel] = useState('');
+  const [vacationSaving, setVacationSaving] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -77,10 +85,34 @@ export default function ShopSettingsTab({ shopId, shop, onShopUpdate }: ShopSett
         city: shop.city || '',
         lunchStart: shop.lunchStart || '',
         lunchEnd: shop.lunchEnd || '',
+        tiktokUrl: shop.tiktokUrl || '',
         workingHours: { ...DEFAULT_HOURS, ...wh }
       });
     }
   }, [shop]);
+
+  useEffect(() => {
+    if (!shopId) return;
+    const loadBlocked = async () => {
+      try {
+        const res = await fetch(`/api/shops/${shopId}/blocked-dates`, { credentials: 'include' });
+        if (res.ok) {
+          const rows = await res.json();
+          setBlockedDates(
+            (rows as { id: string; startDate: string; endDate: string; label?: string }[]).map((r) => ({
+              id: r.id,
+              startDate: r.startDate,
+              endDate: r.endDate,
+              label: r.label,
+            }))
+          );
+        }
+      } catch {
+        // ignore
+      }
+    };
+    void loadBlocked();
+  }, [shopId]);
 
   const handleChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -125,7 +157,8 @@ export default function ShopSettingsTab({ shopId, shop, onShopUpdate }: ShopSett
           city: formData.city || undefined,
           workingHours: formData.workingHours,
           lunchStart: formData.lunchStart || undefined,
-          lunchEnd: formData.lunchEnd || undefined
+          lunchEnd: formData.lunchEnd || undefined,
+          tiktokUrl: formData.tiktokUrl || undefined,
         })
       });
 
@@ -142,6 +175,61 @@ export default function ShopSettingsTab({ shopId, shop, onShopUpdate }: ShopSett
       setMessage({ type: 'error', text: t('dashboard.owner.settingsSaveFailed') });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleAddVacation = async () => {
+    if (!shopId || !vacationStart || !vacationEnd) return;
+    setVacationSaving(true);
+    try {
+      const res = await fetch(`/api/shops/${shopId}/blocked-dates`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          startDate: vacationStart,
+          endDate: vacationEnd,
+          label: vacationLabel || undefined,
+        }),
+      });
+      if (res.ok) {
+        const created = await res.json();
+        setBlockedDates((prev) => [
+          ...prev,
+          {
+            id: created.id,
+            startDate: created.startDate,
+            endDate: created.endDate,
+            label: created.label,
+          },
+        ]);
+        setVacationStart('');
+        setVacationEnd('');
+        setVacationLabel('');
+        setMessage({ type: 'success', text: t('dashboard.owner.vacationAdded') });
+      } else {
+        const err = await res.json();
+        setMessage({ type: 'error', text: err.error || t('dashboard.owner.vacationAddFailed') });
+      }
+    } catch {
+      setMessage({ type: 'error', text: t('dashboard.owner.vacationAddFailed') });
+    } finally {
+      setVacationSaving(false);
+    }
+  };
+
+  const handleDeleteVacation = async (blockedId: string) => {
+    if (!shopId) return;
+    try {
+      const res = await fetch(
+        `/api/shops/${shopId}/blocked-dates?blockedId=${encodeURIComponent(blockedId)}`,
+        { method: 'DELETE', credentials: 'include' }
+      );
+      if (res.ok) {
+        setBlockedDates((prev) => prev.filter((b) => b.id !== blockedId));
+      }
+    } catch {
+      setMessage({ type: 'error', text: t('dashboard.owner.vacationDeleteFailed') });
     }
   };
 
@@ -305,6 +393,21 @@ export default function ShopSettingsTab({ shopId, shop, onShopUpdate }: ShopSett
           </div>
         </div>
 
+        {/* TikTok */}
+        <div>
+          <label className="block text-sm font-bold text-gray-700 mb-2">
+            {t('dashboard.owner.tiktokUrl')}
+          </label>
+          <input
+            type="url"
+            value={formData.tiktokUrl}
+            onChange={(e) => handleChange('tiktokUrl', e.target.value)}
+            className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
+            placeholder="https://www.tiktok.com/@yourshop"
+          />
+          <p className="text-xs text-gray-500 mt-1">{t('dashboard.owner.tiktokUrlHelp')}</p>
+        </div>
+
         {/* Logo */}
         <ImageUploadField
           type="logo"
@@ -357,6 +460,81 @@ export default function ShopSettingsTab({ shopId, shop, onShopUpdate }: ShopSett
           </button>
         </div>
       </form>
+
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-4">
+        <div>
+          <h3 className="text-lg font-bold">{t('dashboard.owner.vacationTitle')}</h3>
+          <p className="text-sm text-gray-500 mt-1">{t('dashboard.owner.vacationHelp')}</p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              {t('dashboard.owner.vacationStart')}
+            </label>
+            <input
+              type="date"
+              value={vacationStart}
+              onChange={(e) => setVacationStart(e.target.value)}
+              className="w-full p-2 border border-gray-200 rounded-lg text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              {t('dashboard.owner.vacationEnd')}
+            </label>
+            <input
+              type="date"
+              value={vacationEnd}
+              onChange={(e) => setVacationEnd(e.target.value)}
+              className="w-full p-2 border border-gray-200 rounded-lg text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              {t('dashboard.owner.vacationLabel')}
+            </label>
+            <input
+              type="text"
+              value={vacationLabel}
+              onChange={(e) => setVacationLabel(e.target.value)}
+              className="w-full p-2 border border-gray-200 rounded-lg text-sm"
+              placeholder={t('dashboard.owner.vacationLabelPlaceholder')}
+            />
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => void handleAddVacation()}
+          disabled={vacationSaving || !vacationStart || !vacationEnd}
+          className="inline-flex items-center gap-2 bg-black text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50"
+        >
+          <Plus className="w-4 h-4" />
+          {t('dashboard.owner.vacationAdd')}
+        </button>
+        {blockedDates.length > 0 && (
+          <ul className="divide-y divide-gray-100 border border-gray-100 rounded-lg">
+            {blockedDates.map((range) => (
+              <li
+                key={range.id}
+                className="flex items-center justify-between gap-3 px-4 py-3 text-sm"
+              >
+                <span>
+                  {range.startDate} – {range.endDate}
+                  {range.label ? ` (${range.label})` : ''}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => range.id && void handleDeleteVacation(range.id)}
+                  className="text-red-600 hover:text-red-800 p-1"
+                  aria-label={t('dashboard.owner.vacationDelete')}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import OwnerDashboard from '@/components/dashboard/owner/OwnerDashboard';
 import { createClient } from '@/lib/supabase/server';
@@ -25,5 +26,9 @@ export default async function OwnerPage() {
     redirect('/login?error=access_denied&redirect=/owner');
   }
 
-  return <OwnerDashboard userEmail={user.email} />;
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <OwnerDashboard userEmail={user.email} />
+    </Suspense>
+  );
 }

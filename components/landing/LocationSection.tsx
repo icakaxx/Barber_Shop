@@ -3,7 +3,7 @@
 import { MapPin, Clock, Phone, Navigation } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
 import { useShopBranding } from '@/contexts/ShopBrandingContext';
-import { type WorkingHoursMap } from '@/lib/utils/shopHours';
+import { type WorkingHoursMap, formatDateYYYYMMDDInTimeZone, SHOP_BUSINESS_TIMEZONE } from '@/lib/utils/shopHours';
 
 const WEEKDAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri'] as const;
 const WEEKEND_KEYS = ['sat', 'sun'] as const;
@@ -46,9 +46,21 @@ export default function LocationSection() {
     : SHOP_COORDS;
   const mapsEmbedSrc = `https://maps.google.com/maps?q=${mapsQuery}&z=15&output=embed`;
 
+  const todayStr = formatDateYYYYMMDDInTimeZone(new Date(), SHOP_BUSINESS_TIMEZONE);
+  const upcomingClosure = shop?.blockedDates?.find(
+    (r) => r.endDate >= todayStr && r.startDate <= r.endDate
+  );
+
   return (
     <section id="location" className="py-20 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {upcomingClosure && (
+          <div className="mb-8 mx-auto max-w-2xl rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm text-amber-900">
+            {`${t('location.vacationNotice')} ${upcomingClosure.startDate} – ${upcomingClosure.endDate}${
+              upcomingClosure.label ? ` (${upcomingClosure.label})` : ''
+            }`}
+          </div>
+        )}
         <div className="text-center mb-16 max-w-3xl mx-auto px-2">
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-gray-900">{t('location.title')}</h2>
           <div className="mt-2 w-20 h-1 bg-black mx-auto" />

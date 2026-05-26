@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { getSupabaseAdmin } from '@/lib/supabase/admin'
-import { validateSlotAgainstShop } from '@/lib/utils/shopHours'
+import { validateSlotAgainstShop, formatAppointmentWindowForEmail } from '@/lib/utils/shopHours'
 import { requireAuthContext, requireRoles } from '@/lib/auth/getAuthContext'
 import { STAFF_ROLES } from '@/lib/auth/types'
 import {
@@ -12,7 +12,8 @@ import { forbiddenJson, notConfiguredJson, serverErrorJson } from '@/lib/api/jso
 
 const resendApiKey = process.env.RESEND_API_KEY
 const emailFrom =
-  process.env.EMAIL_FROM || 'Barber Studio Kalchev Style <kalchevstylestudio@parfumcho.com>'
+  process.env.EMAIL_FROM || 'Mensworld Barber Studio <kalchevstylestudio@parfumcho.com>'
+const emailSignature = 'mensworld barber studio / Клуб мъжки свят'
 const resendClient = resendApiKey ? new Resend(resendApiKey) : null
 
 type AppointmentEmailPayload = {
@@ -25,30 +26,6 @@ type AppointmentEmailPayload = {
   endTime: string
 }
 
-const formatAppointmentWindow = (start: string, end: string) => {
-  const startDate = new Date(start)
-  const endDate = new Date(end)
-
-  const datePart = startDate.toLocaleDateString('bg-BG', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric'
-  })
-
-  const startTimePart = startDate.toLocaleTimeString('bg-BG', {
-    hour: '2-digit',
-    minute: '2-digit'
-  })
-
-  const endTimePart = endDate.toLocaleTimeString('bg-BG', {
-    hour: '2-digit',
-    minute: '2-digit'
-  })
-
-  return `${datePart}, ${startTimePart} - ${endTimePart}`
-}
-
 const sendAppointmentEmail = async (payload: AppointmentEmailPayload) => {
   if (!resendClient) {
     return { success: false, error: 'Resend not configured' }
@@ -57,7 +34,7 @@ const sendAppointmentEmail = async (payload: AppointmentEmailPayload) => {
   const { customerEmail, customerName, barberName, shopName, services, startTime, endTime } =
     payload
 
-  const timeWindow = formatAppointmentWindow(startTime, endTime)
+  const timeWindow = formatAppointmentWindowForEmail(startTime, endTime)
   const servicesListHtml =
     services && services.length
       ? services.map(service => `<li>${service}</li>`).join('')
@@ -86,7 +63,7 @@ const sendAppointmentEmail = async (payload: AppointmentEmailPayload) => {
           : ''
       }
       <p>Ако се наложи да промениш или отмениш часа, моля свържи се със салона възможно най-скоро.</p>
-      <p>Поздрави,<br/>Barber Studio Kalchev Style</p>
+      <p>Поздрави,<br/>${emailSignature}</p>
     `
   })
 
@@ -290,12 +267,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Shop not found' }, { status: 404 })
     }
 
+    const { data: blockedRows } = await admin
+      .from('shop_blocked_dates')
+      .select('start_date, end_date')
+      .eq('shop_id', shopId)
+
+    const blockedRanges = (blockedRows ?? []).map((r) => ({
+      startDate: r.start_date as string,
+      endDate: r.end_date as string,
+    }))
+
     const slotCheck = validateSlotAgainstShop(
       shopRow.working_hours,
       shopRow.lunch_start ?? undefined,
       shopRow.lunch_end ?? undefined,
       start,
-      end
+      end,
+      undefined,
+      blockedRanges
     )
 
     if (!slotCheck.ok) {
@@ -304,6 +293,8 @@ export async function POST(request: NextRequest) {
         OUTSIDE_HOURS: 'Appointment is outside business hours',
         LUNCH: 'Appointment overlaps the lunch break',
         SPANS_MIDNIGHT: 'Invalid appointment time window',
+        BLOCKED: 'The shop is closed on this date (vacation)',
+        INVALID_SLOT_INTERVAL: 'Appointments must start on 30-minute intervals',
       }
       return NextResponse.json(
         { error: messages[slotCheck.code] ?? 'Invalid appointment time', code: slotCheck.code },

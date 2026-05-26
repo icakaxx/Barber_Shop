@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { Building2, Calendar, Users, Plus, Edit2, Trash2, Scissors, Settings, LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Building2, Calendar, Users, Plus, Edit2, Trash2, Scissors, Settings, LogOut, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import { createClient } from '@/lib/supabase/browser';
 import { getStatusBadge } from '@/lib/utils/statusBadge';
 import EditAppointmentModal from '@/components/dashboard/barber/EditAppointmentModal';
@@ -10,9 +10,23 @@ import CreateAppointmentModal from '@/components/dashboard/barber/CreateAppointm
 import ServicesManagementTab from './ServicesManagementTab';
 import BarbersTab from './BarbersTab';
 import ShopSettingsTab from './ShopSettingsTab';
+import OwnerNotificationPanel from './OwnerNotificationPanel';
 import LanguageCurrencySwitcher from '@/components/shared/LanguageCurrencySwitcher';
 import { useI18n } from '@/contexts/I18nContext';
 import type { Barber, AppointmentStatus } from '@/lib/types';
+import { formatDateYYYYMMDDInTimeZone, SHOP_BUSINESS_TIMEZONE } from '@/lib/utils/shopHours';
+import {
+  getTodayDateStr,
+  loadOwnerNotifications,
+  saveOwnerNotifications,
+  playBookingAlertSound,
+  isAppointmentToday,
+  type OwnerNotificationItem,
+} from '@/lib/utils/ownerNotifications';
+
+function isValidDateParam(d: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}$/.test(d);
+}
 
 interface Shop {
   id: string;
@@ -51,11 +65,18 @@ interface OwnerDashboardProps {
 export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
   const { t, locale } = useI18n();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [shops, setShops] = useState<Shop[]>([]);
   const [selectedShopId, setSelectedShopId] = useState<string>('');
   const [barbers, setBarbers] = useState<Barber[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDateState] = useState(() => {
+    const fromUrl = searchParams.get('date');
+    if (fromUrl && isValidDateParam(fromUrl)) return fromUrl;
+    return formatDateYYYYMMDDInTimeZone(new Date(), SHOP_BUSINESS_TIMEZONE);
+  });
+  const [notifications, setNotifications] = useState<OwnerNotificationItem[]>([]);
+  const knownAppointmentIdsRef = useRef<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -65,7 +86,85 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
   const [selectedBarberId, setSelectedBarberId] = useState<string | null>(null);
   const [barberAppointments, setBarberAppointments] = useState<Appointment[]>([]);
   const [sortBy, setSortBy] = useState<'name' | 'appointments'>('name');
-  const [barberViewDate, setBarberViewDate] = useState(new Date().toISOString().split('T')[0]);
+  const [barberViewDate, setBarberViewDateState] = useState(() => {
+    const fromUrl = searchParams.get('barberDate');
+    if (fromUrl && isValidDateParam(fromUrl)) return fromUrl;
+    return formatDateYYYYMMDDInTimeZone(new Date(), SHOP_BUSINESS_TIMEZONE);
+  });
+
+  const syncDateToUrl = useCallback(
+    (date: string, param: 'date' | 'barberDate' = 'date') => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set(param, date);
+      router.replace(`/owner?${params.toString()}`, { scroll: false });
+    },
+    [router, searchParams]
+  );
+
+  const setSelectedDate = useCallback(
+    (value: string | ((prev: string) => string)) => {
+      setSelectedDateState((prev) => {
+        const next = typeof value === 'function' ? value(prev) : value;
+        syncDateToUrl(next, 'date');
+        return next;
+      });
+    },
+    [syncDateToUrl]
+  );
+
+  const setBarberViewDate = useCallback(
+    (value: string | ((prev: string) => string)) => {
+      setBarberViewDateState((prev) => {
+        const next = typeof value === 'function' ? value(prev) : value;
+        syncDateToUrl(next, 'barberDate');
+        return next;
+      });
+    },
+    [syncDateToUrl]
+  );
+
+  const refreshSelectedDateAppointments = useCallback(async () => {
+    if (shops.length === 0 || !selectedShopId) return;
+    try {
+      const response = await fetch(
+        `/api/appointments?shopId=${selectedShopId}&date=${selectedDate}`,
+        { credentials: 'include' }
+      );
+      if (response.ok) {
+        const data: Appointment[] = await response.json();
+        data.sort(
+          (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+        );
+        setAppointments(data);
+        data.forEach((a) => knownAppointmentIdsRef.current.add(a.id));
+      }
+    } catch (error) {
+      console.error('Error refreshing appointments:', error);
+    }
+  }, [selectedShopId, selectedDate, shops.length]);
+
+  const pushNotification = useCallback(
+    (item: OwnerNotificationItem) => {
+      if (!isAppointmentToday(item.startTime)) return;
+      setNotifications((prev) => {
+        if (prev.some((n) => n.appointmentId === item.appointmentId)) return prev;
+        playBookingAlertSound();
+        return [item, ...prev];
+      });
+    },
+    []
+  );
+
+  useEffect(() => {
+    if (!selectedShopId) return;
+    const today = getTodayDateStr();
+    setNotifications(loadOwnerNotifications(selectedShopId, today));
+  }, [selectedShopId]);
+
+  useEffect(() => {
+    if (!selectedShopId) return;
+    saveOwnerNotifications(selectedShopId, getTodayDateStr(), notifications);
+  }, [selectedShopId, notifications]);
 
   useEffect(() => {
     const loadShops = async () => {
@@ -136,6 +235,7 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
           new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
         );
         setAppointments(allAppointments);
+        allAppointments.forEach((a) => knownAppointmentIdsRef.current.add(a.id));
       } catch (error) {
         console.error('Error loading appointments:', error);
       } finally {
@@ -145,6 +245,112 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
 
     loadAppointments();
   }, [selectedShopId, selectedDate, shops]);
+
+  const handleIncomingAppointment = useCallback(
+    (apt: { id: string; customerName: string; startTime: string; barberId?: string }) => {
+      const barberName = barbers.find((b) => b.id === apt.barberId)?.displayName;
+      pushNotification({
+        id: `${apt.id}-${Date.now()}`,
+        appointmentId: apt.id,
+        customerName: apt.customerName,
+        barberName,
+        startTime: apt.startTime,
+        read: false,
+        createdAt: new Date().toISOString(),
+      });
+      const aptDate = formatDateYYYYMMDDInTimeZone(new Date(apt.startTime), SHOP_BUSINESS_TIMEZONE);
+      if (selectedDate === aptDate && selectedShopId) {
+        void fetch(`/api/appointments?shopId=${selectedShopId}&date=${selectedDate}`, {
+          credentials: 'include',
+        })
+          .then((r) => (r.ok ? r.json() : []))
+          .then((data: Appointment[]) => setAppointments(data));
+      }
+    },
+    [barbers, pushNotification, selectedDate, selectedShopId]
+  );
+
+  useEffect(() => {
+    if (!selectedShopId) return;
+    const seedTodayIds = async () => {
+      const today = getTodayDateStr();
+      const res = await fetch(`/api/appointments?shopId=${selectedShopId}&date=${today}`, {
+        credentials: 'include',
+      });
+      if (res.ok) {
+        const data: Appointment[] = await res.json();
+        data.forEach((a) => knownAppointmentIdsRef.current.add(a.id));
+      }
+    };
+    void seedTodayIds();
+  }, [selectedShopId]);
+
+  useEffect(() => {
+    if (!selectedShopId) return;
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`shop-appointments-${selectedShopId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'appointments',
+          filter: `shop_id=eq.${selectedShopId}`,
+        },
+        (payload) => {
+          const row = payload.new as {
+            id: string;
+            customer_name: string;
+            start_time: string;
+            barber_id: string;
+            status: string;
+          };
+          if (!row?.id) return;
+          if (row.status && !['PENDING', 'CONFIRMED'].includes(row.status)) return;
+          if (knownAppointmentIdsRef.current.has(row.id)) return;
+          knownAppointmentIdsRef.current.add(row.id);
+          handleIncomingAppointment({
+            id: row.id,
+            customerName: row.customer_name,
+            startTime: row.start_time,
+            barberId: row.barber_id,
+          });
+        }
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [selectedShopId, handleIncomingAppointment]);
+
+  useEffect(() => {
+    if (!selectedShopId) return;
+    const poll = async () => {
+      const today = getTodayDateStr();
+      try {
+        const res = await fetch(`/api/appointments?shopId=${selectedShopId}&date=${today}`, {
+          credentials: 'include',
+        });
+        if (!res.ok) return;
+        const data: Appointment[] = await res.json();
+        for (const apt of data) {
+          if (knownAppointmentIdsRef.current.has(apt.id)) continue;
+          knownAppointmentIdsRef.current.add(apt.id);
+          handleIncomingAppointment({
+            id: apt.id,
+            customerName: apt.customerName,
+            startTime: apt.startTime,
+            barberId: apt.barberId,
+          });
+        }
+      } catch {
+        // ignore polling errors
+      }
+    };
+    const interval = setInterval(() => void poll(), 30000);
+    return () => clearInterval(interval);
+  }, [selectedShopId, handleIncomingAppointment]);
 
   // Load appointments for barber view when barber is selected
   useEffect(() => {
@@ -378,8 +584,22 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
   const activeBarbers = barbers.filter(b => b.isActive);
   const selectedShop = shops.find(s => s.id === selectedShopId);
 
+  const markNotificationRead = (id: string) => {
+    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
+  };
+
+  const deleteNotification = (id: string) => {
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+  };
+
   return (
     <div className="min-h-[100dvh] bg-gray-50">
+      <OwnerNotificationPanel
+        notifications={notifications}
+        onMarkRead={markNotificationRead}
+        onDelete={deleteNotification}
+        onSelectAppointmentDate={(dateStr) => setSelectedDate(dateStr)}
+      />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
         {/* Header */}
         <div className="mb-6 sm:mb-8">
@@ -426,7 +646,7 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     {t('dashboard.owner.date')}
                   </label>
-                  <div className="flex items-center gap-2 w-full sm:max-w-[380px]">
+                  <div className="flex items-center gap-2 w-full max-w-md sm:max-w-lg">
                     <button
                       type="button"
                       onClick={() => setSelectedDate((prev) => shiftDateByDays(prev, -1))}
@@ -439,7 +659,7 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
                       type="date"
                       value={selectedDate}
                       onChange={(e) => setSelectedDate(e.target.value)}
-                      className="min-w-0 flex-1 p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
+                      className="min-w-[9.5rem] flex-1 p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
                     />
                     <button
                       type="button"
@@ -448,6 +668,15 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
                       className="h-[44px] w-[44px] shrink-0 rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center"
                     >
                       <ChevronRight className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void refreshSelectedDateAppointments()}
+                      className="h-[44px] w-[44px] shrink-0 rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center"
+                      aria-label={t('dashboard.owner.refreshAppointments')}
+                      title={t('dashboard.owner.refreshAppointments')}
+                    >
+                      <RefreshCw className="w-4 h-4" aria-hidden />
                     </button>
                   </div>
                 </div>

@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 
-import type { WorkingHoursMap } from '@/lib/utils/shopHours';
+import type { BlockedDateRange, WorkingHoursMap } from '@/lib/utils/shopHours';
 
 export interface ShopBranding {
   id: string;
@@ -17,6 +17,8 @@ export interface ShopBranding {
   workingHours?: WorkingHoursMap;
   lunchStart?: string;
   lunchEnd?: string;
+  tiktokUrl?: string;
+  blockedDates?: BlockedDateRange[];
 }
 
 export interface BarberPreview {
@@ -47,9 +49,28 @@ export function ShopBrandingProvider({ children }: { children: React.ReactNode }
       fetch('/api/barbers', { cache: 'no-store' }).then((res) => (res.ok ? res.json() : [])),
       fetch('/api/services', { cache: 'no-store' }).then((res) => (res.ok ? res.json() : []))
     ])
-      .then(([shops, barbersData]) => {
+      .then(async ([shops, barbersData]) => {
         const shopData = shops?.[0];
         if (shopData) {
+          let blockedDates: BlockedDateRange[] = [];
+          try {
+            const blockedRes = await fetch(`/api/shops/${shopData.id}/blocked-dates`, {
+              cache: 'no-store',
+            });
+            if (blockedRes.ok) {
+              const rows = await blockedRes.json();
+              blockedDates = (rows as { id: string; startDate: string; endDate: string; label?: string }[]).map(
+                (r) => ({
+                  id: r.id,
+                  startDate: r.startDate,
+                  endDate: r.endDate,
+                  label: r.label,
+                })
+              );
+            }
+          } catch {
+            // non-fatal
+          }
           setShop({
             id: shopData.id,
             name: shopData.name,
@@ -62,7 +83,9 @@ export function ShopBrandingProvider({ children }: { children: React.ReactNode }
             workingHoursText: shopData.workingHoursText,
             workingHours: shopData.workingHours,
             lunchStart: shopData.lunchStart,
-            lunchEnd: shopData.lunchEnd
+            lunchEnd: shopData.lunchEnd,
+            tiktokUrl: shopData.tiktokUrl,
+            blockedDates,
           });
         }
         // GET /api/barbers returns only active barbers; no public isActive flag
