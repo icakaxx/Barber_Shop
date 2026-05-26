@@ -56,6 +56,8 @@ export async function GET(
 
     if (status) {
       query = query.eq('status', status)
+    } else {
+      query = query.neq('status', 'CANCELLED')
     }
 
     const { data, error } = await query

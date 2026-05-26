@@ -39,10 +39,27 @@ export function saveOwnerNotifications(
   localStorage.setItem(storageKey(shopId, dateStr), JSON.stringify(items));
 }
 
-export function isAppointmentToday(startTimeIso: string): boolean {
-  const d = new Date(startTimeIso);
-  const aptDate = formatDateYYYYMMDDInTimeZone(d, SHOP_BUSINESS_TIMEZONE);
-  return aptDate === getTodayDateStr();
+let audioContext: AudioContext | null = null;
+
+/** Resume audio on first user interaction (browser autoplay policy). */
+export function initOwnerAlertAudio() {
+  if (typeof window === 'undefined') return;
+  const unlock = () => {
+    try {
+      const AudioCtx =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!AudioCtx) return;
+      if (!audioContext) audioContext = new AudioCtx();
+      if (audioContext.state === 'suspended') {
+        void audioContext.resume();
+      }
+    } catch {
+      // ignore
+    }
+  };
+  window.addEventListener('pointerdown', unlock, { once: true });
+  window.addEventListener('keydown', unlock, { once: true });
 }
 
 /** Play a short beep three times (Web Audio API). */
@@ -53,23 +70,26 @@ export function playBookingAlertSound() {
       window.AudioContext ||
       (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!AudioCtx) return;
-    const ctx = new AudioCtx();
+    if (!audioContext) audioContext = new AudioCtx();
+    const ctx = audioContext;
     const playBeep = (delayMs: number) => {
       setTimeout(() => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.frequency.value = 880;
-        gain.gain.setValueAtTime(0.12, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
-        osc.start(ctx.currentTime);
-        osc.stop(ctx.currentTime + 0.25);
+        void ctx.resume().then(() => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.frequency.value = 880;
+          gain.gain.setValueAtTime(0.15, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+          osc.start(ctx.currentTime);
+          osc.stop(ctx.currentTime + 0.3);
+        });
       }, delayMs);
     };
     playBeep(0);
-    playBeep(400);
-    playBeep(800);
+    playBeep(450);
+    playBeep(900);
   } catch {
     // ignore autoplay / audio errors
   }

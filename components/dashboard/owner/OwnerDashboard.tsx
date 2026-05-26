@@ -20,7 +20,7 @@ import {
   loadOwnerNotifications,
   saveOwnerNotifications,
   playBookingAlertSound,
-  isAppointmentToday,
+  initOwnerAlertAudio,
   type OwnerNotificationItem,
 } from '@/lib/utils/ownerNotifications';
 
@@ -76,7 +76,10 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
     return formatDateYYYYMMDDInTimeZone(new Date(), SHOP_BUSINESS_TIMEZONE);
   });
   const [notifications, setNotifications] = useState<OwnerNotificationItem[]>([]);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const knownAppointmentIdsRef = useRef<Set<string>>(new Set());
+  const pollSessionStartRef = useRef<string>(new Date().toISOString());
+  const skipNotificationIdsRef = useRef<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -136,7 +139,6 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
           (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
         );
         setAppointments(data);
-        data.forEach((a) => knownAppointmentIdsRef.current.add(a.id));
       }
     } catch (error) {
       console.error('Error refreshing appointments:', error);
@@ -145,10 +147,11 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
 
   const pushNotification = useCallback(
     (item: OwnerNotificationItem) => {
-      if (!isAppointmentToday(item.startTime)) return;
+      if (skipNotificationIdsRef.current.has(item.appointmentId)) return;
       setNotifications((prev) => {
         if (prev.some((n) => n.appointmentId === item.appointmentId)) return prev;
         playBookingAlertSound();
+        setNotificationsOpen(true);
         return [item, ...prev];
       });
     },
@@ -156,7 +159,13 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
   );
 
   useEffect(() => {
+    initOwnerAlertAudio();
+  }, []);
+
+  useEffect(() => {
     if (!selectedShopId) return;
+    pollSessionStartRef.current = new Date().toISOString();
+    knownAppointmentIdsRef.current.clear();
     const today = getTodayDateStr();
     setNotifications(loadOwnerNotifications(selectedShopId, today));
   }, [selectedShopId]);
@@ -235,7 +244,6 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
           new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
         );
         setAppointments(allAppointments);
-        allAppointments.forEach((a) => knownAppointmentIdsRef.current.add(a.id));
       } catch (error) {
         console.error('Error loading appointments:', error);
       } finally {
@@ -246,8 +254,19 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
     loadAppointments();
   }, [selectedShopId, selectedDate, shops]);
 
-  const handleIncomingAppointment = useCallback(
-    (apt: { id: string; customerName: string; startTime: string; barberId?: string }) => {
+  const handleNewBookingDetected = useCallback(
+    (apt: {
+      id: string;
+      customerName: string;
+      startTime: string;
+      barberId?: string;
+      status?: string;
+    }) => {
+      if (apt.status && !['PENDING', 'CONFIRMED'].includes(apt.status)) return;
+      if (skipNotificationIdsRef.current.has(apt.id)) return;
+      if (knownAppointmentIdsRef.current.has(apt.id)) return;
+      knownAppointmentIdsRef.current.add(apt.id);
+
       const barberName = barbers.find((b) => b.id === apt.barberId)?.displayName;
       pushNotification({
         id: `${apt.id}-${Date.now()}`,
@@ -258,6 +277,7 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
         read: false,
         createdAt: new Date().toISOString(),
       });
+
       const aptDate = formatDateYYYYMMDDInTimeZone(new Date(apt.startTime), SHOP_BUSINESS_TIMEZONE);
       if (selectedDate === aptDate && selectedShopId) {
         void fetch(`/api/appointments?shopId=${selectedShopId}&date=${selectedDate}`, {
@@ -269,21 +289,6 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
     },
     [barbers, pushNotification, selectedDate, selectedShopId]
   );
-
-  useEffect(() => {
-    if (!selectedShopId) return;
-    const seedTodayIds = async () => {
-      const today = getTodayDateStr();
-      const res = await fetch(`/api/appointments?shopId=${selectedShopId}&date=${today}`, {
-        credentials: 'include',
-      });
-      if (res.ok) {
-        const data: Appointment[] = await res.json();
-        data.forEach((a) => knownAppointmentIdsRef.current.add(a.id));
-      }
-    };
-    void seedTodayIds();
-  }, [selectedShopId]);
 
   useEffect(() => {
     if (!selectedShopId) return;
@@ -307,50 +312,53 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
             status: string;
           };
           if (!row?.id) return;
-          if (row.status && !['PENDING', 'CONFIRMED'].includes(row.status)) return;
-          if (knownAppointmentIdsRef.current.has(row.id)) return;
-          knownAppointmentIdsRef.current.add(row.id);
-          handleIncomingAppointment({
+          handleNewBookingDetected({
             id: row.id,
             customerName: row.customer_name,
             startTime: row.start_time,
             barberId: row.barber_id,
+            status: row.status,
           });
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === 'CHANNEL_ERROR') {
+          console.warn('Owner appointment realtime unavailable — using polling fallback');
+        }
+      });
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [selectedShopId, handleIncomingAppointment]);
+  }, [selectedShopId, handleNewBookingDetected]);
 
   useEffect(() => {
     if (!selectedShopId) return;
     const poll = async () => {
-      const today = getTodayDateStr();
       try {
-        const res = await fetch(`/api/appointments?shopId=${selectedShopId}&date=${today}`, {
-          credentials: 'include',
-        });
+        const since = encodeURIComponent(pollSessionStartRef.current);
+        const res = await fetch(
+          `/api/appointments?shopId=${selectedShopId}&createdAfter=${since}`,
+          { credentials: 'include' }
+        );
         if (!res.ok) return;
         const data: Appointment[] = await res.json();
         for (const apt of data) {
-          if (knownAppointmentIdsRef.current.has(apt.id)) continue;
-          knownAppointmentIdsRef.current.add(apt.id);
-          handleIncomingAppointment({
+          handleNewBookingDetected({
             id: apt.id,
             customerName: apt.customerName,
             startTime: apt.startTime,
             barberId: apt.barberId,
+            status: apt.status,
           });
         }
       } catch {
         // ignore polling errors
       }
     };
-    const interval = setInterval(() => void poll(), 30000);
+    void poll();
+    const interval = setInterval(() => void poll(), 12000);
     return () => clearInterval(interval);
-  }, [selectedShopId, handleIncomingAppointment]);
+  }, [selectedShopId, handleNewBookingDetected]);
 
   // Load appointments for barber view when barber is selected
   useEffect(() => {
@@ -485,7 +493,11 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
       });
 
       if (response.ok) {
-        // Reload appointments
+        const created = await response.json();
+        if (created?.id) {
+          skipNotificationIdsRef.current.add(created.id);
+          knownAppointmentIdsRef.current.add(created.id);
+        }
         if (selectedShopId) {
           const reloadResponse = await fetch(
             `/api/appointments?shopId=${selectedShopId}&date=${selectedDate}`,
@@ -519,7 +531,11 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
       });
 
       if (response.ok) {
-        // Reload appointments
+        knownAppointmentIdsRef.current.delete(appointmentId);
+        setAppointments((prev) => prev.filter((a) => a.id !== appointmentId));
+        setBarberAppointments((prev) => prev.filter((a) => a.id !== appointmentId));
+        setNotifications((prev) => prev.filter((n) => n.appointmentId !== appointmentId));
+
         if (selectedShopId) {
           const reloadResponse = await fetch(
             `/api/appointments?shopId=${selectedShopId}&date=${selectedDate}`,
@@ -594,12 +610,6 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
 
   return (
     <div className="min-h-[100dvh] bg-gray-50">
-      <OwnerNotificationPanel
-        notifications={notifications}
-        onMarkRead={markNotificationRead}
-        onDelete={deleteNotification}
-        onSelectAppointmentDate={(dateStr) => setSelectedDate(dateStr)}
-      />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
         {/* Header */}
         <div className="mb-6 sm:mb-8">
@@ -614,6 +624,14 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2 sm:gap-4 sm:justify-end">
+              <OwnerNotificationPanel
+                notifications={notifications}
+                isOpen={notificationsOpen}
+                onToggle={() => setNotificationsOpen((o) => !o)}
+                onMarkRead={markNotificationRead}
+                onDelete={deleteNotification}
+                onSelectAppointmentDate={(dateStr) => setSelectedDate(dateStr)}
+              />
               {userEmail && (
                 <span className="text-xs sm:text-sm text-gray-500 truncate max-w-full sm:max-w-[200px] order-last sm:order-none w-full sm:w-auto">
                   {userEmail}

@@ -94,6 +94,7 @@ export async function GET(request: NextRequest) {
     const barberId = searchParams.get('barberId')
     const date = searchParams.get('date')
     const status = searchParams.get('status')
+    const createdAfter = searchParams.get('createdAfter')
     const shopIdParam = searchParams.get('shopId')
 
     if (shopIdParam) {
@@ -157,6 +158,13 @@ export async function GET(request: NextRequest) {
         .lte('start_time', endOfDay.toISOString())
     }
 
+    if (createdAfter) {
+      const parsed = new Date(createdAfter)
+      if (!Number.isNaN(parsed.getTime())) {
+        query = query.gte('created_at', parsed.toISOString())
+      }
+    }
+
     if (status) {
       const statuses = status.split(',')
       if (statuses.length === 1) {
@@ -164,6 +172,9 @@ export async function GET(request: NextRequest) {
       } else {
         query = query.in('status', statuses)
       }
+    } else {
+      // Active appointments only — cancelled rows stay in DB but are hidden & slots freed
+      query = query.neq('status', 'CANCELLED')
     }
 
     const { data, error } = await query
