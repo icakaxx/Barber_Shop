@@ -1,4 +1,4 @@
--- Cleanup duplicate shops
+-- Cleanup duplicate shopsссс
 -- This script removes duplicate shops and consolidates data
 
 DO $$
