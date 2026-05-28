@@ -943,6 +943,9 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
         shopId={selectedShopId}
         barbers={activeBarbers}
         selectedDate={selectedDate}
+        workingHours={selectedShop?.workingHours}
+        lunchStart={selectedShop?.lunchStart}
+        lunchEnd={selectedShop?.lunchEnd}
       />
     </div>
   );

@@ -5,7 +5,7 @@ import { X, Check, Calendar } from 'lucide-react';
 import type { Barber } from '@/lib/types';
 import { useI18n } from '@/contexts/I18nContext';
 import { BOOKING_SLOT_MINUTES } from '@/lib/utils/bookingSlots';
-import { shopLocalDateTimeToUtc, parseAppointmentInstant, formatTimeHHMMInTimeZone } from '@/lib/utils/shopHours';
+import { shopLocalDateTimeToUtc, parseAppointmentInstant, formatTimeHHMMInTimeZone, getHoursForCalendarDate, overlapsLunch, type WorkingHoursMap } from '@/lib/utils/shopHours';
 
 interface Service {
   id: string;
@@ -27,7 +27,10 @@ interface CreateAppointmentModalProps {
   onSave: (appointment: any) => void;
   shopId?: string;
   barbers: Barber[];
-  selectedDate?: string; // Add this prop to pass the selected date
+  selectedDate?: string;
+  workingHours?: WorkingHoursMap;
+  lunchStart?: string;
+  lunchEnd?: string;
 }
 
 export default function CreateAppointmentModal({
@@ -36,9 +39,12 @@ export default function CreateAppointmentModal({
   onSave,
   shopId,
   barbers,
-  selectedDate: initialSelectedDate
+  selectedDate: initialSelectedDate,
+  workingHours,
+  lunchStart,
+  lunchEnd
 }: CreateAppointmentModalProps) {
-  const { t, translateServiceName, locale } = useI18n();
+  const { t, translateServiceName, locale, formatPrice } = useI18n();
   const [services, setServices] = useState<Service[]>([]);
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -130,14 +136,21 @@ export default function CreateAppointmentModal({
 
   if (!isOpen) return null;
 
-  // Generate time slots (9:00 AM to 6:00 PM in 30-minute intervals)
   const generateTimeSlots = () => {
     const slots: string[] = [];
-    for (let hour = 9; hour < 18; hour++) {
-      for (let minute = 0; minute < 60; minute += BOOKING_SLOT_MINUTES) {
-        const timeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-        slots.push(timeStr);
-      }
+    const dayHours = getHoursForCalendarDate(workingHours, selectedDate);
+    const openTime = dayHours?.open ?? '09:00';
+    const closeTime = dayHours?.close ?? '18:00';
+
+    const [openH, openM] = openTime.split(':').map(Number);
+    const [closeH, closeM] = closeTime.split(':').map(Number);
+    const openMinutes = (openH ?? 9) * 60 + (openM ?? 0);
+    const closeMinutes = (closeH ?? 18) * 60 + (closeM ?? 0);
+
+    for (let mins = openMinutes; mins < closeMinutes; mins += BOOKING_SLOT_MINUTES) {
+      const h = Math.floor(mins / 60);
+      const m = mins % 60;
+      slots.push(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`);
     }
     return slots;
   };
@@ -156,7 +169,6 @@ export default function CreateAppointmentModal({
     });
   };
 
-  // Check if a slot can fit the selected services
   const canFitServices = (timeStr: string): boolean => {
     if (selectedServiceIds.length === 0) return true;
     
@@ -165,12 +177,21 @@ export default function CreateAppointmentModal({
       return total + (service?.durationMin || 0);
     }, 0);
 
+    const dayHours = getHoursForCalendarDate(workingHours, selectedDate);
+    const closeTime = dayHours?.close ?? '18:00';
+    const [closeH, closeM] = closeTime.split(':').map(Number);
+    const closeMinutes = (closeH ?? 18) * 60 + (closeM ?? 0);
+
     const slotStart = shopLocalDateTimeToUtc(selectedDate, timeStr);
     const slotEnd = new Date(slotStart.getTime() + totalDuration * 60000);
 
     const endShop = formatTimeHHMMInTimeZone(slotEnd);
     const [endH, endM] = endShop.split(':').map(Number);
-    if (endH > 18 || (endH === 18 && endM > 0)) {
+    if ((endH ?? 0) * 60 + (endM ?? 0) > closeMinutes) {
+      return false;
+    }
+
+    if (overlapsLunch(selectedDate, timeStr, totalDuration, lunchStart, lunchEnd)) {
       return false;
     }
 
@@ -377,7 +398,7 @@ export default function CreateAppointmentModal({
                         <div className="font-medium text-sm">{service.name}</div>
                         <div className={`text-xs ${isSelected ? 'text-gray-200' : 'text-gray-500'}`}>
                           {service.durationMin} min
-                          {service.priceBgn && ` • ${service.priceBgn} лв`}
+                          {service.priceBgn ? ` • ${formatPrice(service.priceBgn)}` : ''}
                         </div>
                       </div>
                       <input
@@ -404,7 +425,7 @@ export default function CreateAppointmentModal({
                     <>
                       <span className="mx-2">•</span>
                       <span className="font-medium">{t('dashboard.barber.totalPrice')}: </span>
-                      {totalPrice} {locale === 'bg' ? 'лв' : 'лв'}
+                      {formatPrice(totalPrice)}
                     </>
                   )}
                 </div>
