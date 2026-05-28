@@ -12,8 +12,8 @@ import { forbiddenJson, notConfiguredJson, serverErrorJson } from '@/lib/api/jso
 
 const resendApiKey = process.env.RESEND_API_KEY
 const emailFrom =
-  process.env.EMAIL_FROM || 'Mensworld Barber Studio <kalchevstylestudio@parfumcho.com>'
-const emailSignature = 'mensworld barber studio / Клуб мъжки свят'
+  process.env.EMAIL_FROM || 'MENSWORLD BARBER STUDIO <bookings@elaproyosif.com>'
+const emailSignature = 'MENSWORLD BARBER STUDIO / Клуб мъжки свят'
 const resendClient = resendApiKey ? new Resend(resendApiKey) : null
 
 type AppointmentEmailPayload = {
@@ -50,7 +50,7 @@ const sendAppointmentEmail = async (payload: AppointmentEmailPayload) => {
       <p>Детайли за твоя час:</p>
       <ul>
         <li><strong>Салон:</strong> ${shopName}</li>
-        <li><strong>Барбер:</strong> ${barberName}</li>
+        <li><strong>Фризьор:</strong> ${barberName}</li>
         <li><strong>Кога:</strong> ${timeWindow}</li>
       </ul>
       ${
@@ -63,6 +63,7 @@ const sendAppointmentEmail = async (payload: AppointmentEmailPayload) => {
           : ''
       }
       <p>Ако се наложи да промениш или отмениш часа, моля свържи се със салона възможно най-скоро.</p>
+      <p><br/></p>
       <p>Поздрави,<br/>${emailSignature}</p>
     `
   })
