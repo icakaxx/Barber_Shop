@@ -38,6 +38,7 @@ const sendAppointmentEmail = async (payload: AppointmentEmailPayload) => {
     payload
 
   const contactPhone = shopPhone?.trim() || defaultShopPhone
+  console.log('[email] shopLogoUrl:', shopLogoUrl ?? '(none)')
   const timeWindow = formatAppointmentWindowForEmail(startTime, endTime)
   const servicesRowsHtml =
     services && services.length
@@ -51,9 +52,15 @@ const sendAppointmentEmail = async (payload: AppointmentEmailPayload) => {
 
   const logoHtml = shopLogoUrl
     ? `<img src="${shopLogoUrl}" alt="${shopName}" width="80" height="80"
-         style="border-radius:50%;object-fit:cover;border:3px solid #111;display:block;margin:0 auto 12px;" />`
-    : `<div style="width:64px;height:64px;border-radius:50%;background:#111;display:flex;align-items:center;
-         justify-content:center;margin:0 auto 12px;font-size:28px;line-height:64px;text-align:center;">✂</div>`
+         style="border-radius:50%;object-fit:cover;border:3px solid #ffffff;display:block;margin:0 auto 12px;" />`
+    : `<table cellpadding="0" cellspacing="0" style="margin:0 auto 12px;">
+         <tr>
+           <td width="64" height="64" align="center" valign="middle"
+             style="width:64px;height:64px;border-radius:50%;background:#333333;font-size:28px;color:#ffffff;text-align:center;line-height:64px;">
+             &#9986;
+           </td>
+         </tr>
+       </table>`
 
   const { data, error } = await resendClient.emails.send({
     from: emailFrom,
@@ -153,10 +160,21 @@ const sendAppointmentEmail = async (payload: AppointmentEmailPayload) => {
 
         <!-- Footer -->
         <tr>
-          <td style="padding:24px 32px 32px;border-top:1px solid #e5e7eb;">
+          <td style="padding:24px 32px 20px;border-top:1px solid #e5e7eb;">
             <p style="margin:0 0 4px;font-size:14px;color:#374151;">Поздрави,</p>
             <p style="margin:0;font-size:14px;font-weight:bold;color:#111111;letter-spacing:0.5px;">
               ${emailSignature}
+            </p>
+          </td>
+        </tr>
+
+        <!-- Credit -->
+        <tr>
+          <td align="center" style="padding:12px 32px 24px;">
+            <p style="margin:0;font-size:11px;color:#9ca3af;">
+              Създадено от
+              <a href="https://www.hmwspro.com/bg" target="_blank"
+                 style="color:#9ca3af;text-decoration:underline;">H&amp;M WsPro</a>
             </p>
           </td>
         </tr>

@@ -76,6 +76,17 @@ export default function Footer() {
 
         <div className="mt-16 pt-8 border-t border-white/10 text-sm text-gray-500 flex flex-col items-center justify-center gap-4 px-1 text-center">
           <p className="max-w-prose mx-auto">&copy; {new Date().getFullYear()} {shopName}. {t('footer.allRightsReserved')}</p>
+          <p className="text-xs text-gray-600">
+            Създадено от{' '}
+            <a
+              href="https://www.hmwspro.com/bg"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gray-400 hover:text-white transition-colors underline"
+            >
+              H&amp;M WsPro
+            </a>
+          </p>
           <div className="flex flex-wrap justify-center gap-x-4 gap-y-2">
             <Link
               href="/barbers"
