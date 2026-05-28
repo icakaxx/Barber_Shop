@@ -59,7 +59,7 @@ export default function ImageUploadField({
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      setError('Please select an image file (JPEG, PNG, WebP)');
+      setError(t('dashboard.owner.uploadErrorNotImage'));
       return;
     }
 
@@ -100,7 +100,7 @@ export default function ImageUploadField({
       setShowUrlInput(false);
       setUrlFallback('');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Upload failed');
+      setError(err instanceof Error ? err.message : t('dashboard.owner.uploadFailed'));
     } finally {
       setUploading(false);
       e.target.value = '';
@@ -161,7 +161,7 @@ export default function ImageUploadField({
               <div className="flex-1 min-w-0">
                 {uploadedSize && (
                   <p className="text-xs font-medium text-green-600 mb-1">
-                    Uploaded: {uploadedSize}
+                    {t('dashboard.owner.uploadedSize')}: {uploadedSize}
                   </p>
                 )}
                 {compressionInfo && (
@@ -174,7 +174,7 @@ export default function ImageUploadField({
                   onClick={handleRemove}
                   className="text-sm text-red-600 hover:text-red-700 font-medium"
                 >
-                  Remove
+                  {t('dashboard.owner.removeImage')}
                 </button>
               </div>
             </div>
@@ -199,12 +199,12 @@ export default function ImageUploadField({
             {uploading ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Compressing & uploading...
+                {t('dashboard.owner.compressingAndUploading')}
               </>
             ) : (
               <>
                 <Upload className="w-4 h-4" />
-                Upload image
+                {t('dashboard.owner.uploadImage')}
               </>
             )}
           </button>
@@ -214,7 +214,7 @@ export default function ImageUploadField({
             className="inline-flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
           >
             <ImageIcon className="w-4 h-4" />
-            {showUrlInput ? 'Cancel' : 'Or paste URL'}
+            {showUrlInput ? t('common.cancel') : t('dashboard.owner.orPasteUrl')}
           </button>
         </div>
 
@@ -233,7 +233,7 @@ export default function ImageUploadField({
               onClick={handleUrlSubmit}
               className="px-4 py-2 bg-black text-white rounded-lg text-sm font-medium hover:bg-black/90"
             >
-              Use URL
+              {t('dashboard.owner.useUrl')}
             </button>
           </div>
         )}

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import type { AppointmentStatus } from '@/lib/types';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface Appointment {
   id: string;
@@ -35,6 +36,7 @@ export default function EditAppointmentModal({
   onSave,
   services = []
 }: EditAppointmentModalProps) {
+  const { t } = useI18n();
   const [formData, setFormData] = useState({
     customerName: '',
     customerPhone: '',
@@ -45,7 +47,6 @@ export default function EditAppointmentModal({
     notes: ''
   });
 
-  // Helper function to format date for datetime-local input (local time, not UTC)
   const formatLocalDateTime = (dateString: string): string => {
     const date = new Date(dateString);
     const year = date.getFullYear();
@@ -85,7 +86,7 @@ export default function EditAppointmentModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4">
         <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-          <h2 className="text-xl font-bold">Edit Appointment</h2>
+          <h2 className="text-xl font-bold">{t('dashboard.owner.editAppointment')}</h2>
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -97,7 +98,7 @@ export default function EditAppointmentModal({
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Customer Name
+              {t('dashboard.barber.customerName')}
             </label>
             <input
               type="text"
@@ -110,7 +111,7 @@ export default function EditAppointmentModal({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Phone Number
+              {t('dashboard.barber.phoneNumber')}
             </label>
             <input
               type="tel"
@@ -123,7 +124,7 @@ export default function EditAppointmentModal({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email (optional)
+              {t('dashboard.barber.emailOptional')}
             </label>
             <input
               type="email"
@@ -136,7 +137,7 @@ export default function EditAppointmentModal({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Start Time
+                {t('dashboard.owner.startTime')}
               </label>
               <input
                 type="datetime-local"
@@ -148,7 +149,7 @@ export default function EditAppointmentModal({
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                End Time
+                {t('dashboard.owner.endTime')}
               </label>
               <input
                 type="datetime-local"
@@ -162,23 +163,23 @@ export default function EditAppointmentModal({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Status
+              {t('appointments.status')}
             </label>
             <select
               value={formData.status}
               onChange={(e) => setFormData({ ...formData, status: e.target.value as AppointmentStatus })}
               className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
             >
-              <option value="PENDING">Pending</option>
-              <option value="CONFIRMED">Confirmed</option>
-              <option value="DONE">Done</option>
-              <option value="CANCELLED">Cancelled</option>
+              <option value="PENDING">{t('appointments.pending')}</option>
+              <option value="CONFIRMED">{t('appointments.confirmed')}</option>
+              <option value="DONE">{t('appointments.done')}</option>
+              <option value="CANCELLED">{t('appointments.cancelled')}</option>
             </select>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Notes (optional)
+              {t('dashboard.barber.notesOptional')}
             </label>
             <textarea
               value={formData.notes}
@@ -194,13 +195,13 @@ export default function EditAppointmentModal({
               onClick={onClose}
               className="flex-1 py-3 border border-gray-200 rounded-lg font-bold hover:bg-gray-50 transition-colors"
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
               className="flex-1 py-3 bg-black text-white rounded-lg font-bold hover:bg-black/90 transition-colors"
             >
-              Save Changes
+              {t('dashboard.owner.saveChanges')}
             </button>
           </div>
         </form>
@@ -208,4 +209,3 @@ export default function EditAppointmentModal({
     </div>
   );
 }
-
