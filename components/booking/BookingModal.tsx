@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { X, ChevronLeft, Check, User } from 'lucide-react';
 import { mockServices } from '@/lib/mock-data';
 import type { BookingState, Service, Barber } from '@/lib/types';
@@ -67,6 +68,7 @@ export default function BookingModal() {
   const [findingBarber, setFindingBarber] = useState(false);
   const [availableBarbersList, setAvailableBarbersList] = useState<Array<{ barberId: string; shopId: string; barber: Barber }>>([]);
   const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [bookingState, setBookingState] = useState<BookingState>({
     step: 1,
     services: [],
@@ -240,6 +242,7 @@ export default function BookingModal() {
     setIsOpen(false);
     setSelectedDate('');
     setAvailableTimes([]);
+    setPrivacyAccepted(false);
     setBookingState({
       step: 1,
       services: [],
@@ -689,6 +692,11 @@ export default function BookingModal() {
 
     if (!nameInput?.value || !phoneInput?.value || !emailInput?.value) {
       alert(t('booking.fillAllFields'));
+      return;
+    }
+
+    if (!privacyAccepted) {
+      alert(t('booking.privacyConsentRequired'));
       return;
     }
 
@@ -1177,6 +1185,43 @@ export default function BookingModal() {
                     placeholder={t('booking.email')}
                   />
                 </div>
+                <label className="flex items-start gap-3 cursor-pointer mt-2">
+                  <input
+                    type="checkbox"
+                    checked={privacyAccepted}
+                    onChange={(e) => setPrivacyAccepted(e.target.checked)}
+                    className="mt-1 h-4 w-4 shrink-0 rounded border-gray-300 text-black focus:ring-black"
+                  />
+                  <span className="text-sm text-gray-600 leading-snug">
+                    {locale === 'bg' ? (
+                      <>
+                        Съгласявам се с обработката на личните ми данни съгласно{' '}
+                        <Link
+                          href="/privacy"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-medium text-black underline hover:no-underline"
+                        >
+                          Политиката за поверителност
+                        </Link>{' '}
+                        за целите на резервацията и потвърждение по имейл/телефон.
+                      </>
+                    ) : (
+                      <>
+                        I agree to the processing of my personal data under the{' '}
+                        <Link
+                          href="/privacy"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-medium text-black underline hover:no-underline"
+                        >
+                          Privacy Policy
+                        </Link>{' '}
+                        for booking and confirmation by email/phone.
+                      </>
+                    )}
+                  </span>
+                </label>
                 <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 mt-6">
                   <p className="text-xs font-bold text-gray-400 uppercase mb-3">{t('booking.summary')}</p>
                   

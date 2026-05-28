@@ -14,6 +14,7 @@ const resendApiKey = process.env.RESEND_API_KEY
 const emailFrom =
   process.env.EMAIL_FROM || 'MENSWORLD BARBER STUDIO <bookings@elaproyosif.com>'
 const emailSignature = 'MENSWORLD BARBER STUDIO / Клуб мъжки свят'
+const defaultShopPhone = process.env.SHOP_CONTACT_PHONE || '+359877378830'
 const resendClient = resendApiKey ? new Resend(resendApiKey) : null
 
 type AppointmentEmailPayload = {
@@ -21,6 +22,8 @@ type AppointmentEmailPayload = {
   customerName: string
   barberName: string
   shopName: string
+  shopPhone?: string
+  shopLogoUrl?: string
   services: string[]
   startTime: string
   endTime: string
@@ -31,41 +34,142 @@ const sendAppointmentEmail = async (payload: AppointmentEmailPayload) => {
     return { success: false, error: 'Resend not configured' }
   }
 
-  const { customerEmail, customerName, barberName, shopName, services, startTime, endTime } =
+  const { customerEmail, customerName, barberName, shopName, shopPhone, shopLogoUrl, services, startTime, endTime } =
     payload
 
+  const contactPhone = shopPhone?.trim() || defaultShopPhone
   const timeWindow = formatAppointmentWindowForEmail(startTime, endTime)
-  const servicesListHtml =
+  const servicesRowsHtml =
     services && services.length
-      ? services.map(service => `<li>${service}</li>`).join('')
+      ? services
+          .map(
+            (service) =>
+              `<tr><td style="padding:6px 0;color:#374151;font-size:15px;">✂ ${service}</td></tr>`
+          )
+          .join('')
       : ''
+
+  const logoHtml = shopLogoUrl
+    ? `<img src="${shopLogoUrl}" alt="${shopName}" width="80" height="80"
+         style="border-radius:50%;object-fit:cover;border:3px solid #111;display:block;margin:0 auto 12px;" />`
+    : `<div style="width:64px;height:64px;border-radius:50%;background:#111;display:flex;align-items:center;
+         justify-content:center;margin:0 auto 12px;font-size:28px;line-height:64px;text-align:center;">✂</div>`
 
   const { data, error } = await resendClient.emails.send({
     from: emailFrom,
     to: [customerEmail],
     subject: `Потвърждение на час в ${shopName}`,
-    html: `
-      <h2>Здравей, ${customerName}!</h2>
-      <p>Потвърждаваме твоя час в <strong>${shopName}</strong>.</p>
-      <p>Детайли за твоя час:</p>
-      <ul>
-        <li><strong>Салон:</strong> ${shopName}</li>
-        <li><strong>Фризьор:</strong> ${barberName}</li>
-        <li><strong>Кога:</strong> ${timeWindow}</li>
-      </ul>
-      ${
-        servicesListHtml
-          ? `
-      <p><strong>Услуги:</strong></p>
-      <ul>
-        ${servicesListHtml}
-      </ul>`
-          : ''
-      }
-      <p>Ако се наложи да промениш или отмениш часа, моля свържи се със салона възможно най-скоро.</p>
-      <p><br/></p>
-      <p>Поздрави,<br/>${emailSignature}</p>
-    `
+    html: `<!DOCTYPE html>
+<html lang="bg">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f3f4f6;font-family:Arial,Helvetica,sans-serif;">
+
+  <!-- Wrapper -->
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:32px 0;">
+    <tr><td align="center">
+
+      <!-- Card -->
+      <table width="600" cellpadding="0" cellspacing="0"
+        style="max-width:600px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
+
+        <!-- Header -->
+        <tr>
+          <td align="center" style="background:#111111;padding:32px 24px 24px;">
+            ${logoHtml}
+            <p style="margin:0;color:#ffffff;font-size:20px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;">
+              ${shopName}
+            </p>
+          </td>
+        </tr>
+
+        <!-- Green confirmation bar -->
+        <tr>
+          <td align="center" style="background:#16a34a;padding:14px 24px;">
+            <p style="margin:0;color:#ffffff;font-size:15px;font-weight:bold;letter-spacing:1px;">
+              ✓ &nbsp;РЕЗЕРВАЦИЯТА Е ПОТВЪРДЕНА
+            </p>
+          </td>
+        </tr>
+
+        <!-- Body -->
+        <tr>
+          <td style="padding:32px 32px 0;">
+            <p style="margin:0 0 8px;font-size:22px;font-weight:bold;color:#111111;">
+              Здравей, ${customerName}!
+            </p>
+            <p style="margin:0 0 28px;font-size:15px;color:#6b7280;">
+              Потвърждаваме твоя час в <strong style="color:#111111;">${shopName}</strong>.
+            </p>
+
+            <!-- Details box -->
+            <table width="100%" cellpadding="0" cellspacing="0"
+              style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:28px;">
+              <tr>
+                <td style="padding:20px 24px;">
+                  <p style="margin:0 0 16px;font-size:11px;font-weight:bold;color:#9ca3af;letter-spacing:2px;text-transform:uppercase;">
+                    Детайли за твоя час
+                  </p>
+                  <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td style="padding:6px 0;width:90px;font-size:13px;color:#6b7280;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;vertical-align:top;">Салон</td>
+                      <td style="padding:6px 0;font-size:15px;color:#111111;font-weight:bold;">${shopName}</td>
+                    </tr>
+                    <tr>
+                      <td colspan="2" style="padding:0;border-top:1px solid #e5e7eb;"></td>
+                    </tr>
+                    <tr>
+                      <td style="padding:6px 0;font-size:13px;color:#6b7280;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;vertical-align:top;">Фризьор</td>
+                      <td style="padding:6px 0;font-size:15px;color:#111111;">${barberName}</td>
+                    </tr>
+                    <tr>
+                      <td colspan="2" style="padding:0;border-top:1px solid #e5e7eb;"></td>
+                    </tr>
+                    <tr>
+                      <td style="padding:6px 0;font-size:13px;color:#6b7280;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;vertical-align:top;">Кога</td>
+                      <td style="padding:6px 0;font-size:15px;color:#111111;font-weight:bold;">${timeWindow}</td>
+                    </tr>
+                    ${servicesRowsHtml
+                      ? `<tr><td colspan="2" style="padding:0;border-top:1px solid #e5e7eb;"></td></tr>
+                         <tr>
+                           <td style="padding:6px 0;font-size:13px;color:#6b7280;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;vertical-align:top;">Услуги</td>
+                           <td style="padding:6px 0;">
+                             <table cellpadding="0" cellspacing="0">${servicesRowsHtml}</table>
+                           </td>
+                         </tr>`
+                      : ''}
+                  </table>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Notice -->
+            <p style="margin:0 0 32px;font-size:14px;color:#6b7280;line-height:1.6;">
+              Ако се наложи да промениш или отмениш часа, моля свържи се с нас
+              възможно най-скоро на
+              <a href="tel:${contactPhone}" style="color:#111111;font-weight:bold;text-decoration:none;">${contactPhone}</a>.
+            </p>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="padding:24px 32px 32px;border-top:1px solid #e5e7eb;">
+            <p style="margin:0 0 4px;font-size:14px;color:#374151;">Поздрави,</p>
+            <p style="margin:0;font-size:14px;font-weight:bold;color:#111111;letter-spacing:0.5px;">
+              ${emailSignature}
+            </p>
+          </td>
+        </tr>
+
+      </table>
+      <!-- /Card -->
+
+    </td></tr>
+  </table>
+  <!-- /Wrapper -->
+
+</body>
+</html>`
   })
 
   if (error) {
@@ -358,7 +462,9 @@ export async function POST(request: NextRequest) {
         ),
         shops:shop_id (
           id,
-          name
+          name,
+          phone,
+          logo_url
         )
       `)
       .single()
@@ -376,6 +482,8 @@ export async function POST(request: NextRequest) {
       serviceName: data.services?.name || 'Unknown Service',
       shopId: data.shop_id,
       shopName: data.shops?.name || 'Unknown Shop',
+      shopPhone: data.shops?.phone || undefined,
+      shopLogoUrl: (data.shops as any)?.logo_url || undefined,
       customerUserId: data.customer_user_id,
       customerName: data.customer_name,
       customerPhone: data.customer_phone,
@@ -399,6 +507,8 @@ export async function POST(request: NextRequest) {
         customerName: appointment.customerName,
         barberName: appointment.barberName,
         shopName: appointment.shopName,
+        shopPhone: appointment.shopPhone,
+        shopLogoUrl: appointment.shopLogoUrl,
         services: servicesForEmail,
         startTime: appointment.startTime,
         endTime: appointment.endTime

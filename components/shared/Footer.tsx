@@ -36,7 +36,7 @@ export default function Footer() {
               <li><Link href="/" className="hover:text-gray-300 transition-colors">{t('footer.home')}</Link></li>
               <li><a href="#services" className="hover:text-gray-300 transition-colors">{t('footer.services')}</a></li>
               <li><a href="#location" className="hover:text-gray-300 transition-colors">{t('footer.location')}</a></li>
-              <li><Link href="#" className="hover:text-gray-300 transition-colors">{t('footer.privacyPolicy')}</Link></li>
+              <li><Link href="/privacy" className="hover:text-gray-300 transition-colors">{t('footer.privacyPolicy')}</Link></li>
             </ul>
           </div>
 
