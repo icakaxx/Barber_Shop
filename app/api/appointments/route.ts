@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { getSupabaseAdmin } from '@/lib/supabase/admin'
-import { validateSlotAgainstShop, formatAppointmentWindowForEmail } from '@/lib/utils/shopHours'
+import { validateSlotAgainstShop, formatAppointmentWindowForEmail, parseAppointmentInstant } from '@/lib/utils/shopHours'
 import { requireAuthContext, requireRoles } from '@/lib/auth/getAuthContext'
 import { STAFF_ROLES } from '@/lib/auth/types'
 import {
@@ -40,6 +40,18 @@ const sendAppointmentEmail = async (payload: AppointmentEmailPayload) => {
   const contactPhone = shopPhone?.trim() || defaultShopPhone
   console.log('[email] shopLogoUrl:', shopLogoUrl ?? '(none)')
   const timeWindow = formatAppointmentWindowForEmail(startTime, endTime)
+
+  // Google Calendar deep link (dates must be UTC in YYYYMMDDTHHMMSSZ format)
+  const toGcalDate = (value: string) =>
+    parseAppointmentInstant(value).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
+  const gcalParams = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: `Час в ${shopName}`,
+    dates: `${toGcalDate(startTime)}/${toGcalDate(endTime)}`,
+    details: `Фризьор: ${barberName}${services?.length ? `\nУслуги: ${services.join(', ')}` : ''}\nТелефон: ${contactPhone}`,
+    location: shopName,
+  })
+  const gcalUrl = `https://calendar.google.com/calendar/render?${gcalParams.toString()}`
   const servicesRowsHtml =
     services && services.length
       ? services
@@ -145,6 +157,19 @@ const sendAppointmentEmail = async (payload: AppointmentEmailPayload) => {
                          </tr>`
                       : ''}
                   </table>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Add to Google Calendar -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+              <tr>
+                <td align="center">
+                  <a href="${gcalUrl}" target="_blank"
+                     style="display:inline-block;background:#111111;color:#ffffff;font-size:14px;font-weight:bold;
+                            padding:13px 28px;border-radius:8px;text-decoration:none;letter-spacing:0.5px;">
+                    📅 &nbsp;Добави в Google Календар
+                  </a>
                 </td>
               </tr>
             </table>

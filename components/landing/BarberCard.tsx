@@ -29,16 +29,12 @@ export default function BarberCard({ barber, compact = false }: BarberCardProps)
         compact ? 'min-w-[140px] max-w-[160px]' : 'min-w-[200px] max-w-[240px]'
       }`}
     >
-      <div
-        className={`relative bg-gray-200 overflow-hidden ${
-          compact ? 'h-[140px] w-full' : 'h-[220px] w-full'
-        }`}
-      >
+      <div className="relative bg-gray-200 overflow-hidden w-full aspect-[3/4]">
         {barber.photoUrl ? (
           <img
             src={barber.photoUrl}
             alt={barber.displayName}
-            className="absolute inset-0 w-full h-full object-cover object-top"
+            className="absolute inset-0 w-full h-full object-cover object-[center_20%]"
           />
         ) : (
           <div
