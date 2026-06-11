@@ -1,6 +1,6 @@
 -- =========================================
 -- Barber Shop Database Schema
--- PostgreSQL Schema for Supabase
+-- PostgreSQL Schema for Supabasejijiji
 -- =========================================
 
 -- =========================================
