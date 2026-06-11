@@ -40,6 +40,7 @@ interface Shop {
   workingHours?: Record<string, { open: string; close: string } | null>;
   lunchStart?: string;
   lunchEnd?: string;
+  lunchHours?: import('@/lib/utils/shopHours').LunchHoursMap;
 }
 
 interface Appointment {
@@ -946,6 +947,7 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
         workingHours={selectedShop?.workingHours}
         lunchStart={selectedShop?.lunchStart}
         lunchEnd={selectedShop?.lunchEnd}
+        lunchHours={selectedShop?.lunchHours}
       />
     </div>
   );

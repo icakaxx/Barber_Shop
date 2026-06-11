@@ -20,6 +20,7 @@ function mapShop(shop: Record<string, unknown>, includeOwnerId: boolean) {
     workingHours: shop.working_hours || undefined,
     lunchStart: shop.lunch_start || undefined,
     lunchEnd: shop.lunch_end || undefined,
+    lunchHours: shop.lunch_hours || undefined,
     logoUrl: shop.logo_url || undefined,
     heroImageUrl: shop.hero_image_url || undefined,
     heroDescription: shop.hero_description || undefined,

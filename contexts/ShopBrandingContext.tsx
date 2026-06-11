@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 
-import type { BlockedDateRange, WorkingHoursMap } from '@/lib/utils/shopHours';
+import type { BlockedDateRange, WorkingHoursMap, LunchHoursMap } from '@/lib/utils/shopHours';
 
 export interface ShopBranding {
   id: string;
@@ -17,6 +17,7 @@ export interface ShopBranding {
   workingHours?: WorkingHoursMap;
   lunchStart?: string;
   lunchEnd?: string;
+  lunchHours?: LunchHoursMap;
   tiktokUrl?: string;
   blockedDates?: BlockedDateRange[];
 }
@@ -84,6 +85,7 @@ export function ShopBrandingProvider({ children }: { children: React.ReactNode }
             workingHours: shopData.workingHours,
             lunchStart: shopData.lunchStart,
             lunchEnd: shopData.lunchEnd,
+            lunchHours: shopData.lunchHours,
             tiktokUrl: shopData.tiktokUrl,
             blockedDates,
           });

@@ -11,7 +11,8 @@ import { useShopBranding } from '@/contexts/ShopBrandingContext';
 import {
   getHoursForDate,
   getHoursForCalendarDate,
-  overlapsLunch,
+  isDuringLunchForDate,
+  overlapsLunchForDate,
   validateSlotAgainstShop,
   formatDateYYYYMMDDInTimeZone,
   SHOP_BUSINESS_TIMEZONE,
@@ -418,9 +419,6 @@ export default function BookingModal() {
 
     const date = new Date(dateStr + 'T12:00:00');
     const dayHours = getHoursForDate(shop?.workingHours, date);
-    const lunchStart = shop?.lunchStart;
-    const lunchEnd = shop?.lunchEnd;
-
     if (!dayHours) {
       setAvailableTimes([]);
       return;
@@ -429,19 +427,18 @@ export default function BookingModal() {
     const startOfDay = new Date(dateStr + `T${dayHours.open}:00`);
     const endOfDay = new Date(dateStr + `T${dayHours.close}:00`);
 
-    const isDuringLunch = (timeStr: string) => {
-      if (!lunchStart || !lunchEnd) return false;
-      const [h, m] = timeStr.split(':').map(Number);
-      const [lStartH, lStartM] = lunchStart.split(':').map(Number);
-      const [lEndH, lEndM] = lunchEnd.split(':').map(Number);
-      const minutes = h * 60 + m;
-      const lunchStartMinutes = lStartH * 60 + lStartM;
-      const lunchEndMinutes = lEndH * 60 + lEndM;
-      return minutes >= lunchStartMinutes && minutes < lunchEndMinutes;
-    };
+    const isDuringLunch = (timeStr: string) =>
+      isDuringLunchForDate(dateStr, timeStr, shop?.lunchHours, shop?.lunchStart, shop?.lunchEnd);
 
     const wouldOverlapLunch = (startStr: string) =>
-      overlapsLunch(dateStr, startStr, totalDurationMinutes, lunchStart, lunchEnd);
+      overlapsLunchForDate(
+        dateStr,
+        startStr,
+        totalDurationMinutes,
+        shop?.lunchHours,
+        shop?.lunchStart,
+        shop?.lunchEnd
+      );
 
     if (!bookingState.barber || bookingState.barber.id === 'any') {
       const times: string[] = [];
@@ -529,7 +526,7 @@ export default function BookingModal() {
           setFindingBarber(false);
           return;
         }
-        if (overlapsLunch(selectedDate, time, totalMinutes, shop?.lunchStart, shop?.lunchEnd)) {
+        if (overlapsLunchForDate(selectedDate, time, totalMinutes, shop?.lunchHours, shop?.lunchStart, shop?.lunchEnd)) {
           alert(t('booking.appointmentOverlapsLunch'));
           setFindingBarber(false);
           return;
@@ -601,7 +598,7 @@ export default function BookingModal() {
         alert(t('booking.servicesExceedBusinessHours'));
         return;
       }
-      if (overlapsLunch(selectedDate, time, totalMinutes, shop?.lunchStart, shop?.lunchEnd)) {
+      if (overlapsLunchForDate(selectedDate, time, totalMinutes, shop?.lunchHours, shop?.lunchStart, shop?.lunchEnd)) {
         alert(t('booking.appointmentOverlapsLunch'));
         return;
       }
@@ -634,6 +631,7 @@ export default function BookingModal() {
                   workingHours: shop.workingHours,
                   lunchStart: shop.lunchStart,
                   lunchEnd: shop.lunchEnd,
+                  lunchHours: shop.lunchHours,
                 }
               : undefined);
           const slotOk = validateSlotAgainstShop(
@@ -641,7 +639,10 @@ export default function BookingModal() {
             shopRecord?.lunchStart,
             shopRecord?.lunchEnd,
             startTime,
-            endTime
+            endTime,
+            undefined,
+            undefined,
+            shopRecord?.lunchHours
           );
           if (!slotOk.ok) {
             continue;
@@ -736,7 +737,7 @@ export default function BookingModal() {
         setLoading(false);
         return;
       }
-      if (overlapsLunch(selectedDate, bookingState.time!, totalMinutes, shop?.lunchStart, shop?.lunchEnd)) {
+      if (overlapsLunchForDate(selectedDate, bookingState.time!, totalMinutes, shop?.lunchHours, shop?.lunchStart, shop?.lunchEnd)) {
         alert(t('booking.appointmentOverlapsLunch'));
         setLoading(false);
         return;

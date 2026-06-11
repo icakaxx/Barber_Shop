@@ -5,7 +5,7 @@ import { Save, Loader2, Trash2, Plus } from 'lucide-react';
 import type { BlockedDateRange } from '@/lib/utils/shopHours';
 import { useI18n } from '@/contexts/I18nContext';
 import ImageUploadField from '@/components/shared/ImageUploadField';
-import { DAY_KEYS, type WorkingHoursMap } from '@/lib/utils/shopHours';
+import { DAY_KEYS, type WorkingHoursMap, type LunchHoursMap } from '@/lib/utils/shopHours';
 
 interface Shop {
   id: string;
@@ -20,6 +20,7 @@ interface Shop {
   workingHoursText?: string;
   lunchStart?: string;
   lunchEnd?: string;
+  lunchHours?: LunchHoursMap;
   tiktokUrl?: string;
 }
 
@@ -49,6 +50,32 @@ const DAY_LABELS: Record<string, string> = {
   sun: 'dashboard.owner.daySun'
 };
 
+const DEFAULT_LUNCH_TIMES = { start: '13:00', end: '14:00' };
+
+function buildInitialLunchHours(shop?: Shop): LunchHoursMap {
+  const map: LunchHoursMap = {};
+  for (const day of DAY_KEYS) map[day] = null;
+
+  if (shop?.lunchHours) {
+    for (const day of DAY_KEYS) {
+      const value = shop.lunchHours[day];
+      map[day] = value === undefined ? null : value;
+    }
+    return map;
+  }
+
+  const globalLunch =
+    shop?.lunchStart && shop?.lunchEnd
+      ? { start: shop.lunchStart, end: shop.lunchEnd }
+      : null;
+
+  for (const day of DAY_KEYS) {
+    const wh = shop?.workingHours?.[day] ?? DEFAULT_HOURS[day];
+    map[day] = wh && globalLunch ? { ...globalLunch } : null;
+  }
+  return map;
+}
+
 export default function ShopSettingsTab({ shopId, shop, onShopUpdate }: ShopSettingsTabProps) {
   const { t } = useI18n();
   const [formData, setFormData] = useState({
@@ -59,10 +86,9 @@ export default function ShopSettingsTab({ shopId, shop, onShopUpdate }: ShopSett
     phone: '',
     address: '',
     city: '',
-    lunchStart: '',
-    lunchEnd: '',
     tiktokUrl: '',
-    workingHours: { ...DEFAULT_HOURS } as WorkingHoursMap
+    workingHours: { ...DEFAULT_HOURS } as WorkingHoursMap,
+    lunchHours: buildInitialLunchHours() as LunchHoursMap
   });
   const [blockedDates, setBlockedDates] = useState<BlockedDateRange[]>([]);
   const [vacationStart, setVacationStart] = useState('');
@@ -83,10 +109,9 @@ export default function ShopSettingsTab({ shopId, shop, onShopUpdate }: ShopSett
         phone: shop.phone || '',
         address: shop.address || '',
         city: shop.city || '',
-        lunchStart: shop.lunchStart || '',
-        lunchEnd: shop.lunchEnd || '',
         tiktokUrl: shop.tiktokUrl || '',
-        workingHours: { ...DEFAULT_HOURS, ...wh }
+        workingHours: { ...DEFAULT_HOURS, ...wh },
+        lunchHours: buildInitialLunchHours(shop)
       });
     }
   }, [shop]);
@@ -125,11 +150,30 @@ export default function ShopSettingsTab({ shopId, shop, onShopUpdate }: ShopSett
       const dayHours = { ...(prev.workingHours[day as keyof WorkingHoursMap] as { open: string; close: string } | null) };
       if (field === 'closed') {
         next.workingHours = { ...prev.workingHours, [day]: value ? null : { open: '09:00', close: '18:00' } };
+        if (value) {
+          next.lunchHours = { ...prev.lunchHours, [day]: null };
+        }
       } else if (typeof value === 'string') {
         next.workingHours = {
           ...prev.workingHours,
           [day]: { ...(dayHours || { open: '09:00', close: '18:00' }), [field]: value }
         };
+      }
+      return next;
+    });
+    setMessage(null);
+  };
+
+  const handleLunchHoursChange = (day: string, field: 'enabled' | 'start' | 'end', value: string | boolean) => {
+    setFormData(prev => {
+      const next = { ...prev, lunchHours: { ...prev.lunchHours } };
+      if (field === 'enabled') {
+        next.lunchHours[day as keyof LunchHoursMap] = value
+          ? { ...DEFAULT_LUNCH_TIMES }
+          : null;
+      } else if (typeof value === 'string') {
+        const current = prev.lunchHours[day as keyof LunchHoursMap] ?? { ...DEFAULT_LUNCH_TIMES };
+        next.lunchHours[day as keyof LunchHoursMap] = { ...current, [field]: value };
       }
       return next;
     });
@@ -143,6 +187,7 @@ export default function ShopSettingsTab({ shopId, shop, onShopUpdate }: ShopSett
     setSaving(true);
     setMessage(null);
     try {
+      const firstLunch = DAY_KEYS.map((d) => formData.lunchHours[d]).find((l) => l);
       const response = await fetch(`/api/shops/${shopId}`, {
         method: 'PATCH',
         credentials: 'include',
@@ -156,8 +201,9 @@ export default function ShopSettingsTab({ shopId, shop, onShopUpdate }: ShopSett
           address: formData.address || undefined,
           city: formData.city || undefined,
           workingHours: formData.workingHours,
-          lunchStart: formData.lunchStart || undefined,
-          lunchEnd: formData.lunchEnd || undefined,
+          lunchHours: formData.lunchHours,
+          lunchStart: firstLunch?.start || undefined,
+          lunchEnd: firstLunch?.end || undefined,
           tiktokUrl: formData.tiktokUrl || undefined,
         })
       });
@@ -335,6 +381,8 @@ export default function ShopSettingsTab({ shopId, shop, onShopUpdate }: ShopSett
             {DAY_KEYS.map((day) => {
               const hours = formData.workingHours[day];
               const isClosed = !hours;
+              const dayLunch = formData.lunchHours[day];
+              const hasLunch = !!dayLunch;
               return (
                 <div key={day} className="flex flex-wrap items-center gap-2">
                   <span className="w-12 text-sm font-medium">{t(DAY_LABELS[day])}</span>
@@ -362,35 +410,39 @@ export default function ShopSettingsTab({ shopId, shop, onShopUpdate }: ShopSett
                         onChange={(e) => handleWorkingHoursChange(day, 'close', e.target.value)}
                         className="p-2 border border-gray-200 rounded-lg text-sm"
                       />
+                      <label className="flex items-center gap-1 text-sm ml-1">
+                        <input
+                          type="checkbox"
+                          checked={hasLunch}
+                          onChange={(e) => handleLunchHoursChange(day, 'enabled', e.target.checked)}
+                          className="rounded border-gray-300"
+                        />
+                        {t('dashboard.owner.lunchBreak')}
+                      </label>
+                      {hasLunch && (
+                        <>
+                          <input
+                            type="time"
+                            value={dayLunch?.start || '13:00'}
+                            onChange={(e) => handleLunchHoursChange(day, 'start', e.target.value)}
+                            className="p-2 border border-gray-200 rounded-lg text-sm"
+                          />
+                          <span className="text-gray-400">–</span>
+                          <input
+                            type="time"
+                            value={dayLunch?.end || '14:00'}
+                            onChange={(e) => handleLunchHoursChange(day, 'end', e.target.value)}
+                            className="p-2 border border-gray-200 rounded-lg text-sm"
+                          />
+                        </>
+                      )}
                     </>
                   )}
                 </div>
               );
             })}
           </div>
-        </div>
-
-        {/* Lunch Break */}
-        <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">
-            {t('dashboard.owner.lunchBreak')}
-          </label>
-          <p className="text-xs text-gray-500 mb-2">{t('dashboard.owner.lunchBreakHelp')}</p>
-          <div className="flex items-center gap-3">
-            <input
-              type="time"
-              value={formData.lunchStart}
-              onChange={(e) => handleChange('lunchStart', e.target.value)}
-              className="p-2 border border-gray-200 rounded-lg text-sm"
-            />
-            <span className="text-gray-400">–</span>
-            <input
-              type="time"
-              value={formData.lunchEnd}
-              onChange={(e) => handleChange('lunchEnd', e.target.value)}
-              className="p-2 border border-gray-200 rounded-lg text-sm"
-            />
-          </div>
+          <p className="text-xs text-gray-500 mt-2">{t('dashboard.owner.lunchBreakHelp')}</p>
         </div>
 
         {/* TikTok */}

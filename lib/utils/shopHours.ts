@@ -11,6 +11,13 @@ export interface DayHours {
 
 export type WorkingHoursMap = Partial<Record<DayKey, DayHours | null>>;
 
+export interface DayLunch {
+  start: string; // "13:00"
+  end: string; // "14:00"
+}
+
+export type LunchHoursMap = Partial<Record<DayKey, DayLunch | null>>;
+
 const DEFAULT_HOURS: WorkingHoursMap = {
   mon: { open: '09:00', close: '18:00' },
   tue: { open: '09:00', close: '18:00' },
@@ -58,6 +65,45 @@ export function getHoursForDate(
   const d = date.getDate();
   const dateStr = `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
   return getHoursForCalendarDate(workingHours, dateStr);
+}
+
+/**
+ * Lunch break for a calendar date (YYYY-MM-DD).
+ * Per-day `lunchHours` wins; falls back to shop-wide lunch_start/lunch_end.
+ */
+export function getLunchForCalendarDate(
+  lunchHours: LunchHoursMap | undefined,
+  dateStr: string,
+  globalLunchStart?: string,
+  globalLunchEnd?: string
+): DayLunch | null {
+  const parts = dateStr.split('-').map(Number);
+  const y = parts[0];
+  const mo = parts[1];
+  const d = parts[2];
+  if (!y || !mo || !d) return null;
+  const utcNoon = new Date(Date.UTC(y, mo - 1, d, 12, 0, 0));
+  const dayIndex = utcNoon.getUTCDay();
+  const key = dayIndex === 0 ? 'sun' : DAY_KEYS[dayIndex - 1];
+
+  if (lunchHours != null && Object.prototype.hasOwnProperty.call(lunchHours, key)) {
+    const h = lunchHours[key];
+    if (h === undefined) {
+      // fall through to global
+    } else if (h === null) {
+      return null;
+    } else if (h.start && h.end) {
+      return h;
+    } else {
+      return null;
+    }
+  }
+
+  if (globalLunchStart && globalLunchEnd) {
+    return { start: globalLunchStart, end: globalLunchEnd };
+  }
+
+  return null;
 }
 
 /** Default timezone for shop hours validation (API + “any barber” checks). */
@@ -190,7 +236,8 @@ export function validateSlotAgainstShop(
   start: Date,
   end: Date,
   timeZone = SHOP_BUSINESS_TIMEZONE,
-  blockedRanges?: BlockedDateRange[]
+  blockedRanges?: BlockedDateRange[],
+  lunchHours?: LunchHoursMap
 ): { ok: true } | { ok: false; code: ShopSlotValidationCode } {
   const dateStr = formatDateYYYYMMDDInTimeZone(start, timeZone);
   const endDateStr = formatDateYYYYMMDDInTimeZone(end, timeZone);
@@ -230,7 +277,8 @@ export function validateSlotAgainstShop(
     return { ok: false, code: 'OUTSIDE_HOURS' };
   }
 
-  if (overlapsLunch(dateStr, startHm, durationMinutes, lunchStart, lunchEnd)) {
+  const lunch = getLunchForCalendarDate(lunchHours, dateStr, lunchStart, lunchEnd);
+  if (overlapsLunch(dateStr, startHm, durationMinutes, lunch?.start, lunch?.end)) {
     return { ok: false, code: 'LUNCH' };
   }
 
@@ -276,6 +324,31 @@ export function formatWorkingHoursForDisplay(workingHours: WorkingHoursMap | und
     }
   }
   return parts.join(', ');
+}
+
+/** Lunch for a date, then check if a slot start falls inside it */
+export function isDuringLunchForDate(
+  dateStr: string,
+  timeStr: string,
+  lunchHours?: LunchHoursMap,
+  globalLunchStart?: string,
+  globalLunchEnd?: string
+): boolean {
+  const lunch = getLunchForCalendarDate(lunchHours, dateStr, globalLunchStart, globalLunchEnd);
+  return isDuringLunch(dateStr, timeStr, lunch?.start, lunch?.end);
+}
+
+/** Lunch for a date, then check if appointment overlaps it */
+export function overlapsLunchForDate(
+  dateStr: string,
+  startTimeStr: string,
+  durationMinutes: number,
+  lunchHours?: LunchHoursMap,
+  globalLunchStart?: string,
+  globalLunchEnd?: string
+): boolean {
+  const lunch = getLunchForCalendarDate(lunchHours, dateStr, globalLunchStart, globalLunchEnd);
+  return overlapsLunch(dateStr, startTimeStr, durationMinutes, lunch?.start, lunch?.end);
 }
 
 /** Check if appointment (start + duration) overlaps lunch */

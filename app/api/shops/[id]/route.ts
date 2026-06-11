@@ -19,6 +19,7 @@ function mapShop(shop: Record<string, unknown>, includeOwnerId: boolean) {
     workingHours: shop.working_hours || undefined,
     lunchStart: shop.lunch_start || undefined,
     lunchEnd: shop.lunch_end || undefined,
+    lunchHours: shop.lunch_hours || undefined,
     logoUrl: shop.logo_url || undefined,
     heroImageUrl: shop.hero_image_url || undefined,
     heroDescription: shop.hero_description || undefined,
@@ -85,6 +86,7 @@ export async function PATCH(
       workingHoursText,
       lunchStart,
       lunchEnd,
+      lunchHours,
       tiktokUrl,
     } = body
 
@@ -100,6 +102,7 @@ export async function PATCH(
     if (workingHoursText !== undefined) updates.working_hours_text = workingHoursText || null
     if (lunchStart !== undefined) updates.lunch_start = lunchStart || null
     if (lunchEnd !== undefined) updates.lunch_end = lunchEnd || null
+    if (lunchHours !== undefined) updates.lunch_hours = lunchHours || null
     if (tiktokUrl !== undefined) updates.tiktok_url = tiktokUrl || null
 
     if (Object.keys(updates).length === 0) {

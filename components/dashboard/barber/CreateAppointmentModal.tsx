@@ -5,7 +5,7 @@ import { X, Check, Calendar } from 'lucide-react';
 import type { Barber } from '@/lib/types';
 import { useI18n } from '@/contexts/I18nContext';
 import { BOOKING_SLOT_MINUTES } from '@/lib/utils/bookingSlots';
-import { shopLocalDateTimeToUtc, parseAppointmentInstant, formatTimeHHMMInTimeZone, getHoursForCalendarDate, overlapsLunch, type WorkingHoursMap } from '@/lib/utils/shopHours';
+import { shopLocalDateTimeToUtc, parseAppointmentInstant, formatTimeHHMMInTimeZone, getHoursForCalendarDate, overlapsLunchForDate, type WorkingHoursMap, type LunchHoursMap } from '@/lib/utils/shopHours';
 
 interface Service {
   id: string;
@@ -31,6 +31,7 @@ interface CreateAppointmentModalProps {
   workingHours?: WorkingHoursMap;
   lunchStart?: string;
   lunchEnd?: string;
+  lunchHours?: LunchHoursMap;
 }
 
 export default function CreateAppointmentModal({
@@ -42,7 +43,8 @@ export default function CreateAppointmentModal({
   selectedDate: initialSelectedDate,
   workingHours,
   lunchStart,
-  lunchEnd
+  lunchEnd,
+  lunchHours
 }: CreateAppointmentModalProps) {
   const { t, translateServiceName, locale, formatPrice } = useI18n();
   const [services, setServices] = useState<Service[]>([]);
@@ -191,7 +193,7 @@ export default function CreateAppointmentModal({
       return false;
     }
 
-    if (overlapsLunch(selectedDate, timeStr, totalDuration, lunchStart, lunchEnd)) {
+    if (overlapsLunchForDate(selectedDate, timeStr, totalDuration, lunchHours, lunchStart, lunchEnd)) {
       return false;
     }
 
