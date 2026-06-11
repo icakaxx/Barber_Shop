@@ -40,6 +40,31 @@ type AppointmentRow = {
   services: { name: string } | null
 }
 
+/** Supabase may return a joined row as an object or a one-element array. */
+function joinRow<T>(value: T | T[] | null | undefined): T | null {
+  if (value == null) return null
+  return Array.isArray(value) ? (value[0] ?? null) : value
+}
+
+function normalizeAppointmentRow(raw: Record<string, unknown>): AppointmentRow {
+  return {
+    id: raw.id as string,
+    customer_name: raw.customer_name as string,
+    customer_email: raw.customer_email as string,
+    start_time: raw.start_time as string,
+    end_time: raw.end_time as string,
+    notes: (raw.notes as string | null) ?? null,
+    barbers: joinRow(raw.barbers as { display_name: string } | { display_name: string }[] | null),
+    shops: joinRow(
+      raw.shops as
+        | { name: string; phone: string | null; logo_url: string | null }
+        | { name: string; phone: string | null; logo_url: string | null }[]
+        | null
+    ),
+    services: joinRow(raw.services as { name: string } | { name: string }[] | null),
+  }
+}
+
 function authorizeCron(request: NextRequest): boolean {
   const secret = process.env.CRON_SECRET
   if (!secret) return false
@@ -81,7 +106,7 @@ async function processReminders(kind: ReminderKind) {
     throw error
   }
 
-  const rows = (data ?? []) as AppointmentRow[]
+  const rows = (data ?? []).map((row) => normalizeAppointmentRow(row as Record<string, unknown>))
   let sent = 0
   let failed = 0
 
