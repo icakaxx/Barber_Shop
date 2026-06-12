@@ -6,6 +6,14 @@ import { getBarbers } from '@/lib/supabase/barbers';
 import type { Barber } from '@/lib/types';
 import { getStatusBadge } from '@/lib/utils/statusBadge';
 import { useI18n } from '@/contexts/I18nContext';
+import {
+  formatAppointmentTimeInShopTz,
+  formatShopCalendarDateLabel,
+  getShopTodayYMD,
+  formatDateYYYYMMDDInTimeZone,
+  parseAppointmentInstant,
+  SHOP_BUSINESS_TIMEZONE,
+} from '@/lib/utils/shopHours';
 
 interface Appointment {
   id: string;
@@ -26,12 +34,12 @@ interface Appointment {
 }
 
 export default function AppointmentsTab() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [barbers, setBarbers] = useState<Barber[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedBarber, setSelectedBarber] = useState<string>('all');
-  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState<string>(getShopTodayYMD());
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
 
   useEffect(() => {
@@ -78,14 +86,11 @@ export default function AppointmentsTab() {
     }
   };
 
-  const formatTime = (isoString: string) => {
-    const date = new Date(isoString);
-    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
-  };
+  const formatTime = (isoString: string) => formatAppointmentTimeInShopTz(isoString);
 
   const formatDate = (isoString: string) => {
-    const date = new Date(isoString);
-    return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    const dateStr = formatDateYYYYMMDDInTimeZone(parseAppointmentInstant(isoString), SHOP_BUSINESS_TIMEZONE);
+    return formatShopCalendarDateLabel(dateStr, locale, 'long');
   };
 
   return (
@@ -158,7 +163,7 @@ export default function AppointmentsTab() {
             onClick={() => {
               setSelectedBarber('all');
               setSelectedStatus('all');
-              setSelectedDate(new Date().toISOString().split('T')[0]);
+              setSelectedDate(getShopTodayYMD());
             }}
             className="mt-4 flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
           >

@@ -1,5 +1,6 @@
 import { supabase } from './client'
 import type { Barber, TimeSlot, BarberSchedule } from '../types'
+import { getShopLocalDayQueryBounds, getShopTodayYMD } from '@/lib/utils/shopHours'
 
 // Get all barbers with profile and shop information
 // Uses API route to avoid RLS issues
@@ -118,15 +119,14 @@ export async function getBarberSchedule(barberId: string, date: string): Promise
   const client = supabase
   
   try {
-    const startOfDay = new Date(`${date}T00:00:00Z`);
-    const endOfDay = new Date(`${date}T23:59:59Z`);
+    const { startIso, endExclusiveIso } = getShopLocalDayQueryBounds(date);
 
     const { data, error } = await client
       .from('time_slots')
       .select('*')
       .eq('barber_id', barberId)
-      .gte('start_time', startOfDay.toISOString())
-      .lte('start_time', endOfDay.toISOString())
+      .gte('start_time', startIso)
+      .lt('start_time', endExclusiveIso)
       .order('start_time')
 
     if (error) {
@@ -156,7 +156,7 @@ export async function getBarberSchedule(barberId: string, date: string): Promise
 
 // Helper function for mock schedule
 function getMockSchedule(barberId: string, date: string): BarberSchedule {
-  const today = new Date().toISOString().split('T')[0];
+  const today = getShopTodayYMD();
   if (date === today) {
     return {
       barberId,

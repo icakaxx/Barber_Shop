@@ -7,10 +7,23 @@ import type { Service } from '@/lib/types';
 import { useI18n } from '@/contexts/I18nContext';
 import { extractPrice } from '@/lib/utils/price';
 
+/** Renders "12.00 €" and "(23.47 лв)" on separate lines for service cards. */
+function StackedServicePrice({ formatted }: { formatted: string }) {
+  const match = formatted.match(/^(.+? €)\s*\((.+)\)$/);
+  if (!match) return <>{formatted}</>;
+  return (
+    <>
+      {match[1]}
+      <br />
+      ({match[2]})
+    </>
+  );
+}
+
 export default function ServicesSection() {
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
-  const { t, formatPrice, currency } = useI18n();
+  const { t, formatPrice, currency, translateServiceName } = useI18n();
 
   useEffect(() => {
     loadServices();
@@ -113,21 +126,26 @@ export default function ServicesSection() {
                     {t('services.bestValue')}
                   </span>
                   <div>
-                    <h3 className="text-xl font-bold mb-1">{service.name}</h3>
+                    <h3 className="text-xl font-bold mb-1">{translateServiceName(service.name)}</h3>
                     <p className="text-sm text-gray-400 mb-1">{service.duration} • {t('services.theWorks')}</p>
                   </div>
                 </div>
               )}
               {!service.best && (
                 <>
-                  <h3 className="text-xl font-bold mb-1">{service.name}</h3>
+                  <h3 className="text-xl font-bold mb-1">{translateServiceName(service.name)}</h3>
                   <p className="text-sm text-gray-500 mb-4">{service.duration} • {t('services.professionalCut')}</p>
                 </>
               )}
-              <div className="flex justify-center items-end gap-3 flex-wrap">
-                <p className="text-3xl font-bold">
-                  {service.priceBgn ? formatPrice(service.priceBgn) : service.price}
+              <div className="flex flex-col items-center">
+                <p className="text-3xl font-bold leading-tight">
+                  {service.priceBgn ? (
+                    <StackedServicePrice formatted={formatPrice(service.priceBgn)} />
+                  ) : (
+                    service.price
+                  )}
                 </p>
+                <br />
                 <span
                   className={`text-sm font-bold inline-flex items-center gap-1 ${
                     service.best

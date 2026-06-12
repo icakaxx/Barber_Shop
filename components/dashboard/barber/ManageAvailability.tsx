@@ -2,6 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { Plus, ChevronLeft, ChevronRight, CheckCircle, Coffee, Trash2, Clock } from 'lucide-react';
+import { useI18n } from '@/contexts/I18nContext';
+import {
+  addCalendarDays,
+  formatAppointmentTimeInShopTz,
+  formatShopCalendarDateLabel,
+  getShopTodayYMD,
+} from '@/lib/utils/shopHours';
 
 interface TimeSlot {
   id: string;
@@ -17,7 +24,8 @@ interface ManageAvailabilityProps {
 }
 
 export default function ManageAvailability({ barberId }: ManageAvailabilityProps) {
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const { t, locale } = useI18n();
+  const [selectedDate, setSelectedDate] = useState(getShopTodayYMD());
   const [slots, setSlots] = useState<TimeSlot[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -29,8 +37,7 @@ export default function ManageAvailability({ barberId }: ManageAvailabilityProps
 
     const loadAvailability = async () => {
       try {
-        const dateStr = selectedDate.toISOString().split('T')[0];
-        const response = await fetch(`/api/barbers/${barberId}/availability?date=${dateStr}`);
+        const response = await fetch(`/api/barbers/${barberId}/availability?date=${selectedDate}`);
         
         if (response.ok) {
           const data = await response.json();
@@ -46,19 +53,18 @@ export default function ManageAvailability({ barberId }: ManageAvailabilityProps
     loadAvailability();
   }, [barberId, selectedDate]);
 
-  const formatTime = (timeString: string) => {
-    const date = new Date(timeString);
-    return date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-  };
+  const formatTime = (timeString: string) => formatAppointmentTimeInShopTz(timeString);
 
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-  };
+  const formatDate = (dateStr: string) => formatShopCalendarDateLabel(dateStr, locale, 'long');
 
   const changeDate = (days: number) => {
-    const newDate = new Date(selectedDate);
-    newDate.setDate(newDate.getDate() + days);
-    setSelectedDate(newDate);
+    setSelectedDate((prev) => addCalendarDays(prev, days));
+  };
+
+  const getSlotLabel = (slot: TimeSlot) => {
+    if (slot.isBooked) return t('dashboard.barber.booked');
+    if (slot.type === 'BREAK') return t('dashboard.barber.slotBreak');
+    return t('dashboard.barber.available');
   };
 
   if (loading) {
@@ -66,11 +72,11 @@ export default function ManageAvailability({ barberId }: ManageAvailabilityProps
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>
-            <h2 className="text-2xl font-bold">Manage Availability</h2>
-            <p className="text-gray-500">Set your working hours and breaks.</p>
+            <h2 className="text-2xl font-bold">{t('dashboard.barber.manageAvailability')}</h2>
+            <p className="text-gray-500">{t('dashboard.barber.setWorkingHoursDescription')}</p>
           </div>
         </div>
-        <div className="text-center py-12 text-gray-400">Loading availability...</div>
+        <div className="text-center py-12 text-gray-400">{t('dashboard.barber.loadingSchedule')}</div>
       </div>
     );
   }
@@ -79,11 +85,11 @@ export default function ManageAvailability({ barberId }: ManageAvailabilityProps
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold">Manage Availability</h2>
-          <p className="text-gray-500">Set your working hours and breaks.</p>
+          <h2 className="text-2xl font-bold">{t('dashboard.barber.manageAvailability')}</h2>
+          <p className="text-gray-500">{t('dashboard.barber.setWorkingHoursDescription')}</p>
         </div>
         <button className="bg-black text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-black/90 transition-all">
-          <Plus className="w-4 h-4" /> Add Slot
+          <Plus className="w-4 h-4" /> {t('dashboard.barber.addSlot')}
         </button>
       </div>
 
@@ -107,8 +113,8 @@ export default function ManageAvailability({ barberId }: ManageAvailabilityProps
           {slots.length === 0 ? (
             <div className="p-8 text-center text-gray-400">
               <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p>No availability slots for this date.</p>
-              <p className="text-sm mt-2">Click &quot;Add Slot&quot; to create one.</p>
+              <p>{t('dashboard.barber.noAvailabilitySlots')}</p>
+              <p className="text-sm mt-2">{t('dashboard.barber.clickAddSlotHint')}</p>
             </div>
           ) : (
             slots.map((slot) => (
@@ -141,7 +147,7 @@ export default function ManageAvailability({ barberId }: ManageAvailabilityProps
                       {formatTime(slot.startTime)} - {formatTime(slot.endTime)}
                     </p>
                     <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">
-                      {slot.isBooked ? 'BOOKED' : slot.type}
+                      {getSlotLabel(slot)}
                     </p>
                   </div>
                 </div>

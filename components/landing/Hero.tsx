@@ -8,12 +8,18 @@ import BarberCards from './BarberCards';
 const DEFAULT_HERO_IMAGE = 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?q=80&w=2074&auto=format&fit=crop';
 
 export default function Hero() {
-  const { t } = useI18n();
+  const { t, translateDbContent, locale } = useI18n();
   const { shop, barbers, isLoading } = useShopBranding();
   // Only use default when loaded and no custom image - avoids flash of old image on first load
   const heroImageUrl = isLoading ? undefined : (shop?.heroImageUrl || DEFAULT_HERO_IMAGE);
-  const shopName = shop?.name || t('hero.title');
-  const heroDescription = shop?.heroDescription || t('hero.premiumCuts');
+  const shopName = translateDbContent(shop?.name) || t('hero.title');
+  const translatedHero = shop?.heroDescription ? translateDbContent(shop.heroDescription) : undefined;
+  const heroDescription =
+    translatedHero ??
+    ((locale === 'en' && shop?.heroDescription && /[\u0400-\u04FF]/.test(shop.heroDescription)
+      ? t('hero.premiumCuts')
+      : shop?.heroDescription) ||
+      t('hero.premiumCuts'));
 
   return (
     <section className="relative min-h-[85dvh] sm:min-h-[90vh] flex items-center justify-center bg-black overflow-hidden">

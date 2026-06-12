@@ -2,10 +2,11 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { Suspense } from 'react';
 import LoginPageContent from '@/components/auth/LoginPageContent';
+import { META_LOGIN_OWNER_DESCRIPTION, META_LOGIN_OWNER_TITLE } from '@/lib/seo-defaults';
 
 export const metadata = {
-  title: 'Вход за собственик | Клуб мъжки свят',
-  description: 'Влезте за достъп до таблото на собственика',
+  title: META_LOGIN_OWNER_TITLE,
+  description: META_LOGIN_OWNER_DESCRIPTION,
 };
 
 export default async function LoginPage({

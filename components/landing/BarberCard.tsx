@@ -10,8 +10,9 @@ interface BarberCardProps {
 }
 
 export default function BarberCard({ barber, compact = false }: BarberCardProps) {
-  const { t } = useI18n();
+  const { t, translateDbContent } = useI18n();
   const [expanded, setExpanded] = useState(false);
+  const displayName = translateDbContent(barber.displayName) ?? barber.displayName;
 
   const openBookingWithBarber = () => {
     const modal = document.getElementById('bookingModal');
@@ -33,7 +34,7 @@ export default function BarberCard({ barber, compact = false }: BarberCardProps)
         {barber.photoUrl ? (
           <img
             src={barber.photoUrl}
-            alt={barber.displayName}
+            alt={displayName}
             className="absolute inset-0 w-full h-full object-cover object-[center_20%]"
           />
         ) : (
@@ -47,7 +48,7 @@ export default function BarberCard({ barber, compact = false }: BarberCardProps)
       </div>
       <div className={`flex flex-col flex-1 ${compact ? 'p-3' : 'p-4'}`}>
         <h3 className={`font-semibold text-gray-900 ${compact ? 'text-sm' : 'text-lg'}`}>
-          {barber.displayName}
+          {displayName}
         </h3>
         {barber.bio && (
           <div className="mt-1">
@@ -56,7 +57,7 @@ export default function BarberCard({ barber, compact = false }: BarberCardProps)
                 expanded ? '' : 'line-clamp-2'
               }`}
             >
-              {barber.bio}
+              {translateDbContent(barber.bio) ?? barber.bio}
             </p>
             <button
               type="button"

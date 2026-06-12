@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { X, Plus, Edit, Trash2, Clock, CheckCircle, Coffee } from 'lucide-react';
+import { useI18n } from '@/contexts/I18nContext';
 import type { Barber, BarberSchedule, TimeSlot } from '@/lib/types';
 
 type ScheduleSlot = {
@@ -19,6 +20,8 @@ interface BarberScheduleModalProps {
 }
 
 export default function BarberScheduleModal({ barber, schedule, onClose }: BarberScheduleModalProps) {
+  const { t, locale } = useI18n();
+  const dateLocale = locale === 'bg' ? 'bg-BG' : 'en-GB';
   const [slots, setSlots] = useState<ScheduleSlot[]>(
     schedule?.slots?.map((s) => ({
       id: s.id,
@@ -104,6 +107,19 @@ export default function BarberScheduleModal({ barber, schedule, onClose }: Barbe
     }
   };
 
+  const getSlotTypeLabel = (type: ScheduleSlot['type']) => {
+    switch (type) {
+      case 'AVAILABLE':
+        return t('dashboard.barber.available');
+      case 'BREAK':
+        return t('dashboard.barber.slotBreak');
+      case 'APPOINTMENT':
+        return t('admin.slotAppointment');
+      default:
+        return t('admin.slotUnavailable');
+    }
+  };
+
   const sortedSlots = [...slots].sort((a, b) =>
     a.startTime.localeCompare(b.startTime)
   );
@@ -114,8 +130,10 @@ export default function BarberScheduleModal({ barber, schedule, onClose }: Barbe
       <div className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-bold">Schedule: {barber.displayName}</h2>
-            <p className="text-sm text-gray-500">Today - {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })}</p>
+            <h2 className="text-xl font-bold">{t('admin.scheduleTitle')}: {barber.displayName}</h2>
+            <p className="text-sm text-gray-500">
+              {t('admin.scheduleToday')} - {new Date().toLocaleDateString(dateLocale, { weekday: 'long', day: 'numeric', month: 'short' })}
+            </p>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full">
             <X className="w-6 h-6" />
@@ -131,7 +149,9 @@ export default function BarberScheduleModal({ barber, schedule, onClose }: Barbe
               </div>
               <div>
                 <p className="font-bold">{barber.displayName}</p>
-                <p className="text-sm text-gray-600">{barber.profile?.role || 'BARBER_WORKER'} • {barber.isActive ? 'Active' : 'Inactive'}</p>
+                <p className="text-sm text-gray-600">
+                  {barber.profile?.role || 'BARBER_WORKER'} • {barber.isActive ? t('status.active') : t('status.inactive')}
+                </p>
               </div>
             </div>
           </div>
@@ -140,11 +160,11 @@ export default function BarberScheduleModal({ barber, schedule, onClose }: Barbe
           {(showAddSlot || editingSlot) && (
             <div className="bg-gray-50 p-4 rounded-xl mb-6">
               <h3 className="font-bold mb-4">
-                {editingSlot ? 'Edit Slot' : 'Add New Slot'}
+                {editingSlot ? t('admin.editSlot') : t('admin.addNewSlot')}
               </h3>
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">Start Time</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">{t('dashboard.owner.startTime')}</label>
                   <input
                     type="time"
                     value={newSlot.startTime}
@@ -153,7 +173,7 @@ export default function BarberScheduleModal({ barber, schedule, onClose }: Barbe
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">End Time</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">{t('dashboard.owner.endTime')}</label>
                   <input
                     type="time"
                     value={newSlot.endTime}
@@ -163,25 +183,25 @@ export default function BarberScheduleModal({ barber, schedule, onClose }: Barbe
                 </div>
               </div>
               <div className="mb-4">
-                <label className="block text-sm font-bold text-gray-700 mb-1">Type</label>
+                <label className="block text-sm font-bold text-gray-700 mb-1">{t('admin.slotType')}</label>
                 <select
                   value={newSlot.type}
                   onChange={(e) => setNewSlot(prev => ({ ...prev, type: e.target.value as ScheduleSlot['type'] }))}
                   className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
                 >
-                  <option value="AVAILABLE">Available</option>
-                  <option value="BREAK">Break</option>
-                  <option value="UNAVAILABLE">Unavailable</option>
+                  <option value="AVAILABLE">{t('dashboard.barber.available')}</option>
+                  <option value="BREAK">{t('dashboard.barber.slotBreak')}</option>
+                  <option value="UNAVAILABLE">{t('admin.slotUnavailable')}</option>
                 </select>
               </div>
               <div className="mb-4">
-                <label className="block text-sm font-bold text-gray-700 mb-1">Notes (Optional)</label>
+                <label className="block text-sm font-bold text-gray-700 mb-1">{t('admin.slotNotesOptional')}</label>
                 <input
                   type="text"
                   value={newSlot.notes}
                   onChange={(e) => setNewSlot(prev => ({ ...prev, notes: e.target.value }))}
                   className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
-                  placeholder="e.g. Lunch break, meeting"
+                  placeholder={t('admin.slotNotesPlaceholder')}
                 />
               </div>
               <div className="flex justify-end gap-2">
@@ -193,13 +213,13 @@ export default function BarberScheduleModal({ barber, schedule, onClose }: Barbe
                   }}
                   className="px-4 py-2 text-sm font-bold border border-gray-200 rounded-lg hover:bg-gray-50"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
                 <button
                   onClick={editingSlot ? handleUpdateSlot : handleAddSlot}
                   className="px-4 py-2 text-sm font-bold bg-black text-white rounded-lg hover:bg-black/90"
                 >
-                  {editingSlot ? 'Update' : 'Add'} Slot
+                  {editingSlot ? `${t('admin.updateSlot')} ${t('admin.addSlotLabel')}` : t('admin.addSlotLabel')}
                 </button>
               </div>
             </div>
@@ -208,18 +228,18 @@ export default function BarberScheduleModal({ barber, schedule, onClose }: Barbe
           {/* Schedule Slots */}
           <div className="space-y-3">
             <div className="flex justify-between items-center">
-              <h3 className="text-lg font-bold">Today&apos;s Schedule</h3>
+              <h3 className="text-lg font-bold">{t('admin.todaysSchedule')}</h3>
               <button
                 onClick={() => setShowAddSlot(true)}
                 className="flex items-center gap-2 px-3 py-1 bg-black text-white text-sm rounded-lg hover:bg-black/90"
               >
-                <Plus className="w-4 h-4" /> Add Slot
+                <Plus className="w-4 h-4" /> {t('admin.addSlotLabel')}
               </button>
             </div>
 
             {sortedSlots.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
-                No schedule set for today
+                {t('admin.noScheduleToday')}
               </div>
             ) : (
               sortedSlots.map((slot) => (
@@ -234,8 +254,8 @@ export default function BarberScheduleModal({ barber, schedule, onClose }: Barbe
                         <p className="font-bold">
                           {slot.startTime} - {slot.endTime}
                         </p>
-                        <p className="text-sm text-gray-600 capitalize">
-                          {slot.type.toLowerCase()}
+                        <p className="text-sm text-gray-600">
+                          {getSlotTypeLabel(slot.type)}
                           {slot.notes && ` • ${slot.notes}`}
                         </p>
                       </div>
@@ -244,14 +264,14 @@ export default function BarberScheduleModal({ barber, schedule, onClose }: Barbe
                       <button
                         onClick={() => handleEditSlot(slot)}
                         className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
-                        title="Edit Slot"
+                        title={t('admin.editSlotTitle')}
                       >
                         <Edit className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDeleteSlot(slot.id)}
                         className="p-1 text-gray-400 hover:text-red-600 transition-colors"
-                        title="Delete Slot"
+                        title={t('admin.deleteSlotTitle')}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -268,12 +288,12 @@ export default function BarberScheduleModal({ barber, schedule, onClose }: Barbe
               onClick={onClose}
               className="px-6 py-2 text-sm font-bold border border-gray-200 rounded-lg hover:bg-gray-50"
             >
-              Close
+              {t('common.close')}
             </button>
             <button
               className="px-6 py-2 text-sm font-bold bg-black text-white rounded-lg hover:bg-black/90"
             >
-              Save Schedule
+              {t('admin.saveSchedule')}
             </button>
           </div>
         </div>

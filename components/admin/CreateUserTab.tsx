@@ -123,9 +123,6 @@ export default function CreateUserTab() {
 
   return (
     <div className="max-w-xl space-y-6">
-      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-900">
-        {t('dashboard.admin.createUserWarning')}
-      </div>
 
       <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-4">
         {message && (

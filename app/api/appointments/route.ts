@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase/admin'
-import { validateSlotAgainstShop } from '@/lib/utils/shopHours'
+import { validateSlotAgainstShop, getShopLocalDayQueryBounds, formatDateYYYYMMDDInTimeZone, formatTimeHHMMInTimeZone, SHOP_BUSINESS_TIMEZONE } from '@/lib/utils/shopHours'
 import { sendAppointmentEmail } from '@/lib/email/appointmentEmail'
 import { requireAuthContext, requireRoles } from '@/lib/auth/getAuthContext'
 import { STAFF_ROLES } from '@/lib/auth/types'
@@ -86,11 +86,10 @@ export async function GET(request: NextRequest) {
     }
 
     if (date) {
-      const startOfDay = new Date(`${date}T00:00:00Z`)
-      const endOfDay = new Date(`${date}T23:59:59Z`)
+      const { startIso, endExclusiveIso } = getShopLocalDayQueryBounds(date)
       query = query
-        .gte('start_time', startOfDay.toISOString())
-        .lte('start_time', endOfDay.toISOString())
+        .gte('start_time', startIso)
+        .lt('start_time', endExclusiveIso)
     }
 
     if (createdAfter) {
@@ -249,15 +248,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { data: existing } = await admin
-      .from('appointments')
-      .select('id')
-      .eq('barber_id', barberId)
-      .eq('start_time', startTime)
-      .in('status', ['PENDING', 'CONFIRMED'])
-      .single()
+    const startIso = start.toISOString()
+    const endIso = end.toISOString()
+    const shopDateStr = formatDateYYYYMMDDInTimeZone(start, SHOP_BUSINESS_TIMEZONE)
 
-    if (existing) {
+    const { data: conflicts, error: conflictError } = await admin
+      .from('appointments')
+      .select('id, start_time, end_time, status')
+      .eq('barber_id', barberId)
+      .lt('start_time', endIso)
+      .gt('end_time', startIso)
+      .in('status', ['PENDING', 'CONFIRMED'])
+
+    const { startIso: dayStartIso, endExclusiveIso: dayEndIso } = getShopLocalDayQueryBounds(shopDateStr)
+
+    if (conflicts && conflicts.length > 0) {
       return NextResponse.json(
         { error: 'This time slot is already booked' },
         { status: 409 }

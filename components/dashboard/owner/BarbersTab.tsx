@@ -7,6 +7,11 @@ import BarberFormModal from '@/components/admin/BarberFormModal';
 import { useI18n } from '@/contexts/I18nContext';
 import type { AppointmentStatus } from '@/lib/types';
 import type { Barber } from '@/lib/types';
+import {
+  addCalendarDays,
+  formatAppointmentTimeInShopTz,
+  formatShopCalendarDateLabel,
+} from '@/lib/utils/shopHours';
 
 interface Appointment {
   id: string;
@@ -82,30 +87,15 @@ export default function BarbersTab({
     return appointments.filter(apt => apt.barberId === barberId).length;
   };
 
-  const formatTime = (timeString: string) => {
-    const date = new Date(timeString);
-    return date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-  };
+  const formatTime = (timeString: string) => formatAppointmentTimeInShopTz(timeString);
 
   const formatTimeRange = (startTime: string, endTime: string) => {
     return `${formatTime(startTime)} - ${formatTime(endTime)}`;
   };
 
-  const formatDisplayDate = (dateString: string) => {
-    const date = new Date(`${dateString}T12:00:00`);
-    return date.toLocaleDateString(locale === 'bg' ? 'bg-BG' : 'en-GB', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  };
+  const formatDisplayDate = (dateString: string) => formatShopCalendarDateLabel(dateString, locale, 'long');
 
-  const shiftDateByDays = (dateString: string, days: number) => {
-    const date = new Date(`${dateString}T12:00:00`);
-    date.setDate(date.getDate() + days);
-    return date.toISOString().split('T')[0];
-  };
+  const shiftDateByDays = (dateString: string, days: number) => addCalendarDays(dateString, days);
 
   const parseServicesFromNotes = (notes: string | undefined): string[] => {
     if (!notes) return [];

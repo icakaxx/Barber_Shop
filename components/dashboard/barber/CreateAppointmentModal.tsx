@@ -5,7 +5,7 @@ import { X, Check, Calendar } from 'lucide-react';
 import type { Barber } from '@/lib/types';
 import { useI18n } from '@/contexts/I18nContext';
 import { BOOKING_SLOT_MINUTES } from '@/lib/utils/bookingSlots';
-import { shopLocalDateTimeToUtc, parseAppointmentInstant, formatTimeHHMMInTimeZone, getHoursForCalendarDate, overlapsLunchForDate, type WorkingHoursMap, type LunchHoursMap } from '@/lib/utils/shopHours';
+import { shopLocalDateTimeToUtc, parseAppointmentInstant, formatTimeHHMMInTimeZone, formatDateTimeLocalInShopTz, getShopTodayYMD, getHoursForCalendarDate, overlapsLunchForDate, SHOP_BUSINESS_TIMEZONE, type WorkingHoursMap, type LunchHoursMap } from '@/lib/utils/shopHours';
 
 interface Service {
   id: string;
@@ -50,7 +50,7 @@ export default function CreateAppointmentModal({
   const [services, setServices] = useState<Service[]>([]);
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [selectedDate, setSelectedDate] = useState(initialSelectedDate || new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(initialSelectedDate || getShopTodayYMD());
   const [formData, setFormData] = useState({
     barberId: barbers[0]?.id || '',
     customerName: '',
@@ -85,7 +85,7 @@ export default function CreateAppointmentModal({
       loadServices();
       // Reset selections when modal opens
       setSelectedServiceIds([]);
-      setSelectedDate(initialSelectedDate || new Date().toISOString().split('T')[0]);
+      setSelectedDate(initialSelectedDate || getShopTodayYMD());
       setFormData(prev => ({ ...prev, startTime: '', endTime: '' }));
     }
   }, [isOpen, shopId, initialSelectedDate, translateServiceName]);
@@ -250,20 +250,9 @@ export default function CreateAppointmentModal({
           return total + (service?.durationMin || 0);
         }, 0);
         
-        const start = new Date(formData.startTime);
+        const start = parseAppointmentInstant(formData.startTime);
         const end = new Date(start.getTime() + totalDuration * 60000);
-        
-        // Format as local datetime-local string
-        const formatLocalDateTime = (date: Date): string => {
-          const year = date.getFullYear();
-          const month = String(date.getMonth() + 1).padStart(2, '0');
-          const day = String(date.getDate()).padStart(2, '0');
-          const hour = String(date.getHours()).padStart(2, '0');
-          const minute = String(date.getMinutes()).padStart(2, '0');
-          return `${year}-${month}-${day}T${hour}:${minute}`;
-        };
-        
-        setFormData(prev => ({ ...prev, endTime: formatLocalDateTime(end) }));
+        setFormData(prev => ({ ...prev, endTime: formatDateTimeLocalInShopTz(end) }));
       } else if (newSelection.length === 0) {
         setFormData(prev => ({ ...prev, startTime: '', endTime: '' }));
       }
@@ -293,7 +282,7 @@ export default function CreateAppointmentModal({
 
     // Build notes with all selected services
     const serviceNames = selectedServices.map(s => s.name).join(', ');
-    const servicesLabel = locale === 'bg' ? 'Услуги' : 'Services';
+    const servicesLabel = t('dashboard.barber.servicesLabel');
     const servicesNote = selectedServices.length > 1 
       ? `${servicesLabel}: ${serviceNames}${formData.notes ? `\n\n${formData.notes}` : ''}`
       : formData.notes || null;
@@ -323,19 +312,20 @@ export default function CreateAppointmentModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between sticky top-0 bg-white">
-          <h2 className="text-xl font-bold">{t('dashboard.barber.createNewAppointment')}</h2>
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm sm:p-4">
+      <div className="bg-white rounded-t-2xl sm:rounded-xl shadow-2xl w-full max-w-2xl sm:mx-4 max-h-[92dvh] sm:max-h-[90vh] overflow-y-auto pb-[env(safe-area-inset-bottom)]">
+        <div className="px-4 sm:px-6 py-4 border-b border-gray-200 flex items-center justify-between sticky top-0 bg-white z-10">
+          <h2 className="text-lg sm:text-xl font-bold pr-2">{t('dashboard.barber.createNewAppointment')}</h2>
           <button
             onClick={handleClose}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-2.5 min-h-[44px] min-w-[44px] hover:bg-gray-100 rounded-full transition-colors touch-manipulation flex items-center justify-center shrink-0"
+            aria-label={t('common.close')}
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               {t('dashboard.barber.barberLabel')} *
@@ -442,7 +432,7 @@ export default function CreateAppointmentModal({
                 {t('dashboard.barber.selectStartTime')} * {t('dashboard.barber.clickAvailableSlot')}
               </label>
               <div className="border border-gray-200 rounded-lg p-4">
-                <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 max-h-64 overflow-y-auto">
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2 max-h-64 overflow-y-auto">
                   {timeSlots.map((timeStr) => {
                     const isTaken = isTimeSlotTaken(timeStr);
                     const canFit = canFitServices(timeStr);
@@ -455,7 +445,7 @@ export default function CreateAppointmentModal({
                         onClick={() => handleTimeSlotClick(timeStr)}
                         disabled={isTaken || !canFit}
                         className={`
-                          py-2 px-2 rounded-lg text-center text-xs font-medium border-2 transition-all
+                          py-2.5 px-2 min-h-[44px] rounded-lg text-center text-xs font-medium border-2 transition-all touch-manipulation
                           ${isSelected
                             ? 'border-black bg-black text-white'
                             : isTaken
@@ -476,15 +466,9 @@ export default function CreateAppointmentModal({
                   <div className="mt-3 p-2 bg-gray-50 rounded-lg text-xs text-gray-600">
                     <span className="font-medium">{t('dashboard.barber.selected')}: </span>
                     {(() => {
-                      // Parse datetime-local strings as local time and format
                       const start = new Date(formData.startTime);
                       const end = new Date(formData.endTime);
-                      const formatTime = (date: Date) => {
-                        const hours = String(date.getHours()).padStart(2, '0');
-                        const minutes = String(date.getMinutes()).padStart(2, '0');
-                        return `${hours}:${minutes}`;
-                      };
-                      return `${formatTime(start)} - ${formatTime(end)}`;
+                      return `${formatTimeHHMMInTimeZone(start, SHOP_BUSINESS_TIMEZONE)} - ${formatTimeHHMMInTimeZone(end, SHOP_BUSINESS_TIMEZONE)}`;
                     })()}
                   </div>
                 )}
@@ -552,17 +536,17 @@ export default function CreateAppointmentModal({
             />
           </div>
 
-          <div className="flex gap-3 pt-4">
+          <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4">
             <button
               type="button"
               onClick={handleClose}
-              className="flex-1 py-3 border border-gray-200 rounded-lg font-bold hover:bg-gray-50 transition-colors"
+              className="flex-1 min-h-[48px] py-3 border border-gray-200 rounded-lg font-bold hover:bg-gray-50 transition-colors touch-manipulation"
             >
               {t('dashboard.barber.cancelButton')}
             </button>
             <button
               type="submit"
-              className="flex-1 py-3 bg-black text-white rounded-lg font-bold hover:bg-black/90 transition-colors"
+              className="flex-1 min-h-[48px] py-3 bg-black text-white rounded-lg font-bold hover:bg-black/90 transition-colors touch-manipulation"
             >
               {t('dashboard.barber.createAppointment')}
             </button>

@@ -20,9 +20,30 @@ interface Shop {
 
 interface SuperAdminDashboardProps {
   userEmail?: string | null;
+  userName?: string | null;
 }
 
-export default function SuperAdminDashboard({ userEmail }: SuperAdminDashboardProps) {
+function getUserInitials(userName?: string | null, userEmail?: string | null): string {
+  const name = userName?.trim();
+  if (name) {
+    const parts = name.split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) {
+      return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+    }
+    return name.slice(0, 2).toUpperCase();
+  }
+  if (userEmail) {
+    const local = userEmail.split('@')[0] ?? userEmail;
+    const parts = local.split(/[._-]/).filter(Boolean);
+    if (parts.length >= 2) {
+      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    }
+    return local.slice(0, 2).toUpperCase();
+  }
+  return '?';
+}
+
+export default function SuperAdminDashboard({ userEmail, userName }: SuperAdminDashboardProps) {
   const { t } = useI18n();
   const router = useRouter();
   const [currentTab, setCurrentTab] = useState<'barbers' | 'appointments' | 'services' | 'users'>('barbers');
@@ -50,6 +71,9 @@ export default function SuperAdminDashboard({ userEmail }: SuperAdminDashboardPr
     }
   }, [currentTab]);
 
+  const displayName = userName?.trim() || userEmail || '';
+  const userInitials = getUserInitials(userName, userEmail);
+
   return (
     <div className="min-h-[100dvh] bg-gray-50">
       <header className="sticky top-0 z-40 w-full border-b border-gray-200 bg-white shadow-sm pt-safe">
@@ -62,11 +86,6 @@ export default function SuperAdminDashboard({ userEmail }: SuperAdminDashboardPr
               <h1 className="text-lg sm:text-xl font-bold tracking-tight truncate">{t('dashboard.admin.title')}</h1>
             </div>
             <div className="flex items-center gap-2 sm:gap-3 ml-auto shrink-0 flex-wrap justify-end">
-              {userEmail && (
-                <span className="text-xs text-gray-500 hidden md:inline max-w-[160px] truncate order-last md:order-none">
-                  {userEmail}
-                </span>
-              )}
               <button
                 type="button"
                 onClick={async () => {
@@ -81,12 +100,19 @@ export default function SuperAdminDashboard({ userEmail }: SuperAdminDashboardPr
                 <span className="hidden min-[380px]:inline">{t('auth.logout')}</span>
               </button>
               <LanguageCurrencySwitcher />
-              <div className="hidden sm:block text-right">
-                <p className="text-sm font-bold">{t('dashboard.admin.globalAdmin')}</p>
-                <p className="text-xs text-gray-500">{t('dashboard.admin.systemRoot')}</p>
-              </div>
-              <div className="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center font-bold text-sm shrink-0">
-                SA
+              {displayName && (
+                <div className="hidden min-[480px]:block text-right min-w-0 max-w-[140px] sm:max-w-[220px]">
+                  <p className="text-sm font-bold truncate">{displayName}</p>
+                  {userName?.trim() && userEmail && (
+                    <p className="text-xs text-gray-500 truncate">{userEmail}</p>
+                  )}
+                </div>
+              )}
+              <div
+                className="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center font-bold text-sm shrink-0"
+                title={displayName || undefined}
+              >
+                {userInitials}
               </div>
             </div>
           </div>
@@ -153,15 +179,16 @@ export default function SuperAdminDashboard({ userEmail }: SuperAdminDashboardPr
         {currentTab === 'users' && <CreateUserTab />}
         {currentTab === 'appointments' && <AppointmentsTab />}
         {currentTab === 'services' && (
-          <div className="space-y-4">
-            <div className="bg-white p-4 rounded-xl border border-gray-200">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+          <div className="space-y-4 sm:space-y-6">
+            <div className="bg-white p-4 sm:p-5 rounded-xl border border-gray-200 shadow-sm">
+              <label htmlFor="superadmin-shop-select" className="block text-sm font-medium text-gray-700 mb-2">
                 {t('dashboard.admin.selectShop')}
               </label>
               <select
+                id="superadmin-shop-select"
                 value={selectedShopId}
                 onChange={(e) => setSelectedShopId(e.target.value)}
-                className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
+                className="w-full p-3 min-h-[44px] border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none touch-manipulation"
               >
                 <option value="">{t('dashboard.admin.selectShopPlaceholder')}</option>
                 {shops.map((shop) => (
@@ -175,8 +202,8 @@ export default function SuperAdminDashboard({ userEmail }: SuperAdminDashboardPr
               <ServicesManagementTab shopId={selectedShopId} />
             )}
             {!selectedShopId && (
-              <div className="bg-white p-12 rounded-xl border border-gray-200 shadow-sm text-center">
-                <p className="text-gray-500">{t('dashboard.admin.selectShopMessage')}</p>
+              <div className="bg-white p-8 sm:p-12 rounded-xl border border-gray-200 shadow-sm text-center">
+                <p className="text-gray-500 text-sm sm:text-base">{t('dashboard.admin.selectShopMessage')}</p>
               </div>
             )}
           </div>

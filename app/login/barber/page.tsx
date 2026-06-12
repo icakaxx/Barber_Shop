@@ -2,10 +2,11 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { Suspense } from 'react';
 import LoginPageContent from '@/components/auth/LoginPageContent';
+import { META_LOGIN_BARBER_DESCRIPTION, META_LOGIN_BARBER_TITLE } from '@/lib/seo-defaults';
 
 export const metadata = {
-  title: 'Вход за бръснари | Клуб мъжки свят',
-  description: 'Влезте за достъп до екипното табло',
+  title: META_LOGIN_BARBER_TITLE,
+  description: META_LOGIN_BARBER_DESCRIPTION,
 };
 
 export default async function BarberLoginPage({

@@ -3,6 +3,12 @@
 import { useState, useEffect } from 'react';
 import { Users, Calendar, Scissors, Phone, Edit2, Plus } from 'lucide-react';
 import { getStatusBadge } from '@/lib/utils/statusBadge';
+import { useI18n } from '@/contexts/I18nContext';
+import {
+  formatDateYYYYMMDDInTimeZone,
+  formatTimeHHMMInTimeZone,
+  SHOP_BUSINESS_TIMEZONE,
+} from '@/lib/utils/shopHours';
 import EditAppointmentModal from './EditAppointmentModal';
 import CreateAppointmentModal from './CreateAppointmentModal';
 import type { Barber, AppointmentStatus } from '@/lib/types';
@@ -27,10 +33,13 @@ interface TeamViewProps {
 }
 
 export default function TeamView({ shopId, currentBarberId }: TeamViewProps) {
+  const { t } = useI18n();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [barbers, setBarbers] = useState<Barber[]>([]);
   const [selectedBarberId, setSelectedBarberId] = useState<string>('all');
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(() =>
+    formatDateYYYYMMDDInTimeZone(new Date(), SHOP_BUSINESS_TIMEZONE)
+  );
   const [loading, setLoading] = useState(true);
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -86,8 +95,7 @@ export default function TeamView({ shopId, currentBarberId }: TeamViewProps) {
   }, [shopId, selectedBarberId, selectedDate]);
 
   const formatTime = (timeString: string) => {
-    const date = new Date(timeString);
-    return date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    return formatTimeHHMMInTimeZone(new Date(timeString), SHOP_BUSINESS_TIMEZONE);
   };
 
   const formatTimeRange = (startTime: string, endTime: string) => {
@@ -157,11 +165,11 @@ export default function TeamView({ shopId, currentBarberId }: TeamViewProps) {
         setEditingAppointment(null);
       } else {
         const error = await response.json();
-        alert(`Failed to update appointment: ${error.error}`);
+        alert(`${t('dashboard.barber.failedToUpdate')}: ${error.error}`);
       }
     } catch (error) {
       console.error('Error updating appointment:', error);
-      alert('Failed to update appointment');
+      alert(t('dashboard.barber.failedToUpdate'));
     }
   };
 
@@ -188,11 +196,11 @@ export default function TeamView({ shopId, currentBarberId }: TeamViewProps) {
         setIsCreateModalOpen(false);
       } else {
         const error = await response.json();
-        alert(`Failed to create appointment: ${error.error}`);
+        alert(`${t('dashboard.barber.failedToCreate')}: ${error.error}`);
       }
     } catch (error) {
       console.error('Error creating appointment:', error);
-      alert('Failed to create appointment');
+      alert(t('dashboard.barber.failedToCreate'));
     }
   };
 
@@ -200,9 +208,9 @@ export default function TeamView({ shopId, currentBarberId }: TeamViewProps) {
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold">Team Schedule</h2>
+          <h2 className="text-2xl font-bold">{t('dashboard.barber.teamSchedule')}</h2>
         </div>
-        <div className="text-center py-12 text-gray-400">Loading team appointments...</div>
+        <div className="text-center py-12 text-gray-400">{t('dashboard.barber.loadingTeamAppointments')}</div>
       </div>
     );
   }
@@ -212,7 +220,7 @@ export default function TeamView({ shopId, currentBarberId }: TeamViewProps) {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center flex-wrap gap-4">
-        <h2 className="text-2xl font-bold">Team Schedule</h2>
+        <h2 className="text-2xl font-bold">{t('dashboard.barber.teamSchedule')}</h2>
         <div className="flex gap-3">
           <input
             type="date"
@@ -225,7 +233,7 @@ export default function TeamView({ shopId, currentBarberId }: TeamViewProps) {
             onChange={(e) => setSelectedBarberId(e.target.value)}
             className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-black outline-none"
           >
-            <option value="all">All Barbers</option>
+            <option value="all">{t('dashboard.barber.allBarbers')}</option>
             {teamBarbers.map((barber) => (
               <option key={barber.id} value={barber.id}>
                 {barber.displayName}
@@ -236,7 +244,7 @@ export default function TeamView({ shopId, currentBarberId }: TeamViewProps) {
             onClick={() => setIsCreateModalOpen(true)}
             className="bg-black text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-black/90 transition-all"
           >
-            <Plus className="w-4 h-4" /> New Appointment
+            <Plus className="w-4 h-4" /> {t('dashboard.owner.newAppointment')}
           </button>
         </div>
       </div>
@@ -247,9 +255,9 @@ export default function TeamView({ shopId, currentBarberId }: TeamViewProps) {
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
               <Users className="w-8 h-8 text-gray-400" />
             </div>
-            <h3 className="font-bold text-lg">No Appointments</h3>
+            <h3 className="font-bold text-lg">{t('dashboard.barber.noTeamAppointments')}</h3>
             <p className="text-gray-500 max-w-sm mt-2">
-              No appointments found for the selected date and barber.
+              {t('dashboard.barber.noTeamAppointmentsHint')}
             </p>
           </div>
         ) : (
@@ -260,9 +268,9 @@ export default function TeamView({ shopId, currentBarberId }: TeamViewProps) {
             >
               <div className="flex items-start gap-4">
                 <div className="bg-gray-100 p-3 rounded-lg text-center min-w-[120px]">
-                  <p className="text-xs font-bold text-gray-500 uppercase">Time</p>
+                  <p className="text-xs font-bold text-gray-500 uppercase">{t('dashboard.barber.time')}</p>
                   <p className="font-bold text-sm">{formatTimeRange(app.startTime, app.endTime)}</p>
-                  <p className="text-xs text-gray-500 mt-1">{getDuration(app.startTime, app.endTime)} min</p>
+                  <p className="text-xs text-gray-500 mt-1">{getDuration(app.startTime, app.endTime)} {t('services.min')}</p>
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
@@ -294,7 +302,7 @@ export default function TeamView({ shopId, currentBarberId }: TeamViewProps) {
                 onClick={() => handleEdit(app)}
                 className="px-4 py-2 border border-gray-200 text-sm font-bold rounded-lg hover:bg-gray-50 transition-all flex items-center gap-2"
               >
-                <Edit2 className="w-4 h-4" /> Edit
+                <Edit2 className="w-4 h-4" /> {t('dashboard.barber.edit')}
               </button>
             </div>
           ))

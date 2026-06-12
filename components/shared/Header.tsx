@@ -15,9 +15,9 @@ function openBookingModal() {
 }
 
 function HeaderBrand() {
-  const { t } = useI18n();
+  const { t, translateDbContent } = useI18n();
   const { shop } = useShopBranding();
-  const shopName = shop?.name || t('hero.title');
+  const shopName = translateDbContent(shop?.name) || t('hero.title');
   const logoUrl = shop?.logoUrl;
 
   return (

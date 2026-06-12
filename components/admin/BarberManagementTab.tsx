@@ -8,6 +8,7 @@ import type { Barber, BarberSchedule } from '@/lib/types';
 import BarberFormModal from './BarberFormModal';
 import BarberScheduleModal from './BarberScheduleModal';
 import { useI18n } from '@/contexts/I18nContext';
+import { getShopTodayYMD } from '@/lib/utils/shopHours';
 
 export default function BarberManagementTab() {
   const { t } = useI18n();
@@ -38,7 +39,7 @@ export default function BarberManagementTab() {
   const getBarberSchedule = (barberId: string): BarberSchedule | undefined => {
     // For now, use mock schedule data
     // TODO: Implement dynamic schedule loading from Supabase
-    const today = new Date().toISOString().split('T')[0];
+    const today = getShopTodayYMD();
     return mockBarberSchedules.find(sch => sch.barberId === barberId && sch.date === today);
   };
 

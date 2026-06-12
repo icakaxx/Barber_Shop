@@ -33,10 +33,10 @@ function WorkingHoursDisplay({ workingHours, t }: { workingHours: WorkingHoursMa
 }
 
 export default function LocationSection() {
-  const { t } = useI18n();
+  const { t, translateDbContent } = useI18n();
   const { shop } = useShopBranding();
-  const address = shop?.address || t('location.address');
-  const city = shop?.city;
+  const address = translateDbContent(shop?.address) || t('location.address');
+  const city = translateDbContent(shop?.city) || shop?.city;
   const addressDisplay = city ? `${address}${address && !address.includes(city) ? ', ' + city : ''}` : address;
   const phone = shop?.phone || '+359 888 123 456';
   const hasStructuredHours = shop?.workingHours && Object.keys(shop.workingHours).length > 0;

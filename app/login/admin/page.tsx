@@ -2,10 +2,11 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { Suspense } from 'react';
 import LoginPageContent from '@/components/auth/LoginPageContent';
+import { META_LOGIN_ADMIN_DESCRIPTION, META_LOGIN_ADMIN_TITLE } from '@/lib/seo-defaults';
 
 export const metadata = {
-  title: 'Вход за супер админ | Клуб мъжки свят',
-  description: 'Влезте за достъп до админ таблото',
+  title: META_LOGIN_ADMIN_TITLE,
+  description: META_LOGIN_ADMIN_DESCRIPTION,
 };
 
 export default async function AdminLoginPage({

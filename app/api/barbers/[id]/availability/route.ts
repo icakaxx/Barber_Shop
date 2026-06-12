@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase/admin'
 import { notConfiguredJson, serverErrorJson } from '@/lib/api/jsonErrors'
+import { getShopLocalDayQueryBounds, getShopTodayYMD } from '@/lib/utils/shopHours'
 
 /**
  * PUBLIC: time slots + booked flags for a barber (no customer PII in appointment rows).
@@ -25,19 +26,14 @@ export async function GET(
       .order('start_time', { ascending: true })
 
     if (date) {
-      const startOfDay = new Date(`${date}T00:00:00Z`)
-      const endOfDay = new Date(`${date}T23:59:59Z`)
-      query = query
-        .gte('start_time', startOfDay.toISOString())
-        .lte('start_time', endOfDay.toISOString())
+      const { startIso, endExclusiveIso } = getShopLocalDayQueryBounds(date)
+      query = query.gte('start_time', startIso).lt('start_time', endExclusiveIso)
     }
 
     if (startDate && endDate) {
-      const start = new Date(`${startDate}T00:00:00Z`)
-      const end = new Date(`${endDate}T23:59:59Z`)
-      query = query
-        .gte('start_time', start.toISOString())
-        .lte('start_time', end.toISOString())
+      const { startIso } = getShopLocalDayQueryBounds(startDate)
+      const { endExclusiveIso } = getShopLocalDayQueryBounds(endDate)
+      query = query.gte('start_time', startIso).lt('start_time', endExclusiveIso)
     }
 
     const { data, error } = await query
@@ -47,16 +43,15 @@ export async function GET(
       return serverErrorJson()
     }
 
-    const today = date || new Date().toISOString().split('T')[0]
-    const startOfDay = new Date(`${today}T00:00:00Z`)
-    const endOfDay = new Date(`${today}T23:59:59Z`)
+    const today = date || getShopTodayYMD()
+    const { startIso, endExclusiveIso } = getShopLocalDayQueryBounds(today)
 
     const { data: appointments } = await admin
       .from('appointments')
       .select('start_time, end_time, status')
       .eq('barber_id', params.id)
-      .gte('start_time', startOfDay.toISOString())
-      .lte('start_time', endOfDay.toISOString())
+      .gte('start_time', startIso)
+      .lt('start_time', endExclusiveIso)
       .in('status', ['PENDING', 'CONFIRMED'])
 
     const bookedSlots = new Set((appointments ?? []).map((apt) => apt.start_time))

@@ -149,6 +149,207 @@ export function formatTimeHHMMInTimeZone(d: Date, timeZone = SHOP_BUSINESS_TIMEZ
   return `${pad2(parseInt(h, 10))}:${pad2(parseInt(m, 10))}`;
 }
 
+/** Add days to a YYYY-MM-DD shop calendar label. */
+export function addCalendarDays(dateStr: string, days: number): string {
+  const [y, mo, d] = dateStr.split('-').map(Number);
+  const utcNoon = new Date(Date.UTC(y, mo - 1, d + days, 12, 0, 0));
+  return `${utcNoon.getUTCFullYear()}-${pad2(utcNoon.getUTCMonth() + 1)}-${pad2(utcNoon.getUTCDate())}`;
+}
+
+/** UTC query bounds for one shop-local calendar day (start inclusive, end exclusive). */
+export function getShopLocalDayQueryBounds(
+  dateStr: string,
+  timeZone = SHOP_BUSINESS_TIMEZONE
+): { startIso: string; endExclusiveIso: string } {
+  const startUtc = shopLocalDateTimeToUtc(dateStr, '00:00', timeZone);
+  const endExclusiveUtc = shopLocalDateTimeToUtc(addCalendarDays(dateStr, 1), '00:00', timeZone);
+  return {
+    startIso: startUtc.toISOString(),
+    endExclusiveIso: endExclusiveUtc.toISOString(),
+  };
+}
+
+/** True when a slot ends on or before shop close on the given calendar date. */
+export function slotEndsBeforeShopClose(
+  dateStr: string,
+  slotEndUtc: Date,
+  closeTime: string,
+  timeZone = SHOP_BUSINESS_TIMEZONE
+): boolean {
+  const closeUtc = shopLocalDateTimeToUtc(dateStr, closeTime, timeZone);
+  return slotEndUtc.getTime() <= closeUtc.getTime();
+}
+
+/** Today's date as YYYY-MM-DD in shop timezone. */
+export function getShopTodayYMD(timeZone = SHOP_BUSINESS_TIMEZONE): string {
+  return formatDateYYYYMMDDInTimeZone(new Date(), timeZone);
+}
+
+const BG_WEEKDAYS_SHORT = ['Нед', 'Пон', 'Вт', 'Ср', 'Чет', 'Пет', 'Съб'] as const;
+const BG_WEEKDAYS_LONG = [
+  'неделя',
+  'понеделник',
+  'вторник',
+  'сряда',
+  'четвъртък',
+  'петък',
+  'събота',
+] as const;
+const BG_MONTHS_SHORT = ['яну', 'фев', 'мар', 'апр', 'май', 'юни', 'юли', 'авг', 'сеп', 'окт', 'ное', 'дек'] as const;
+const BG_MONTHS_LONG = [
+  'януари',
+  'февруари',
+  'март',
+  'април',
+  'май',
+  'юни',
+  'юли',
+  'август',
+  'септември',
+  'октомври',
+  'ноември',
+  'декември',
+] as const;
+
+function weekdayIndexForCalendarDate(dateStr: string): number {
+  const [y, mo, d] = dateStr.split('-').map(Number);
+  return new Date(Date.UTC(y, mo - 1, d, 12, 0, 0)).getUTCDay();
+}
+
+/** Weekday label for a shop calendar date (YYYY-MM-DD), not browser-local. */
+export function formatShopWeekdayLabel(
+  dateStr: string,
+  locale: string,
+  style: 'short' | 'long' = 'short',
+  timeZone = SHOP_BUSINESS_TIMEZONE
+): string {
+  if (locale === 'bg') {
+    const idx = weekdayIndexForCalendarDate(dateStr);
+    return style === 'short' ? BG_WEEKDAYS_SHORT[idx] : BG_WEEKDAYS_LONG[idx];
+  }
+  const [y, mo, d] = dateStr.split('-').map(Number);
+  const utcNoon = new Date(Date.UTC(y, mo - 1, d, 12, 0, 0));
+  return utcNoon.toLocaleDateString('en-GB', {
+    weekday: style === 'short' ? 'short' : 'long',
+    timeZone,
+  });
+}
+
+/** Display label for a shop calendar date (YYYY-MM-DD), not browser-local. */
+export function formatShopCalendarDateLabel(
+  dateStr: string,
+  locale: string,
+  style: 'short' | 'long' = 'long',
+  timeZone = SHOP_BUSINESS_TIMEZONE
+): string {
+  const [y, mo, d] = dateStr.split('-').map(Number);
+  if (locale === 'bg') {
+    const idx = weekdayIndexForCalendarDate(dateStr);
+    if (style === 'short') {
+      return `${BG_WEEKDAYS_SHORT[idx]}, ${d} ${BG_MONTHS_SHORT[mo - 1]}`;
+    }
+    return `${BG_WEEKDAYS_LONG[idx]}, ${d} ${BG_MONTHS_LONG[mo - 1]}`;
+  }
+  const utcNoon = new Date(Date.UTC(y, mo - 1, d, 12, 0, 0));
+  return utcNoon.toLocaleDateString('en-GB', {
+    weekday: style === 'short' ? 'short' : 'long',
+    day: 'numeric',
+    month: style === 'short' ? 'short' : 'long',
+    year: style === 'long' ? 'numeric' : undefined,
+    timeZone,
+  });
+}
+
+/** datetime-local input value (YYYY-MM-DDTHH:mm) in shop timezone. */
+export function formatDateTimeLocalInShopTz(d: Date, timeZone = SHOP_BUSINESS_TIMEZONE): string {
+  return `${formatDateYYYYMMDDInTimeZone(d, timeZone)}T${formatTimeHHMMInTimeZone(d, timeZone)}`;
+}
+
+/** Iterate booking slots in shop wall-clock time. */
+export function eachShopLocalBookingSlot(
+  dateStr: string,
+  openStr: string,
+  closeStr: string,
+  stepMinutes: number,
+  timeZone = SHOP_BUSINESS_TIMEZONE
+): Array<{ timeStr: string; slotStartUtc: Date }> {
+  const slots: Array<{ timeStr: string; slotStartUtc: Date }> = [];
+  const [openH, openM] = openStr.split(':').map(Number);
+  const [closeH, closeM] = closeStr.split(':').map(Number);
+  const closeTotalMin = closeH * 60 + closeM;
+  let h = openH;
+  let m = openM;
+  while (h * 60 + m < closeTotalMin) {
+    const timeStr = `${pad2(h)}:${pad2(m)}`;
+    slots.push({ timeStr, slotStartUtc: shopLocalDateTimeToUtc(dateStr, timeStr, timeZone) });
+    m += stepMinutes;
+    h += Math.floor(m / 60);
+    m %= 60;
+  }
+  return slots;
+}
+
+export function slotOverlapsBusy(
+  slotStartUtc: Date,
+  slotEndUtc: Date,
+  busyRanges: { start: Date; end: Date }[]
+): boolean {
+  return busyRanges.some((apt) => slotStartUtc < apt.end && slotEndUtc > apt.start);
+}
+
+export type ShopSlotDisplayStatus = 'available' | 'taken' | 'closed';
+
+export interface ShopCalendarSlotOptions {
+  lunchHours?: LunchHoursMap;
+  lunchStart?: string;
+  lunchEnd?: string;
+  blockedRanges?: BlockedDateRange[];
+  slotMinutes?: number;
+}
+
+/** All grid times for a shop day (open→close), empty when closed/blocked. */
+export function getShopCalendarTimeSlots(
+  dateStr: string,
+  workingHours: WorkingHoursMap | undefined,
+  options?: ShopCalendarSlotOptions
+): string[] {
+  if (isDateBlocked(dateStr, options?.blockedRanges)) return [];
+  const dayHours = getHoursForCalendarDate(workingHours, dateStr);
+  if (!dayHours) return [];
+  return eachShopLocalBookingSlot(
+    dateStr,
+    dayHours.open,
+    dayHours.close,
+    options?.slotMinutes ?? BOOKING_SLOT_MINUTES
+  ).map((s) => s.timeStr);
+}
+
+/** Classify a calendar slot using shop hours, lunch, and busy ranges. */
+export function getShopCalendarSlotStatus(
+  dateStr: string,
+  timeStr: string,
+  workingHours: WorkingHoursMap | undefined,
+  busyRanges: { start: Date; end: Date }[],
+  options?: ShopCalendarSlotOptions
+): ShopSlotDisplayStatus {
+  if (isDateBlocked(dateStr, options?.blockedRanges)) return 'closed';
+  const dayHours = getHoursForCalendarDate(workingHours, dateStr);
+  if (!dayHours) return 'closed';
+  if (isDuringLunchForDate(dateStr, timeStr, options?.lunchHours, options?.lunchStart, options?.lunchEnd)) {
+    return 'closed';
+  }
+  const slotMinutes = options?.slotMinutes ?? BOOKING_SLOT_MINUTES;
+  const slotStart = shopLocalDateTimeToUtc(dateStr, timeStr);
+  const slotEnd = new Date(slotStart.getTime() + slotMinutes * 60000);
+  if (slotOverlapsBusy(slotStart, slotEnd, busyRanges)) return 'taken';
+  return 'available';
+}
+
+/** Format an appointment instant as shop-local time (HH:mm). */
+export function formatAppointmentTimeInShopTz(value: string, timeZone = SHOP_BUSINESS_TIMEZONE): string {
+  return formatTimeHHMMInTimeZone(parseAppointmentInstant(value), timeZone);
+}
+
 /** Parse DB/API timestamp strings as UTC instants (Postgres timestamptz). */
 export function parseAppointmentInstant(value: string): Date {
   const trimmed = value.trim();

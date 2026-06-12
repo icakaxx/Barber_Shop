@@ -14,9 +14,9 @@ function TikTokIcon({ className }: { className?: string }) {
 }
 
 export default function Footer() {
-  const { t } = useI18n();
+  const { t, translateDbContent } = useI18n();
   const { shop } = useShopBranding();
-  const shopName = shop?.name || t('hero.title');
+  const shopName = translateDbContent(shop?.name) || t('hero.title');
   const tiktokUrl = shop?.tiktokUrl?.trim();
 
   return (
@@ -77,7 +77,7 @@ export default function Footer() {
         <div className="mt-16 pt-8 border-t border-white/10 text-sm text-gray-500 flex flex-col items-center justify-center gap-4 px-1 text-center">
           <p className="max-w-prose mx-auto">&copy; {new Date().getFullYear()} {shopName}. {t('footer.allRightsReserved')}</p>
           <p className="text-xs text-gray-600">
-            Създадено от{' '}
+            {t('footer.createdBy')}{' '}
             <a
               href="https://www.hmwspro.com/bg"
               target="_blank"

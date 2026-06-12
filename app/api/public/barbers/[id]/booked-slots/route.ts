@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { badRequestJson, notConfiguredJson, serverErrorJson } from '@/lib/api/jsonErrors';
+import { getShopLocalDayQueryBounds } from '@/lib/utils/shopHours';
 
 /**
  * PUBLIC: returns only busy time ranges for a barber on a date (no customer PII).
@@ -20,15 +21,14 @@ export async function GET(
   }
 
   try {
-    const startOfDay = new Date(`${date}T00:00:00Z`);
-    const endOfDay = new Date(`${date}T23:59:59Z`);
+    const { startIso, endExclusiveIso } = getShopLocalDayQueryBounds(date);
 
     const { data, error } = await admin
       .from('appointments')
       .select('start_time, end_time, status')
       .eq('barber_id', params.id)
-      .gte('start_time', startOfDay.toISOString())
-      .lte('start_time', endOfDay.toISOString())
+      .gte('start_time', startIso)
+      .lt('start_time', endExclusiveIso)
       .in('status', ['PENDING', 'CONFIRMED']);
 
     if (error) {

@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { Locale, Currency, translations, formatPriceWithConversion } from '@/lib/i18n/translations';
+import { translateDbContent, translateServiceName as translateServiceNameFromDb } from '@/lib/i18n/dbTranslations';
 
 interface I18nContextType {
   locale: Locale;
@@ -11,6 +12,7 @@ interface I18nContextType {
   t: (key: string) => string;
   formatPrice: (amountBgn: number) => string;
   translateServiceName: (serviceName: string) => string;
+  translateDbContent: (text: string | undefined | null) => string | undefined;
 }
 
 const I18nContext = createContext<I18nContextType | undefined>(undefined);
@@ -64,27 +66,11 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   }, [currency, locale]);
 
   const translateServiceName = useMemo(() => {
-    return (serviceName: string): string => {
-      // Get serviceNames mapping directly from translations
-      const serviceNames = translations[locale]?.serviceNames || {};
-      if (typeof serviceNames === 'object') {
-        // Check for exact match
-        if (serviceName in serviceNames) {
-          return serviceNames[serviceName as keyof typeof serviceNames] as string;
-        }
-        
-        // Try case-insensitive match
-        for (const [key, value] of Object.entries(serviceNames)) {
-          if (serviceName.toLowerCase() === key.toLowerCase()) {
-            return value as string;
-          }
-        }
-      }
-      
-      // If no match found, return the original name
-      // This allows new services to display their original name until translation is added
-      return serviceName;
-    };
+    return (serviceName: string): string => translateServiceNameFromDb(serviceName, locale);
+  }, [locale]);
+
+  const translateDbContentFn = useMemo(() => {
+    return (text: string | undefined | null): string | undefined => translateDbContent(text, locale);
   }, [locale]);
 
   const value = useMemo(() => ({
@@ -95,7 +81,8 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     t,
     formatPrice,
     translateServiceName,
-  }), [locale, currency, formatPrice, translateServiceName]);
+    translateDbContent: translateDbContentFn,
+  }), [locale, currency, formatPrice, translateServiceName, translateDbContentFn]);
 
   return (
     <I18nContext.Provider value={value}>

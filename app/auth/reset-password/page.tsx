@@ -1,9 +1,10 @@
-import Link from 'next/link';
 import ResetPasswordClient from '@/components/auth/ResetPasswordClient';
+import BackToHomeLink from '@/components/auth/BackToHomeLink';
+import { META_RESET_PASSWORD_DESCRIPTION, META_RESET_PASSWORD_TITLE } from '@/lib/seo-defaults';
 
 export const metadata = {
-  title: 'Нова парола | Клуб мъжки свят',
-  description: 'Задайте нова парола за акаунта си',
+  title: META_RESET_PASSWORD_TITLE,
+  description: META_RESET_PASSWORD_DESCRIPTION,
 };
 
 export default function ResetPasswordPage() {
@@ -12,9 +13,7 @@ export default function ResetPasswordPage() {
       <div className="w-full max-w-md min-w-0 bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-100 p-5 sm:p-8">
         <ResetPasswordClient />
       </div>
-      <Link href="/" className="mt-8 text-sm text-white/90 hover:text-white font-medium drop-shadow-sm">
-        ← Начало
-      </Link>
+      <BackToHomeLink className="mt-8 text-sm text-white/90 hover:text-white font-medium drop-shadow-sm" />
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { requireAuthContext, requireRoles } from '@/lib/auth/getAuthContext'
 import { STAFF_ROLES } from '@/lib/auth/types'
 import { assertBarberTeamAccess } from '@/lib/auth/scope'
 import { notConfiguredJson, serverErrorJson } from '@/lib/api/jsonErrors'
+import { getShopLocalDayQueryBounds } from '@/lib/utils/shopHours'
 
 // GET /api/barbers/[id]/appointments — authenticated staff with team/shop scope
 export async function GET(
@@ -47,11 +48,10 @@ export async function GET(
       .order('start_time', { ascending: true })
 
     if (date) {
-      const startOfDay = new Date(`${date}T00:00:00Z`)
-      const endOfDay = new Date(`${date}T23:59:59Z`)
+      const { startIso, endExclusiveIso } = getShopLocalDayQueryBounds(date)
       query = query
-        .gte('start_time', startOfDay.toISOString())
-        .lte('start_time', endOfDay.toISOString())
+        .gte('start_time', startIso)
+        .lt('start_time', endExclusiveIso)
     }
 
     if (status) {

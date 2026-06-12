@@ -5,6 +5,17 @@ import { Calendar, Scissors, Phone, Edit2, Check, X } from 'lucide-react';
 import { getStatusBadge } from '@/lib/utils/statusBadge';
 import type { AppointmentStatus } from '@/lib/types';
 import { useI18n } from '@/contexts/I18nContext';
+import {
+  formatDateYYYYMMDDInTimeZone,
+  formatTimeHHMMInTimeZone,
+  formatShopCalendarDateLabel,
+  getHoursForCalendarDate,
+  getShopTodayYMD,
+  parseAppointmentInstant,
+  shopLocalDateTimeToUtc,
+  SHOP_BUSINESS_TIMEZONE,
+  type WorkingHoursMap,
+} from '@/lib/utils/shopHours';
 import EditAppointmentModal from './EditAppointmentModal';
 
 interface Appointment {
@@ -37,8 +48,27 @@ export default function TodayAppointments({
   const [loading, setLoading] = useState(true);
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(() =>
+    formatDateYYYYMMDDInTimeZone(new Date(), SHOP_BUSINESS_TIMEZONE)
+  );
   const [statusFilter, setStatusFilter] = useState<string>('all'); // 'all', 'PENDING', 'CONFIRMED', 'DONE', 'CANCELLED'
+  const [workingHours, setWorkingHours] = useState<WorkingHoursMap | undefined>();
+
+  useEffect(() => {
+    if (!shopId) return;
+    const loadShopHours = async () => {
+      try {
+        const response = await fetch(`/api/shops/${shopId}`, { credentials: 'include' });
+        if (response.ok) {
+          const shop = await response.json();
+          setWorkingHours(shop.workingHours);
+        }
+      } catch (error) {
+        console.error('Error loading shop hours:', error);
+      }
+    };
+    void loadShopHours();
+  }, [shopId]);
 
   const buildListUrl = useCallback(() => {
     if (shopId && !barberId) {
@@ -89,17 +119,10 @@ export default function TodayAppointments({
 
   const formatTime = (timeString: string) => {
     const date = new Date(timeString);
-    return date.toLocaleTimeString(locale === 'bg' ? 'bg-BG' : 'en-GB', { hour: '2-digit', minute: '2-digit' });
+    return formatTimeHHMMInTimeZone(date, SHOP_BUSINESS_TIMEZONE);
   };
 
-  const formatDate = (date: Date) => {
-    if (locale === 'bg') {
-      const bgMonths = ['януари', 'февруари', 'март', 'април', 'май', 'юни', 'юли', 'август', 'септември', 'октомври', 'ноември', 'декември'];
-      const bgDays = ['неделя', 'понеделник', 'вторник', 'сряда', 'четвъртък', 'петък', 'събота'];
-      return `${bgDays[date.getDay()]}, ${date.getDate()} ${bgMonths[date.getMonth()]}`;
-    }
-    return date.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
-  };
+  const formatDate = (dateStr: string) => formatShopCalendarDateLabel(dateStr, locale, 'long');
 
   const formatTimeRange = (startTime: string, endTime: string) => {
     const start = new Date(startTime);
@@ -131,65 +154,57 @@ export default function TodayAppointments({
     return [...services, ...additionalServices];
   };
 
-  // Calculate free time slots
   const getFreeTimeSlots = () => {
-    const workingHours = { start: 9, end: 18 }; // 9 AM to 6 PM
+    const dayHours = getHoursForCalendarDate(workingHours, selectedDate);
+    if (!dayHours) return [];
+
     const freeSlots: Array<{ start: string; end: string }> = [];
-    
-    // Sort appointments by start time
+
     const sortedAppointments = [...appointments]
-      .filter(apt => apt.status === 'PENDING' || apt.status === 'CONFIRMED')
-      .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
-    
-    // Get the selected date
-    const date = new Date(selectedDate + 'T00:00:00');
-    const today = new Date();
-    const isToday = selectedDate === today.toISOString().split('T')[0];
-    
-    // Start from beginning of day or current time if today
-    let currentTime = new Date(date);
-    if (isToday) {
-      const now = new Date();
-      currentTime.setHours(Math.max(workingHours.start, now.getHours()), 
-                          now.getHours() === workingHours.start ? Math.max(0, now.getMinutes()) : 0, 0);
-    } else {
-      currentTime.setHours(workingHours.start, 0, 0);
+      .filter((apt) => apt.status === 'PENDING' || apt.status === 'CONFIRMED')
+      .sort(
+        (a, b) =>
+          parseAppointmentInstant(a.startTime).getTime() -
+          parseAppointmentInstant(b.startTime).getTime()
+      );
+
+    let currentTime = shopLocalDateTimeToUtc(selectedDate, dayHours.open);
+    const endOfDay = shopLocalDateTimeToUtc(selectedDate, dayHours.close);
+
+    if (selectedDate === getShopTodayYMD()) {
+      const nowUtc = shopLocalDateTimeToUtc(
+        selectedDate,
+        formatTimeHHMMInTimeZone(new Date(), SHOP_BUSINESS_TIMEZONE)
+      );
+      if (nowUtc > currentTime) {
+        currentTime = nowUtc;
+      }
     }
-    
-    const endOfDay = new Date(date);
-    endOfDay.setHours(workingHours.end, 0, 0);
-    
-    // Find gaps between appointments
+
     for (const apt of sortedAppointments) {
-      const aptStart = new Date(apt.startTime);
-      const aptEnd = new Date(apt.endTime);
-      
-      // Check if there's a gap before this appointment
+      const aptStart = parseAppointmentInstant(apt.startTime);
+      const aptEnd = parseAppointmentInstant(apt.endTime);
+
       if (aptStart > currentTime) {
         freeSlots.push({
           start: currentTime.toISOString(),
-          end: aptStart.toISOString()
+          end: aptStart.toISOString(),
         });
       }
-      
-      // Move current time to end of this appointment
+
       if (aptEnd > currentTime) {
-        currentTime = new Date(aptEnd);
+        currentTime = aptEnd;
       }
     }
-    
-    // Check for gap after last appointment
+
     if (currentTime < endOfDay) {
       freeSlots.push({
         start: currentTime.toISOString(),
-        end: endOfDay.toISOString()
+        end: endOfDay.toISOString(),
       });
     }
-    
-    return freeSlots.filter(slot => {
-      const slotStart = new Date(slot.start);
-      return slotStart < endOfDay;
-    });
+
+    return freeSlots.filter((slot) => parseAppointmentInstant(slot.start) < endOfDay);
   };
 
   const handleEdit = (appointment: Appointment) => {
@@ -291,14 +306,18 @@ export default function TodayAppointments({
     }
   };
 
+  const freeSlots = getFreeTimeSlots();
+  const todayShop = getShopTodayYMD();
+  const isToday = selectedDate === todayShop;
+
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold">{t('appointments.todayAppointments')}</h2>
+        <div className="flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center">
+          <h2 className="text-xl sm:text-2xl font-bold">{t('appointments.todayAppointments')}</h2>
           <div className="flex items-center gap-2 text-sm text-gray-500">
-            <Calendar className="w-4 h-4" />
-            <span>{t('booking.today')}, {new Date().toLocaleDateString(locale === 'bg' ? 'bg-BG' : 'en-GB', { day: 'numeric', month: 'short' })}</span>
+            <Calendar className="w-4 h-4 shrink-0" />
+            <span>{t('booking.today')}, {formatShopCalendarDateLabel(getShopTodayYMD(), locale, 'short')}</span>
           </div>
         </div>
         <div className="text-center py-12 text-gray-400">{t('dashboard.barber.loadingAppointments')}</div>
@@ -306,25 +325,21 @@ export default function TodayAppointments({
     );
   }
 
-  const freeSlots = getFreeTimeSlots();
-  const isToday = selectedDate === new Date().toISOString().split('T')[0];
-  const displayDate = new Date(selectedDate + 'T00:00:00');
-
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap justify-between items-center gap-4">
-        <h2 className="text-2xl font-bold">{t('dashboard.barber.appointmentsSchedule')}</h2>
-        <div className="flex items-center gap-3">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-between sm:items-center">
+        <h2 className="text-xl sm:text-2xl font-bold">{t('dashboard.barber.appointmentsSchedule')}</h2>
+        <div className="flex flex-col gap-2 w-full sm:w-auto sm:flex-row sm:gap-3">
           <input
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-black focus:outline-none"
+            className="w-full sm:w-auto min-h-[44px] px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-black focus:outline-none touch-manipulation"
           />
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-black focus:outline-none"
+            className="w-full sm:w-auto min-h-[44px] px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-black focus:outline-none touch-manipulation"
           >
             <option value="all">{t('common.all')} {t('appointments.status')}</option>
             <option value="PENDING">{t('appointments.pending')}</option>
@@ -363,7 +378,7 @@ export default function TodayAppointments({
           <div className="bg-white p-12 rounded-xl border border-dashed border-gray-300 text-center">
             <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-4" />
             <p className="text-gray-400 font-medium">
-              {isToday ? t('dashboard.barber.noAppointmentsForToday') : `${t('dashboard.barber.noAppointmentsForDate')} ${formatDate(displayDate)}`}.
+              {isToday ? t('dashboard.barber.noAppointmentsForToday') : `${t('dashboard.barber.noAppointmentsForDate')} ${formatDate(selectedDate)}`}.
             </p>
             {freeSlots.length === 0 && (
               <p className="text-sm text-gray-400 mt-2">{t('dashboard.barber.noFreeTimeSlotsAvailable')}</p>
@@ -373,27 +388,29 @@ export default function TodayAppointments({
           appointments.map((app) => (
             <div
               key={app.id}
-              className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4"
+              className="bg-white p-4 sm:p-5 rounded-xl border border-gray-200 shadow-sm flex flex-col gap-4"
             >
-              <div className="flex items-start gap-4">
-                <div className="bg-gray-100 p-3 rounded-lg text-center min-w-[120px]">
-                  <p className="text-xs font-bold text-gray-500 uppercase">{t('dashboard.barber.time')}</p>
-                  <p className="font-bold text-sm">{formatTimeRange(app.startTime, app.endTime)}</p>
-                  <p className="text-xs text-gray-500 mt-1">{getDuration(app.startTime, app.endTime)} {t('services.min')}</p>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4 min-w-0">
+                <div className="flex items-center gap-3 sm:block sm:shrink-0">
+                  <div className="bg-gray-100 px-3 py-2 sm:p-3 rounded-lg text-center min-w-[96px] sm:min-w-[120px] shrink-0">
+                    <p className="text-[10px] sm:text-xs font-bold text-gray-500 uppercase">{t('dashboard.barber.time')}</p>
+                    <p className="font-bold text-sm">{formatTimeRange(app.startTime, app.endTime)}</p>
+                    <p className="text-xs text-gray-500 mt-0.5 sm:mt-1">{getDuration(app.startTime, app.endTime)} {t('services.min')}</p>
+                  </div>
                 </div>
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <h3 className="font-bold text-lg">{app.customerName}</h3>
+                    <h3 className="font-bold text-base sm:text-lg truncate max-w-full">{app.customerName}</h3>
                     {getStatusBadge(app.status as AppointmentStatus)}
                     {showBarberLabels && app.barberName && (
-                      <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 truncate max-w-full">
                         {app.barberName}
                       </span>
                     )}
                   </div>
                   <div className="text-sm text-gray-600 flex items-start gap-1 mb-1">
                     <Scissors className="w-3 h-3 mt-0.5 flex-shrink-0" />
-                    <div>
+                    <div className="break-words min-w-0">
                       {getAllServices(app).map((service, index) => (
                         <span key={index}>
                           {service}
@@ -402,15 +419,18 @@ export default function TodayAppointments({
                       ))}
                     </div>
                   </div>
-                  <p className="text-sm text-gray-400 flex items-center gap-1">
-                    <Phone className="w-3 h-3" /> {app.customerPhone}
-                  </p>
+                  <a
+                    href={`tel:${app.customerPhone.replace(/\s/g, '')}`}
+                    className="text-sm text-gray-400 flex items-center gap-1 touch-manipulation min-h-[44px] sm:min-h-0"
+                  >
+                    <Phone className="w-3 h-3 shrink-0" /> {app.customerPhone}
+                  </a>
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                 <button
                   onClick={() => handleEdit(app)}
-                  className="flex-1 md:flex-none px-4 py-2 border border-gray-200 text-sm font-bold rounded-lg hover:bg-gray-50 transition-all flex items-center gap-2"
+                  className="w-full sm:w-auto min-h-[44px] px-4 py-2.5 border border-gray-200 text-sm font-bold rounded-lg hover:bg-gray-50 transition-all flex items-center justify-center gap-2 touch-manipulation"
                 >
                   <Edit2 className="w-4 h-4" /> {t('dashboard.barber.edit')}
                 </button>
@@ -418,13 +438,13 @@ export default function TodayAppointments({
                   <>
                     <button
                       onClick={() => handleMarkDone(app.id)}
-                      className="flex-1 md:flex-none px-4 py-2 bg-black text-white text-sm font-bold rounded-lg hover:bg-black/90 transition-all flex items-center gap-2"
+                      className="w-full sm:w-auto min-h-[44px] px-4 py-2.5 bg-black text-white text-sm font-bold rounded-lg hover:bg-black/90 transition-all flex items-center justify-center gap-2 touch-manipulation"
                     >
                       <Check className="w-4 h-4" /> {t('dashboard.barber.done')}
                     </button>
                     <button
                       onClick={() => handleCancel(app.id)}
-                      className="flex-1 md:flex-none px-4 py-2 border border-gray-200 text-sm font-bold rounded-lg hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all flex items-center gap-2"
+                      className="w-full sm:w-auto min-h-[44px] px-4 py-2.5 border border-gray-200 text-sm font-bold rounded-lg hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all flex items-center justify-center gap-2 touch-manipulation"
                     >
                       <X className="w-4 h-4" /> {t('dashboard.barber.cancel')}
                     </button>

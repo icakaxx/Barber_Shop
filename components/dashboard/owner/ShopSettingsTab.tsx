@@ -305,7 +305,7 @@ export default function ShopSettingsTab({ shopId, shop, onShopUpdate }: ShopSett
             value={formData.name}
             onChange={(e) => handleChange('name', e.target.value)}
             className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
-            placeholder="Клуб мъжки свят"
+            placeholder={t('dashboard.owner.shopNamePlaceholder')}
             required
           />
           <p className="text-xs text-gray-500 mt-1">{t('dashboard.owner.shopNameHelp')}</p>
@@ -336,7 +336,7 @@ export default function ShopSettingsTab({ shopId, shop, onShopUpdate }: ShopSett
             value={formData.address}
             onChange={(e) => handleChange('address', e.target.value)}
             className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
-            placeholder="ул. Пример 12, 1000 Център"
+            placeholder={t('dashboard.owner.addressPlaceholder')}
           />
           <p className="text-xs text-gray-500 mt-1">{t('dashboard.owner.addressHelp')}</p>
         </div>
@@ -351,7 +351,7 @@ export default function ShopSettingsTab({ shopId, shop, onShopUpdate }: ShopSett
             value={formData.city}
             onChange={(e) => handleChange('city', e.target.value)}
             className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
-            placeholder="София"
+            placeholder={t('dashboard.owner.cityPlaceholder')}
           />
           <p className="text-xs text-gray-500 mt-1">{t('dashboard.owner.cityHelp')}</p>
         </div>

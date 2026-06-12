@@ -1,0 +1,12 @@
+http://localhost:3000/
+http://localhost:3000/privacy
+http://localhost:3000/auth/reset-password
+http://localhost:3000/login
+http://localhost:3000/login/barber
+http://localhost:3000/login/admin
+http://localhost:3000/owner
+http://localhost:3000/barbers
+http://localhost:3000/superadmin
+http://localhost:3000/login?error=access_denied&redirect=/owner
+http://localhost:3000/login/barber?error=access_denied&redirect=/barbers
+http://localhost:3000/login/admin?error=access_denied&redirect=/superadmin

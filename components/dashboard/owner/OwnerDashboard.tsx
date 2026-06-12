@@ -14,7 +14,7 @@ import OwnerNotificationPanel from './OwnerNotificationPanel';
 import LanguageCurrencySwitcher from '@/components/shared/LanguageCurrencySwitcher';
 import { useI18n } from '@/contexts/I18nContext';
 import type { Barber, AppointmentStatus } from '@/lib/types';
-import { formatDateYYYYMMDDInTimeZone, SHOP_BUSINESS_TIMEZONE } from '@/lib/utils/shopHours';
+import { formatDateYYYYMMDDInTimeZone, SHOP_BUSINESS_TIMEZONE, formatAppointmentTimeInShopTz, formatShopCalendarDateLabel, addCalendarDays, getShopTodayYMD } from '@/lib/utils/shopHours';
 import {
   getTodayDateStr,
   loadOwnerNotifications,
@@ -402,10 +402,7 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
     loadBarberAppointments();
   }, [selectedBarberId, barberViewDate, currentTab, barbers]);
 
-  const formatTime = (timeString: string) => {
-    const date = new Date(timeString);
-    return date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-  };
+  const formatTime = (timeString: string) => formatAppointmentTimeInShopTz(timeString);
 
   const parseServicesFromNotes = (notes: string | undefined): string[] => {
     if (!notes) return [];
@@ -422,21 +419,9 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
     return [...services, ...additionalServices];
   };
 
-  const formatDisplayDate = (dateString: string) => {
-    const date = new Date(`${dateString}T12:00:00`);
-    return date.toLocaleDateString(locale === 'bg' ? 'bg-BG' : 'en-GB', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  };
+  const formatDisplayDate = (dateString: string) => formatShopCalendarDateLabel(dateString, locale, 'long');
 
-  const shiftDateByDays = (dateString: string, days: number) => {
-    const date = new Date(`${dateString}T12:00:00`);
-    date.setDate(date.getDate() + days);
-    return date.toISOString().split('T')[0];
-  };
+  const shiftDateByDays = (dateString: string, days: number) => addCalendarDays(dateString, days);
 
   const handleEdit = (appointment: Appointment) => {
     setEditingAppointment(appointment);
@@ -476,11 +461,11 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
         setEditingAppointment(null);
       } else {
         const error = await response.json();
-        alert(`Failed to update appointment: ${error.error}`);
+        alert(`${t('dashboard.barber.failedToUpdate')}: ${error.error}`);
       }
     } catch (error) {
       console.error('Error updating appointment:', error);
-      alert('Failed to update appointment');
+      alert(t('dashboard.barber.failedToUpdate'));
     }
   };
 
@@ -512,16 +497,16 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
         setIsCreateModalOpen(false);
       } else {
         const error = await response.json();
-        alert(`Failed to create appointment: ${error.error}`);
+        alert(`${t('dashboard.barber.failedToCreate')}: ${error.error}`);
       }
     } catch (error) {
       console.error('Error creating appointment:', error);
-      alert('Failed to create appointment');
+      alert(t('dashboard.barber.failedToCreate'));
     }
   };
 
   const handleDelete = async (appointmentId: string) => {
-    if (!confirm('Are you sure you want to cancel/delete this appointment?')) return;
+    if (!confirm(t('dashboard.owner.deleteAppointmentConfirm'))) return;
 
     setDeletingId(appointmentId);
     try {
@@ -577,11 +562,11 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
         }
       } else {
         const error = await response.json();
-        alert(`Failed to delete appointment: ${error.error}`);
+        alert(`${t('dashboard.owner.failedToDelete')}: ${error.error}`);
       }
     } catch (error) {
       console.error('Error deleting appointment:', error);
-      alert('Failed to delete appointment');
+      alert(t('dashboard.owner.failedToDelete'));
     } finally {
       setDeletingId(null);
     }
@@ -592,7 +577,7 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
-          <p className="text-gray-500">Loading owner dashboard...</p>
+          <p className="text-gray-500">{t('dashboard.owner.loadingDashboard')}</p>
         </div>
       </div>
     );
@@ -890,7 +875,7 @@ export default function OwnerDashboard({ userEmail }: OwnerDashboardProps) {
             onDeleteAppointment={handleDelete}
             deletingId={deletingId}
             onReloadAppointments={() => {
-              setSelectedDate(new Date().toISOString().split('T')[0]);
+              setSelectedDate(getShopTodayYMD());
             }}
             onBarberUpdate={async (barberId, data) => {
               const response = await fetch(`/api/barbers/${barberId}`, {

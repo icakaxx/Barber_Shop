@@ -9,15 +9,20 @@ import { useI18n } from '@/contexts/I18nContext';
 import { extractPrice } from '@/lib/utils/price';
 import { useShopBranding } from '@/contexts/ShopBrandingContext';
 import {
-  getHoursForDate,
   getHoursForCalendarDate,
   isDuringLunchForDate,
   overlapsLunchForDate,
   validateSlotAgainstShop,
   formatDateYYYYMMDDInTimeZone,
+  addCalendarDays,
   SHOP_BUSINESS_TIMEZONE,
   isDateBlocked,
   shopLocalDateTimeToUtc,
+  slotEndsBeforeShopClose,
+  eachShopLocalBookingSlot,
+  slotOverlapsBusy,
+  formatShopWeekdayLabel,
+  formatShopCalendarDateLabel,
 } from '@/lib/utils/shopHours';
 import { BOOKING_SLOT_MINUTES } from '@/lib/utils/bookingSlots';
 
@@ -228,12 +233,12 @@ export default function BookingModal() {
     }
   }, [isOpen]);
 
-  // Reload available times when services change (to validate they fit in time windows)
+  // Reload available times when services or barber change
   useEffect(() => {
     if (selectedDate && bookingState.barber && bookingState.barber.id !== 'any') {
       loadAvailableTimes(selectedDate);
     }
-  }, [bookingState.services]);
+  }, [bookingState.services, bookingState.barber?.id]);
 
   const closeModal = () => {
     const modal = document.getElementById('bookingModal');
@@ -351,41 +356,22 @@ export default function BookingModal() {
     }
   };
 
-  // Generate available dates (next 21 days)
+  // Generate available dates (next 21 shop-local calendar days)
   const getAvailableDates = () => {
     const dates: string[] = [];
-    const today = new Date();
+    const todayShop = formatDateYYYYMMDDInTimeZone(new Date(), SHOP_BUSINESS_TIMEZONE);
     for (let i = 0; i < 21; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() + i);
-      dates.push(date.toISOString().split('T')[0]);
+      dates.push(addCalendarDays(todayShop, i));
     }
     return dates;
   };
 
   // Helper function to format weekday based on locale
-  const formatWeekday = (date: Date): string => {
-    if (locale === 'bg') {
-      // Bulgarian short day names: Sunday=0, Monday=1, ..., Saturday=6
-      const bgDays = ['Нед', 'Пон', 'Вт', 'Ср', 'Чет', 'Пет', 'Съб'];
-      return bgDays[date.getDay()];
-    }
-    return date.toLocaleDateString('en-GB', { weekday: 'short' });
-  };
+  const formatWeekday = (dateStr: string): string =>
+    formatShopWeekdayLabel(dateStr, locale, 'short');
 
-  // Helper function to format full date based on locale (used in summary)
-  const formatFullDate = (date: Date): string => {
-    if (locale === 'bg') {
-      // Bulgarian short day names and month abbreviations
-      const bgDays = ['Нед', 'Пон', 'Вт', 'Ср', 'Чет', 'Пет', 'Съб'];
-      const bgMonths = ['яну', 'фев', 'мар', 'апр', 'май', 'юни', 'юли', 'авг', 'сеп', 'окт', 'ное', 'дек'];
-      const dayName = bgDays[date.getDay()];
-      const day = date.getDate();
-      const month = bgMonths[date.getMonth()];
-      return `${dayName}, ${day} ${month}`;
-    }
-    return date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
-  };
+  const formatFullDate = (dateStr: string): string =>
+    formatShopCalendarDateLabel(dateStr, locale, 'short');
 
   const isDateBlockedDay = (dateStr: string) =>
     isDateBlocked(dateStr, shop?.blockedDates);
@@ -403,8 +389,7 @@ export default function BookingModal() {
       return;
     }
     setSelectedDate(dateStr);
-    const date = new Date(dateStr + 'T00:00:00');
-    const formattedDate = formatFullDate(date);
+    const formattedDate = formatFullDate(dateStr);
     setBookingState({ ...bookingState, date: formattedDate });
 
     // Load available times for selected date and barber
@@ -417,15 +402,19 @@ export default function BookingModal() {
       return sum + minutes;
     }, 0);
 
-    const date = new Date(dateStr + 'T12:00:00');
-    const dayHours = getHoursForDate(shop?.workingHours, date);
+    const dayHours = getHoursForCalendarDate(shop?.workingHours, dateStr);
     if (!dayHours) {
       setAvailableTimes([]);
       return;
     }
 
-    const startOfDay = new Date(dateStr + `T${dayHours.open}:00`);
-    const endOfDay = new Date(dateStr + `T${dayHours.close}:00`);
+    const shopSlots = eachShopLocalBookingSlot(
+      dateStr,
+      dayHours.open,
+      dayHours.close,
+      BOOKING_SLOT_MINUTES
+    );
+    const closeUtc = shopLocalDateTimeToUtc(dateStr, dayHours.close);
 
     const isDuringLunch = (timeStr: string) =>
       isDuringLunchForDate(dateStr, timeStr, shop?.lunchHours, shop?.lunchStart, shop?.lunchEnd);
@@ -440,57 +429,33 @@ export default function BookingModal() {
         shop?.lunchEnd
       );
 
+    const slotPassesLunch = (timeStr: string) =>
+      !isDuringLunch(timeStr) && !wouldOverlapLunch(timeStr);
+
     if (!bookingState.barber || bookingState.barber.id === 'any') {
-      const times: string[] = [];
-      for (let slot = new Date(startOfDay); slot < endOfDay; slot.setMinutes(slot.getMinutes() + BOOKING_SLOT_MINUTES)) {
-        const timeStr = `${slot.getHours().toString().padStart(2, '0')}:${slot.getMinutes().toString().padStart(2, '0')}`;
-        if (!isDuringLunch(timeStr) && !wouldOverlapLunch(timeStr)) times.push(timeStr);
-      }
-      setAvailableTimes(times);
+      setAvailableTimes(shopSlots.filter(({ timeStr }) => slotPassesLunch(timeStr)).map(({ timeStr }) => timeStr));
       return;
     }
 
     try {
       const busyRanges = await fetchPublicBookedSlotRanges(bookingState.barber.id, dateStr);
 
-      const isTimeBlocked = (time: Date) =>
-        busyRanges.some((apt) => time >= apt.start && time < apt.end);
-
-      const servicesFitInWindow = (startTime: Date): boolean => {
-        if (totalDurationMinutes === 0) return true;
-        const endTime = new Date(startTime);
-        endTime.setMinutes(endTime.getMinutes() + totalDurationMinutes);
-        if (endTime > endOfDay) return false;
-        const startStr = `${startTime.getHours().toString().padStart(2, '0')}:${startTime.getMinutes().toString().padStart(2, '0')}`;
-        if (wouldOverlapLunch(startStr)) return false;
-        if (busyRanges.some((apt) => startTime < apt.end && endTime > apt.start)) return false;
-        return true;
-      };
-
-      const candidateTimes: Date[] = [];
-      for (let slot = new Date(startOfDay); slot < endOfDay; slot.setMinutes(slot.getMinutes() + BOOKING_SLOT_MINUTES)) {
-        candidateTimes.push(new Date(slot));
-      }
-
       const validTimes: string[] = [];
-      for (const candidateTime of candidateTimes) {
-        const timeStr = `${candidateTime.getHours().toString().padStart(2, '0')}:${candidateTime.getMinutes().toString().padStart(2, '0')}`;
-        if (isDuringLunch(timeStr)) continue;
-        if (!isTimeBlocked(candidateTime) && servicesFitInWindow(candidateTime) && !validTimes.includes(timeStr)) {
-          validTimes.push(timeStr);
-        }
+      for (const { timeStr, slotStartUtc } of shopSlots) {
+        if (!slotPassesLunch(timeStr)) continue;
+
+        const slotEndUtc =
+          totalDurationMinutes > 0
+            ? new Date(slotStartUtc.getTime() + totalDurationMinutes * 60000)
+            : new Date(slotStartUtc.getTime() + BOOKING_SLOT_MINUTES * 60000);
+
+        if (totalDurationMinutes > 0 && slotEndUtc > closeUtc) continue;
+        if (slotOverlapsBusy(slotStartUtc, slotEndUtc, busyRanges)) continue;
+
+        validTimes.push(timeStr);
       }
 
-      if (totalDurationMinutes === 0) {
-        const simplified: string[] = [];
-        for (let slot = new Date(startOfDay); slot < endOfDay; slot.setMinutes(slot.getMinutes() + BOOKING_SLOT_MINUTES)) {
-          const timeStr = `${slot.getHours().toString().padStart(2, '0')}:${slot.getMinutes().toString().padStart(2, '0')}`;
-          if (!isDuringLunch(timeStr) && !isTimeBlocked(slot)) simplified.push(timeStr);
-        }
-        setAvailableTimes(simplified);
-      } else {
-        setAvailableTimes(validTimes);
-      }
+      setAvailableTimes(validTimes);
     } catch (error) {
       console.error('Error loading available times:', error);
       setAvailableTimes([]);
@@ -513,15 +478,13 @@ export default function BookingModal() {
         const startTime = shopLocalDateTimeToUtc(selectedDate, time);
         const endTime = new Date(startTime.getTime() + totalMinutes * 60000);
 
-        const dateForCheck = new Date(selectedDate + 'T12:00:00');
-        const dayH = getHoursForDate(shop?.workingHours, dateForCheck);
+        const dayH = getHoursForCalendarDate(shop?.workingHours, selectedDate);
         if (!dayH) {
           alert(t('booking.dayClosed'));
           setFindingBarber(false);
           return;
         }
-        const [closeH, closeM] = dayH.close.split(':').map(Number);
-        if (endTime.getHours() > closeH || (endTime.getHours() === closeH && endTime.getMinutes() > closeM)) {
+        if (!slotEndsBeforeShopClose(selectedDate, endTime, dayH.close)) {
           alert(t('booking.servicesExceedBusinessHours'));
           setFindingBarber(false);
           return;
@@ -542,8 +505,7 @@ export default function BookingModal() {
         }
 
         // Format the date for display
-        const date = new Date(selectedDate + 'T00:00:00');
-        const formattedDate = formatFullDate(date);
+        const formattedDate = formatFullDate(selectedDate);
         
         // Store available barbers list
         setAvailableBarbersList(availableBarbers);
@@ -585,21 +547,24 @@ export default function BookingModal() {
         const minutes = parseInt(service.duration.replace(/\D/g, '')) || 0;
         return sum + minutes;
       }, 0);
-      const dateForCheck = new Date(selectedDate + 'T12:00:00');
-      const dayH = getHoursForDate(shop?.workingHours, dateForCheck);
+      const dayH = getHoursForCalendarDate(shop?.workingHours, selectedDate);
       if (!dayH) {
         alert(t('booking.dayClosed'));
         return;
       }
       const slotStart = shopLocalDateTimeToUtc(selectedDate, time);
       const slotEnd = new Date(slotStart.getTime() + totalMinutes * 60000);
-      const [closeH, closeM] = dayH.close.split(':').map(Number);
-      if (slotEnd.getHours() > closeH || (slotEnd.getHours() === closeH && slotEnd.getMinutes() > closeM)) {
+      if (!slotEndsBeforeShopClose(selectedDate, slotEnd, dayH.close)) {
         alert(t('booking.servicesExceedBusinessHours'));
         return;
       }
       if (overlapsLunchForDate(selectedDate, time, totalMinutes, shop?.lunchHours, shop?.lunchStart, shop?.lunchEnd)) {
         alert(t('booking.appointmentOverlapsLunch'));
+        return;
+      }
+      const busyRanges = await fetchPublicBookedSlotRanges(bookingState.barber!.id, selectedDate);
+      if (slotOverlapsBusy(slotStart, slotEnd, busyRanges)) {
+        alert(t('booking.timeSlotBooked'));
         return;
       }
       setBookingState((prev) => ({ ...prev, time, step: 4 }));
@@ -724,15 +689,13 @@ export default function BookingModal() {
       const startTime = shopLocalDateTimeToUtc(selectedDate, bookingState.time!);
       const endTime = new Date(startTime.getTime() + totalMinutes * 60000);
 
-      const dateForCheck = new Date(selectedDate + 'T12:00:00');
-      const dayH = getHoursForDate(shop?.workingHours, dateForCheck);
+      const dayH = getHoursForCalendarDate(shop?.workingHours, selectedDate);
       if (!dayH) {
         alert(t('booking.dayClosed'));
         setLoading(false);
         return;
       }
-      const [closeH, closeM] = dayH.close.split(':').map(Number);
-      if (endTime.getHours() > closeH || (endTime.getHours() === closeH && endTime.getMinutes() > closeM)) {
+      if (!slotEndsBeforeShopClose(selectedDate, endTime, dayH.close)) {
         alert(t('booking.servicesExceedBusinessHours'));
         setLoading(false);
         return;
@@ -983,8 +946,8 @@ export default function BookingModal() {
               <p className="text-sm text-gray-500 mb-6">{t('booking.chooseDate')}</p>
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 mb-6 max-h-64 overflow-y-auto">
                 {getAvailableDates().map((dateStr) => {
-                  const date = new Date(dateStr + 'T00:00:00');
-                  const isToday = dateStr === new Date().toISOString().split('T')[0];
+                  const dayNum = parseInt(dateStr.split('-')[2], 10);
+                  const isToday = dateStr === formatDateYYYYMMDDInTimeZone(new Date(), SHOP_BUSINESS_TIMEZONE);
                   const isSelected = selectedDate === dateStr;
                   const blocked = isDateBlockedDay(dateStr);
                   const bookable = isDateBookable(dateStr);
@@ -1012,9 +975,9 @@ export default function BookingModal() {
                       <div
                         className={`text-xs mb-1 ${!bookable ? 'text-gray-400' : isSelected ? 'text-gray-300' : 'text-gray-500'}`}
                       >
-                        {formatWeekday(date)}
+                        {formatWeekday(dateStr)}
                       </div>
-                      <div className="font-bold">{date.getDate()}</div>
+                      <div className="font-bold">{dayNum}</div>
                       {!bookable && (
                         <div className="text-[9px] text-gray-400 mt-1 leading-tight">
                           {blocked ? t('booking.vacationLabel') : t('dashboard.owner.closed')}
@@ -1194,33 +1157,16 @@ export default function BookingModal() {
                     className="mt-1 h-4 w-4 shrink-0 rounded border-gray-300 text-black focus:ring-black"
                   />
                   <span className="text-sm text-gray-600 leading-snug">
-                    {locale === 'bg' ? (
-                      <>
-                        Съгласявам се с обработката на личните ми данни съгласно{' '}
-                        <Link
-                          href="/privacy"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="font-medium text-black underline hover:no-underline"
-                        >
-                          Политиката за поверителност
-                        </Link>{' '}
-                        за целите на резервацията и потвърждение по имейл/телефон.
-                      </>
-                    ) : (
-                      <>
-                        I agree to the processing of my personal data under the{' '}
-                        <Link
-                          href="/privacy"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="font-medium text-black underline hover:no-underline"
-                        >
-                          Privacy Policy
-                        </Link>{' '}
-                        for booking and confirmation by email/phone.
-                      </>
-                    )}
+                    {t('booking.privacyConsentBefore')}{' '}
+                    <Link
+                      href="/privacy"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium text-black underline hover:no-underline"
+                    >
+                      {t('booking.privacyConsentLink')}
+                    </Link>{' '}
+                    {t('booking.privacyConsentAfter')}
                   </span>
                 </label>
                 <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 mt-6">
@@ -1253,7 +1199,7 @@ export default function BookingModal() {
                       <span className="text-lg font-bold">{calculateTotal().totalPrice}</span>
                     </div>
                     <div className="text-xs text-gray-500 mt-2">
-                      {bookingState.date} {locale === 'bg' ? 'в' : 'at'} {bookingState.time} • {calculateTotal().totalDuration}
+                      {bookingState.date} {t('booking.atTime')} {bookingState.time} • {calculateTotal().totalDuration}
                     </div>
                   </div>
                 </div>

@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import OwnerDashboard from '@/components/dashboard/owner/OwnerDashboard';
+import DashboardLoadingFallback from '@/components/shared/DashboardLoadingFallback';
 import { createClient } from '@/lib/supabase/server';
 
 const ALLOWED_ROLES = ['BARBER_OWNER', 'SUPER_ADMIN'];
@@ -27,7 +28,7 @@ export default async function OwnerPage() {
   }
 
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+    <Suspense fallback={<DashboardLoadingFallback messageKey="dashboard.owner.loadingDashboard" />}>
       <OwnerDashboard userEmail={user.email} />
     </Suspense>
   );

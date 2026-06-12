@@ -8,7 +8,7 @@ import { useI18n } from '@/contexts/I18nContext';
 import { privacyPolicyBg, privacyPolicyEn } from '@/lib/legal/privacyPolicyContent';
 
 export default function PrivacyPolicyPage() {
-  const { locale } = useI18n();
+  const { locale, t } = useI18n();
   const content = locale === 'en' ? privacyPolicyEn : privacyPolicyBg;
 
   return (
@@ -20,7 +20,7 @@ export default function PrivacyPolicyPage() {
             href="/"
             className="text-sm text-gray-500 hover:text-black transition-colors mb-8 inline-block"
           >
-            ← {locale === 'bg' ? 'Начало' : 'Home'}
+            ← {t('footer.home')}
           </Link>
 
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">

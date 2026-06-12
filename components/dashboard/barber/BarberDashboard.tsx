@@ -202,17 +202,45 @@ export default function BarberDashboard({
     <div className="min-h-[100dvh] bg-gray-50">
       <header className="sticky top-0 z-40 w-full border-b border-gray-200 bg-white shadow-sm pt-safe">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-wrap items-center justify-between gap-y-2 py-2 sm:py-0 sm:h-16">
-            <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-              <Link
-                href="/"
-                className="p-2 hover:bg-gray-100 rounded-full shrink-0 touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </Link>
-              <h1 className="text-lg sm:text-xl font-bold tracking-tight truncate">{t('nav.barberDashboard')}</h1>
+          <div className="flex flex-col gap-2 py-2 sm:flex-row sm:items-center sm:justify-between sm:gap-0 sm:py-0 sm:min-h-16">
+            <div className="flex items-center justify-between gap-2 sm:justify-start sm:gap-4 min-w-0">
+              <div className="flex items-center gap-2 min-w-0">
+                <Link
+                  href="/"
+                  className="p-2 hover:bg-gray-100 rounded-full shrink-0 touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                </Link>
+                <h1 className="text-base sm:text-xl font-bold tracking-tight truncate">
+                  {t('nav.barberDashboard')}
+                </h1>
+              </div>
+              <div className="flex items-center gap-1 sm:hidden shrink-0">
+                {sessionBacked && (
+                  <button
+                    type="button"
+                    onClick={handleSignOut}
+                    className="p-2.5 min-h-[44px] min-w-[44px] text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100 touch-manipulation flex items-center justify-center"
+                    aria-label={t('auth.logout')}
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </button>
+                )}
+                <LanguageCurrencySwitcher />
+                {barber?.photoUrl ? (
+                  <img
+                    src={barber.photoUrl}
+                    alt=""
+                    className="w-9 h-9 rounded-full object-cover ring-2 ring-gray-100"
+                  />
+                ) : (
+                  <div className="w-9 h-9 rounded-full bg-black text-white flex items-center justify-center font-bold text-xs ring-2 ring-gray-100">
+                    {initials}
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="flex items-center gap-2 sm:gap-3 ml-auto shrink-0 flex-wrap justify-end">
+            <div className="hidden sm:flex items-center gap-2 sm:gap-3 shrink-0 flex-wrap justify-end">
               {sessionBacked && (
                 <button
                   type="button"
@@ -224,7 +252,7 @@ export default function BarberDashboard({
                 </button>
               )}
               <LanguageCurrencySwitcher />
-              <div className="hidden sm:block text-right max-w-[200px] min-w-0">
+              <div className="text-right max-w-[200px] min-w-0">
                 {sessionBacked ? (
                   <>
                     <p className="text-sm font-bold text-gray-900 truncate" title={shopName}>
@@ -257,20 +285,30 @@ export default function BarberDashboard({
                 </div>
               )}
             </div>
+            {sessionBacked && (
+              <div className="sm:hidden -mt-1 pb-1 min-w-0">
+                <p className="text-xs font-semibold text-gray-900 truncate" title={shopName}>
+                  {shopName}
+                </p>
+                <p className="text-xs text-gray-500 truncate" title={displayName}>
+                  {t('dashboard.barber.signedInAs')}: {displayName}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
         {showTeamFilters && currentTab === 'today' && (
-          <div className="mb-6 flex flex-wrap items-center gap-3">
+          <div className="mb-4 sm:mb-6 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
             <label className="text-sm font-medium text-gray-700">{t('dashboard.barber.todayWho')}</label>
             <select
               value={todayFilterBarberId}
               onChange={(e) =>
                 setTodayFilterBarberId(e.target.value === 'all' ? 'all' : e.target.value)
               }
-              className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-black focus:outline-none"
+              className="w-full sm:w-auto min-h-[44px] px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-black focus:outline-none touch-manipulation"
             >
               <option value="all">{t('dashboard.barber.todayAllBarbers')}</option>
               {team.map((b) => (
@@ -282,10 +320,10 @@ export default function BarberDashboard({
           </div>
         )}
 
-        <div className="flex border-b border-gray-200 mb-8 overflow-x-auto scrollbar-hide">
+        <div className="flex border-b border-gray-200 mb-5 sm:mb-8 -mx-3 sm:mx-0 px-3 sm:px-0">
           <button
             onClick={() => setCurrentTab('today')}
-            className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+            className={`flex-1 px-3 py-3 min-h-[48px] text-sm font-medium border-b-2 transition-colors touch-manipulation ${
               currentTab === 'today'
                 ? 'border-black text-black'
                 : 'border-transparent text-gray-500 hover:text-black'
@@ -295,7 +333,7 @@ export default function BarberDashboard({
           </button>
           <button
             onClick={() => setCurrentTab('calendar')}
-            className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+            className={`flex-1 px-3 py-3 min-h-[48px] text-sm font-medium border-b-2 transition-colors touch-manipulation ${
               currentTab === 'calendar'
                 ? 'border-black text-black'
                 : 'border-transparent text-gray-500 hover:text-black'
@@ -308,7 +346,7 @@ export default function BarberDashboard({
         {currentTab === 'today' && (
           <TodayAppointments
             barberId={todayFilterBarberId === 'all' ? undefined : todayFilterBarberId}
-            shopId={todayFilterBarberId === 'all' ? shopId || undefined : undefined}
+            shopId={shopId || barber?.shopId || undefined}
             showBarberLabels={todayFilterBarberId === 'all' && !!shopId}
           />
         )}

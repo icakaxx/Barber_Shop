@@ -1,9 +1,22 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Calendar, ChevronLeft, ChevronRight, Users } from 'lucide-react';
 import type { Barber } from '@/lib/types';
 import { useI18n } from '@/contexts/I18nContext';
+import { BOOKING_SLOT_MINUTES } from '@/lib/utils/bookingSlots';
+import {
+  type WorkingHoursMap,
+  type LunchHoursMap,
+  type BlockedDateRange,
+  getShopTodayYMD,
+  getShopCalendarTimeSlots,
+  getShopCalendarSlotStatus,
+  formatAppointmentTimeInShopTz,
+  formatShopCalendarDateLabel,
+  parseAppointmentInstant,
+  shopLocalDateTimeToUtc,
+} from '@/lib/utils/shopHours';
 import CreateAppointmentModal from './CreateAppointmentModal';
 import AppointmentDetailsModal from './AppointmentDetailsModal';
 
@@ -36,20 +49,19 @@ export default function ScheduleCalendar({
   defaultTeamView = false,
 }: ScheduleCalendarProps) {
   const { t, locale } = useI18n();
-  // Store selected date as YYYY-MM-DD in local time (avoid timezone shift issues)
-  const getTodayYMD = () => {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day = String(today.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
-  const [selectedDate, setSelectedDate] = useState(getTodayYMD());
+  const [selectedDate, setSelectedDate] = useState(getShopTodayYMD());
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [currentMonth, setCurrentMonth] = useState(() => {
+    const [y, mo, d] = getShopTodayYMD().split('-').map(Number);
+    return new Date(y, mo - 1, d);
+  });
   const [barbers, setBarbers] = useState<Barber[]>([]);
+  const [workingHours, setWorkingHours] = useState<WorkingHoursMap | undefined>();
+  const [lunchStart, setLunchStart] = useState<string | undefined>();
+  const [lunchEnd, setLunchEnd] = useState<string | undefined>();
+  const [lunchHours, setLunchHours] = useState<LunchHoursMap | undefined>();
+  const [blockedDates, setBlockedDates] = useState<BlockedDateRange[]>([]);
   const [selectedBarberId, setSelectedBarberId] = useState<string>(() => {
     if (defaultTeamView && shopId) return 'all';
     return barberId || 'all';
@@ -82,6 +94,40 @@ export default function ScheduleCalendar({
     };
 
     loadBarbers();
+  }, [shopId]);
+
+  useEffect(() => {
+    const loadShopSettings = async () => {
+      if (!shopId) return;
+      try {
+        const [shopRes, blockedRes] = await Promise.all([
+          fetch(`/api/shops/${shopId}`, { credentials: 'include' }),
+          fetch(`/api/shops/${shopId}/blocked-dates`, { credentials: 'include' }),
+        ]);
+        if (shopRes.ok) {
+          const shop = await shopRes.json();
+          setWorkingHours(shop.workingHours);
+          setLunchStart(shop.lunchStart);
+          setLunchEnd(shop.lunchEnd);
+          setLunchHours(shop.lunchHours);
+        }
+        if (blockedRes.ok) {
+          const rows = await blockedRes.json();
+          setBlockedDates(
+            (rows as { id: string; startDate: string; endDate: string; label?: string }[]).map((r) => ({
+              id: r.id,
+              startDate: r.startDate,
+              endDate: r.endDate,
+              label: r.label,
+            }))
+          );
+        }
+      } catch (error) {
+        console.error('Error loading shop settings for calendar:', error);
+      }
+    };
+
+    loadShopSettings();
   }, [shopId]);
 
   useEffect(() => {
@@ -181,71 +227,60 @@ export default function ScheduleCalendar({
         setIsCreateModalOpen(false);
       } else {
         const error = await response.json();
-        alert(`Failed to create appointment: ${error.error}`);
+        alert(`${t('dashboard.barber.failedToCreate')}: ${error.error}`);
       }
     } catch (error) {
       console.error('Error creating appointment from calendar:', error);
-      alert('Failed to create appointment');
+      alert(t('dashboard.barber.failedToCreate'));
     }
   };
 
-  // Generate time slots (9:00 AM to 6:00 PM in 30-minute intervals)
-  const generateTimeSlots = () => {
-    const slots: string[] = [];
-    for (let hour = 9; hour < 18; hour++) {
-      for (let minute = 0; minute < 60; minute += 30) {
-        const timeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-        slots.push(timeStr);
-      }
-    }
-    return slots;
-  };
+  const slotOptions = useMemo(
+    () => ({ lunchHours, lunchStart, lunchEnd, blockedRanges: blockedDates, slotMinutes: BOOKING_SLOT_MINUTES }),
+    [lunchHours, lunchStart, lunchEnd, blockedDates]
+  );
 
-  const timeSlots = generateTimeSlots();
+  const timeSlots = useMemo(
+    () => getShopCalendarTimeSlots(selectedDate, workingHours, slotOptions),
+    [selectedDate, workingHours, slotOptions]
+  );
+
+  const busyRanges = useMemo(
+    () =>
+      appointments.map((apt) => ({
+        start: parseAppointmentInstant(apt.startTime),
+        end: parseAppointmentInstant(apt.endTime),
+      })),
+    [appointments]
+  );
 
   const getDateFromYMD = (ymd: string) => {
     const [year, month, day] = ymd.split('-').map(Number);
     return new Date(year, month - 1, day);
   };
 
-  /** Local calendar date as YYYY-MM-DD — never use toISOString() for calendar cells (UTC shifts the day). */
-  const toLocalYMD = (date: Date) => {
+  const toCalendarYMD = (date: Date) => {
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, '0');
     const d = String(date.getDate()).padStart(2, '0');
     return `${y}-${m}-${d}`;
   };
 
-  // Check if a time slot is taken
-  const isTimeSlotTaken = (timeStr: string): boolean => {
-    const [hours, minutes] = timeStr.split(':').map(Number);
-    const slotStart = getDateFromYMD(selectedDate);
-    slotStart.setHours(hours, minutes, 0, 0);
-    const slotEnd = new Date(slotStart);
-    slotEnd.setMinutes(slotEnd.getMinutes() + 30);
-
-    return appointments.some(apt => {
-      const aptStart = new Date(apt.startTime);
-      const aptEnd = new Date(apt.endTime);
-      // Check if the slot overlaps with any appointment
-      return (slotStart < aptEnd && slotEnd > aptStart);
-    });
-  };
-
-  // Get appointment info for a time slot
   const getAppointmentForSlot = (timeStr: string): Appointment | null => {
-    const [hours, minutes] = timeStr.split(':').map(Number);
-    const slotStart = getDateFromYMD(selectedDate);
-    slotStart.setHours(hours, minutes, 0, 0);
-    const slotEnd = new Date(slotStart);
-    slotEnd.setMinutes(slotEnd.getMinutes() + 30);
+    const slotStart = shopLocalDateTimeToUtc(selectedDate, timeStr);
+    const slotEnd = new Date(slotStart.getTime() + BOOKING_SLOT_MINUTES * 60000);
 
-    return appointments.find(apt => {
-      const aptStart = new Date(apt.startTime);
-      const aptEnd = new Date(apt.endTime);
-      return (slotStart < aptEnd && slotEnd > aptStart);
-    }) || null;
+    return (
+      appointments.find((apt) => {
+        const aptStart = parseAppointmentInstant(apt.startTime);
+        const aptEnd = parseAppointmentInstant(apt.endTime);
+        return slotStart < aptEnd && slotEnd > aptStart;
+      }) || null
+    );
   };
+
+  const getSlotStatus = (timeStr: string) =>
+    getShopCalendarSlotStatus(selectedDate, timeStr, workingHours, busyRanges, slotOptions);
 
   // Generate calendar days for the current month
   const generateCalendarDays = () => {
@@ -281,36 +316,13 @@ export default function ScheduleCalendar({
   };
 
   const calendarDays = generateCalendarDays();
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const shopToday = getShopTodayYMD();
 
-  const isToday = (date: Date) => {
-    const compareDate = new Date(date);
-    compareDate.setHours(0, 0, 0, 0);
-    return compareDate.getTime() === today.getTime();
-  };
+  const isToday = (date: Date) => toCalendarYMD(date) === shopToday;
 
-  const isSelected = (date: Date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const dateStr = `${year}-${month}-${day}`;
-    return dateStr === selectedDate;
-  };
+  const isSelected = (date: Date) => toCalendarYMD(date) === selectedDate;
 
-  const formatDate = (date: Date) => {
-    if (locale === 'bg') {
-      const bgMonths = ['януари', 'февруари', 'март', 'април', 'май', 'юни', 'юли', 'август', 'септември', 'октомври', 'ноември', 'декември'];
-      const bgDays = ['неделя', 'понеделник', 'вторник', 'сряда', 'четвъртък', 'петък', 'събота'];
-      return `${bgDays[date.getDay()]}, ${date.getDate()} ${bgMonths[date.getMonth()]} ${date.getFullYear()}`;
-    }
-    return date.toLocaleDateString('en-GB', { 
-      weekday: 'long', 
-      day: 'numeric', 
-      month: 'long',
-      year: 'numeric'
-    });
-  };
+  const formatDate = (dateStr: string) => formatShopCalendarDateLabel(dateStr, locale, 'long');
 
   const formatMonthYear = (date: Date) => {
     if (locale === 'bg') {
@@ -342,26 +354,26 @@ export default function ScheduleCalendar({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Calendar Header */}
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <h2 className="text-2xl font-bold">{t('dashboard.barber.scheduleCalendar')}</h2>
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            <Users className="w-4 h-4" />
-            <span>
-              {selectedBarberId === 'all'
-                ? t('dashboard.barber.allBarbers')
-                : barbers.find(b => b.id === selectedBarberId)?.displayName || t('dashboard.barber.mySchedule')}
-            </span>
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+          <div className="min-w-0">
+            <h2 className="text-xl sm:text-2xl font-bold">{t('dashboard.barber.scheduleCalendar')}</h2>
+            <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
+              <Users className="w-4 h-4 shrink-0" />
+              <span className="truncate">
+                {selectedBarberId === 'all'
+                  ? t('dashboard.barber.allBarbers')
+                  : barbers.find(b => b.id === selectedBarberId)?.displayName || t('dashboard.barber.mySchedule')}
+              </span>
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-3">
           {barbers.length > 0 && (
             <select
               value={selectedBarberId}
               onChange={e => setSelectedBarberId(e.target.value)}
-              className="bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:ring-1 focus:ring-black outline-none"
+              className="w-full sm:w-auto min-h-[44px] bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-black outline-none touch-manipulation"
             >
               <option value="all">{t('dashboard.barber.allBarbers')}</option>
               {barbers.map(b => (
@@ -371,18 +383,22 @@ export default function ScheduleCalendar({
               ))}
             </select>
           )}
+        </div>
+        <div className="flex items-center justify-between gap-2">
           <button
             onClick={() => navigateMonth('prev')}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2.5 min-h-[44px] min-w-[44px] hover:bg-gray-100 rounded-lg transition-colors touch-manipulation flex items-center justify-center"
+            aria-label="Previous month"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
-          <h3 className="text-lg font-bold min-w-[200px] text-center">
+          <h3 className="text-base sm:text-lg font-bold flex-1 text-center min-w-0 px-1">
             {formatMonthYear(currentMonth)}
           </h3>
           <button
             onClick={() => navigateMonth('next')}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2.5 min-h-[44px] min-w-[44px] hover:bg-gray-100 rounded-lg transition-colors touch-manipulation flex items-center justify-center"
+            aria-label="Next month"
           >
             <ChevronRight className="w-5 h-5" />
           </button>
@@ -390,17 +406,17 @@ export default function ScheduleCalendar({
       </div>
 
       {/* Calendar Grid */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-        <div className="grid grid-cols-7 gap-1 mb-4">
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-3 sm:p-6">
+        <div className="grid grid-cols-7 gap-0.5 sm:gap-1 mb-2 sm:mb-4">
           {['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'].map(day => (
-            <div key={day} className="text-center text-sm font-bold text-gray-500 py-2">
+            <div key={day} className="text-center text-[10px] sm:text-sm font-bold text-gray-500 py-1 sm:py-2">
               {t(`dashboard.barber.dayNames.${day}`)}
             </div>
           ))}
         </div>
-        <div className="grid grid-cols-7 gap-1">
+        <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
           {calendarDays.map((dayInfo, index) => {
-            const dateStr = toLocalYMD(dayInfo.date);
+            const dateStr = toCalendarYMD(dayInfo.date);
             const daySelected = isSelected(dayInfo.date);
             const dayIsToday = isToday(dayInfo.date);
             
@@ -413,14 +429,14 @@ export default function ScheduleCalendar({
                   }
                 }}
                 className={`
-                  aspect-square p-2 rounded-lg border-2 transition-all
+                  aspect-square p-1 sm:p-2 rounded-lg border-2 transition-all touch-manipulation min-h-[40px] sm:min-h-0
                   ${!dayInfo.isCurrentMonth ? 'text-gray-300' : ''}
-                  ${daySelected ? 'border-black bg-black text-white' : 'border-transparent hover:border-gray-300'}
+                  ${daySelected ? 'border-black bg-black text-white' : 'border-transparent hover:border-gray-300 active:bg-gray-50'}
                   ${dayIsToday && !daySelected ? 'border-blue-500' : ''}
                 `}
                 disabled={!dayInfo.isCurrentMonth}
               >
-                <div className="text-sm font-medium">{dayInfo.date.getDate()}</div>
+                <div className="text-xs sm:text-sm font-medium">{dayInfo.date.getDate()}</div>
               </button>
             );
           })}
@@ -428,30 +444,34 @@ export default function ScheduleCalendar({
       </div>
 
       {/* Selected Date and Time Slots */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-        <div className="flex items-center gap-2 mb-6">
-          <Calendar className="w-5 h-5" />
-          <h3 className="text-xl font-bold">{formatDate(getDateFromYMD(selectedDate))}</h3>
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-3 sm:p-6">
+        <div className="flex items-start gap-2 mb-4 sm:mb-6 min-w-0">
+          <Calendar className="w-5 h-5 shrink-0 mt-0.5" />
+          <h3 className="text-base sm:text-xl font-bold break-words">{formatDate(selectedDate)}</h3>
         </div>
 
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+        {timeSlots.length === 0 ? (
+          <p className="text-gray-500 text-sm text-center py-6">{t('booking.dayClosed')}</p>
+        ) : (
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 sm:gap-3">
           {timeSlots.map((timeStr) => {
-            const isTaken = isTimeSlotTaken(timeStr);
-            const appointment = getAppointmentForSlot(timeStr);
+            const slotStatus = getSlotStatus(timeStr);
+            const isTaken = slotStatus === 'taken';
+            const isClosed = slotStatus === 'closed';
+            const appointment = isTaken ? getAppointmentForSlot(timeStr) : null;
             
             return (
               <button
                 key={timeStr}
                 type="button"
                 onClick={() => {
+                  if (isClosed) return;
                   if (isTaken && appointment) {
-                    // Open details modal for taken slots
                     setSelectedAppointment(appointment);
                     setIsDetailsModalOpen(true);
                     return;
                   }
                   
-                  // Open create modal for available slots
                   const targetBarberId =
                     selectedBarberId && selectedBarberId !== 'all'
                       ? selectedBarberId
@@ -467,26 +487,31 @@ export default function ScheduleCalendar({
                   setModalSelectedDate(selectedDate);
                   setIsCreateModalOpen(true);
                 }}
-                disabled={!isTaken && !shopId}
+                disabled={isClosed || (!isTaken && !shopId)}
                 className={`
-                  py-3 px-2 rounded-lg text-center text-sm font-medium border-2 transition-all cursor-pointer
-                  ${isTaken 
-                    ? 'border-red-300 bg-red-50 text-red-700 hover:bg-red-100' 
-                    : 'border-green-300 bg-green-50 text-green-700 hover:bg-green-100'
+                  py-3 px-2 min-h-[44px] rounded-lg text-center text-sm font-medium border-2 transition-all touch-manipulation
+                  ${isClosed
+                    ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : isTaken 
+                    ? 'border-red-300 bg-red-50 text-red-700 hover:bg-red-100 active:bg-red-100 cursor-pointer' 
+                    : 'border-green-300 bg-green-50 text-green-700 hover:bg-green-100 active:bg-green-100 cursor-pointer'
                   }
                 `}
                 title={appointment 
-                  ? `${t('dashboard.barber.taken')}: ${new Date(appointment.startTime).toLocaleTimeString(locale === 'bg' ? 'bg-BG' : 'en-GB', { hour: '2-digit', minute: '2-digit' })} - ${new Date(appointment.endTime).toLocaleTimeString(locale === 'bg' ? 'bg-BG' : 'en-GB', { hour: '2-digit', minute: '2-digit' })}` 
-                  : t('dashboard.barber.available')}
+                  ? `${t('dashboard.barber.taken')}: ${formatAppointmentTimeInShopTz(appointment.startTime)} - ${formatAppointmentTimeInShopTz(appointment.endTime)}` 
+                  : isClosed
+                    ? t('booking.slotUnavailable')
+                    : t('dashboard.barber.available')}
               >
                 {timeStr}
               </button>
             );
           })}
         </div>
+        )}
 
         {/* Legend */}
-        <div className="mt-6 flex items-center gap-6 text-sm">
+        <div className="mt-4 sm:mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded border-2 border-green-300 bg-green-50"></div>
             <span className="text-gray-600">{t('dashboard.barber.available')}</span>
@@ -494,6 +519,10 @@ export default function ScheduleCalendar({
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded border-2 border-red-300 bg-red-50"></div>
             <span className="text-gray-600">{t('dashboard.barber.taken')}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded border-2 border-gray-200 bg-gray-100"></div>
+            <span className="text-gray-600">{t('booking.slotUnavailable')}</span>
           </div>
         </div>
       </div>
@@ -506,6 +535,10 @@ export default function ScheduleCalendar({
           shopId={shopId}
           barbers={modalBarbers.length > 0 ? modalBarbers : barbers}
           selectedDate={modalSelectedDate}
+          workingHours={workingHours}
+          lunchStart={lunchStart}
+          lunchEnd={lunchEnd}
+          lunchHours={lunchHours}
         />
       )}
 

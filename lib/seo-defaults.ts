@@ -31,3 +31,19 @@ export const SEO_DESCRIPTION_BG =
 
 export const SEO_DESCRIPTION_EN =
   "Men’s World Club is a barber shop in Lovech offering men’s haircuts, beard trims, and convenient online booking.";
+
+export const META_LOGIN_OWNER_TITLE = "Owner Login | Men's World Club";
+export const META_LOGIN_OWNER_DESCRIPTION = "Sign in to access the owner dashboard.";
+
+export const META_LOGIN_BARBER_TITLE = "Team Login | Men's World Club";
+export const META_LOGIN_BARBER_DESCRIPTION = "Sign in to access the barber team dashboard.";
+
+export const META_LOGIN_ADMIN_TITLE = "Admin Login | Men's World Club";
+export const META_LOGIN_ADMIN_DESCRIPTION = "Sign in to access the super admin panel.";
+
+export const META_RESET_PASSWORD_TITLE = "Reset Password | Men's World Club";
+export const META_RESET_PASSWORD_DESCRIPTION = "Set a new password for your account.";
+
+export const META_PRIVACY_TITLE = "Privacy Policy | Men's World Club";
+export const META_PRIVACY_DESCRIPTION =
+  "Privacy policy for Men's World Club — how we process personal data for online bookings.";
