@@ -1,7 +1,7 @@
 -- Insert default services for the main shop
 -- Run this after creating your first shop
 
--- First, get or create a default shop
+-- First, get or create a default shьop
 -- If you already have a shop, replace the shop_id below with your actual shop ID
 
 DO $$
